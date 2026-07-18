@@ -11,6 +11,7 @@ import type { Entry, FriendSnapshot } from '../types'
 import { Leaderboard, type LeaderboardMode } from './Leaderboard'
 import { PublicProfileView } from './PublicProfileView'
 import { RankBadge } from './RankBadge'
+import { RankHelp } from './RankHelp'
 
 type RankedPanelProps = {
   entries: Entry[]
@@ -24,6 +25,7 @@ export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) 
   const [syncError, setSyncError] = useState<string | null>(null)
   const [boardKey, setBoardKey] = useState(0)
   const [boardMode, setBoardMode] = useState<LeaderboardMode>('season')
+  const [showRankHelp, setShowRankHelp] = useState(false)
 
   useEffect(() => {
     const tick = () => setSeasonInfo(getSeasonInfo())
@@ -88,7 +90,17 @@ export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) 
 
       <section className="ranked__progress block">
         <div className="block__head">
-          <h2>Ranked Progression</h2>
+          <h2 className="ranked__progress-title">
+            Ranked Progression
+            <button
+              type="button"
+              className="help-btn"
+              aria-label="Ranks erklären"
+              onClick={() => setShowRankHelp(true)}
+            >
+              ?
+            </button>
+          </h2>
           <span>{formatMinutes(seasonMinutes)} diese Season</span>
         </div>
         <RankBadge totalMinutes={seasonMinutes} rank={progress.rank} />
@@ -108,6 +120,8 @@ export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) 
         </p>
         {syncError && <p className="friends__error">{syncError}</p>}
       </section>
+
+      <RankHelp open={showRankHelp} onClose={() => setShowRankHelp(false)} />
 
       <section className="ranked__board block">
         <div className="block__head">

@@ -308,7 +308,6 @@ export default function App() {
               username={data.profile.username}
               displayName={data.profile.name}
               avatarUrl={data.profile.avatarUrl}
-              cloudCode={data.profile.cloudCode}
               entries={data.entries}
               totalMinutes={totalMinutes}
               level={level.level}

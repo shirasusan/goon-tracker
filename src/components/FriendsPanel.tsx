@@ -32,6 +32,7 @@ type FriendsPanelProps = {
 
 type SortKey = 'level' | 'time'
 type FriendsView = 'compare' | 'recs'
+type CategoryFilter = 'all' | (typeof CATEGORIES)[number]
 
 export function FriendsPanel({
   me,
@@ -51,6 +52,8 @@ export function FriendsPanel({
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [sort, setSort] = useState<SortKey>('time')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [showAddFriend, setShowAddFriend] = useState(false)
   const [recs, setRecs] = useState<Recommendation[]>([])
   const [recName, setRecName] = useState('')
   const [recLink, setRecLink] = useState('')
@@ -61,15 +64,22 @@ export function FriendsPanel({
   const myCode = cloudCode ?? '…'
 
   const board = useMemo(() => {
+    const metric = (row: FriendSnapshot) =>
+      categoryFilter === 'all'
+        ? row.totalMinutes
+        : row.categories[categoryFilter] || 0
+
     const rows = [
       { ...me, name: displayName.trim() || 'Du', _you: true as const },
       ...friends.map((f) => ({ ...f, _you: false as const })),
     ]
-    return rows.sort((a, b) => {
-      if (sort === 'level') return b.level - a.level || b.totalMinutes - a.totalMinutes
-      return b.totalMinutes - a.totalMinutes || b.level - a.level
-    })
-  }, [me, friends, displayName, sort])
+    return rows
+      .map((row) => ({ ...row, _metric: metric(row) }))
+      .sort((a, b) => {
+        if (sort === 'level') return b.level - a.level || b._metric - a._metric
+        return b._metric - a._metric || b.level - a.level
+      })
+  }, [me, friends, displayName, sort, categoryFilter])
 
   useEffect(() => {
     if (!cloudEnabled) return
@@ -114,7 +124,6 @@ export function FriendsPanel({
       if ('error' in loaded) setError(loaded.error)
       else {
         onFriendsSync(loaded.friends)
-        setStatus('Online · 1 Code reicht (gegenseitig)')
       }
 
       const r = await loadRecommendations(user.userId)
@@ -258,48 +267,84 @@ export function FriendsPanel({
 
       {view === 'compare' && (
         <>
-          <div className="friends__share">
-            <p>Dein Code — einmal teilen reicht (Freundschaft ist gegenseitig):</p>
-            <input className="friends__code" readOnly value={myCode} />
-            <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
-              {copied ? 'Kopiert' : 'Code kopieren'}
-            </button>
-            {status && <p className="friends__status">{status}</p>}
-          </div>
-
-          <div className="friends__add">
-            <label htmlFor="friend-code">Freund-Code</label>
-            <input
-              id="friend-code"
-              placeholder="AB12CD"
-              value={paste}
-              onChange={(e) => {
-                setPaste(e.target.value.toUpperCase())
-                setError(null)
-              }}
-            />
+          {!showAddFriend ? (
             <button
               type="button"
               className="btn btn--solid"
-              onClick={() => void addFriend()}
-              disabled={busy}
+              onClick={() => setShowAddFriend(true)}
             >
-              Hinzufügen
+              Freunde hinzufügen
             </button>
-            {error && <p className="friends__error">{error}</p>}
-          </div>
+          ) : (
+            <div className="friends__add-panel">
+              <div className="block__head">
+                <h3>Freunde hinzufügen</h3>
+                <button
+                  type="button"
+                  className="section__close"
+                  onClick={() => setShowAddFriend(false)}
+                >
+                  schließen
+                </button>
+              </div>
+              <div className="friends__share">
+                <p>Dein Code — einmal teilen reicht (Freundschaft ist gegenseitig):</p>
+                <input className="friends__code" readOnly value={myCode} />
+                <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
+                  {copied ? 'Kopiert' : 'Code kopieren'}
+                </button>
+                {status && <p className="friends__status">{status}</p>}
+              </div>
+
+              <div className="friends__add">
+                <label htmlFor="friend-code">Freund-Code</label>
+                <input
+                  id="friend-code"
+                  placeholder="AB12CD"
+                  value={paste}
+                  onChange={(e) => {
+                    setPaste(e.target.value.toUpperCase())
+                    setError(null)
+                  }}
+                />
+                <button
+                  type="button"
+                  className="btn btn--solid"
+                  onClick={() => void addFriend()}
+                  disabled={busy}
+                >
+                  Hinzufügen
+                </button>
+                {error && <p className="friends__error">{error}</p>}
+              </div>
+            </div>
+          )}
 
           <div className="friends__board">
             <div className="friends__board-head">
               <h3>Vergleich</h3>
-              <select
-                value={sort}
-                onChange={(e) => setSort(e.target.value as SortKey)}
-                aria-label="Sortierung"
-              >
-                <option value="level">Level</option>
-                <option value="time">Zeit</option>
-              </select>
+              <div className="friends__filters">
+                <select
+                  value={sort}
+                  onChange={(e) => setSort(e.target.value as SortKey)}
+                  aria-label="Sortierung"
+                >
+                  <option value="level">Level</option>
+                  <option value="time">Zeit</option>
+                </select>
+                <select
+                  value={categoryFilter}
+                  onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+                  aria-label="Kategorie"
+                >
+                  <option value="all">Alle Kategorien</option>
+                  {CATEGORIES.map((c) => (
+                    <option key={c} value={c}>
+                      {CATEGORY_META[c].label}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
             <ol className="leaderboard compare-list">
               {board.map((row, i) => (
@@ -328,18 +373,17 @@ export function FriendsPanel({
                       </strong>
                     </button>
                     <span>
-                      Lv {row.level} · {formatMinutes(row.totalMinutes)}
+                      Lv {row.level} · {formatMinutes(row._metric)}
+                      {categoryFilter !== 'all' ? (
+                        <span
+                          className="compare-cat-tag"
+                          style={{ color: CATEGORY_META[categoryFilter].color }}
+                        >
+                          {' '}
+                          · {CATEGORY_META[categoryFilter].label}
+                        </span>
+                      ) : null}
                     </span>
-                    <ul className="compare-cats">
-                      {CATEGORIES.map((cat) => (
-                        <li key={cat}>
-                          <span style={{ color: CATEGORY_META[cat].color }}>
-                            {CATEGORY_META[cat].label}
-                          </span>
-                          <span>{formatMinutes(row.categories[cat] || 0)}</span>
-                        </li>
-                      ))}
-                    </ul>
                   </div>
                   {!row._you && (
                     <button

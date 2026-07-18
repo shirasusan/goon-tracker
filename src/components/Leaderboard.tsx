@@ -61,18 +61,20 @@ export function Leaderboard({
     <div className="leaderboard-wrap">
       <div className="friends__board-head">
         <h3>{mode === 'alltime' ? 'All Time' : `Season ${activeSeason}`}</h3>
-        <select
-          value={category}
-          onChange={(e) => setCategory(e.target.value as Category | 'all')}
-          aria-label="Kategorie"
-        >
-          <option value="all">Gesamtzeit</option>
-          {CATEGORIES.map((c) => (
-            <option key={c} value={c}>
-              {CATEGORY_META[c].label}
-            </option>
-          ))}
-        </select>
+        <div className="friends__filters">
+          <select
+            value={category}
+            onChange={(e) => setCategory(e.target.value as Category | 'all')}
+            aria-label="Kategorie"
+          >
+            <option value="all">Alle Kategorien</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {CATEGORY_META[c].label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       {busy && <p className="empty">Lade…</p>}
       {error && <p className="friends__error">{error}</p>}

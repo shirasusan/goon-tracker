@@ -1,6 +1,7 @@
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
-import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
+import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
+import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
@@ -51,13 +52,15 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
         </p>
       </section>
 
+      <AchievementsSection categories={profile.categories} />
+
       <section className="block">
         <div className="block__head">
           <h2>Stats</h2>
           <span>Kategorien</span>
         </div>
         <ul className="cat-stats">
-          {CATEGORIES.map((cat: Category) => {
+          {CATEGORIES.map((cat) => {
             const meta = CATEGORY_META[cat]
             const mins = profile.categories[cat] || 0
             const pct = Math.round((mins / maxCat) * 100)

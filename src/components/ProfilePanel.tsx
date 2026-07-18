@@ -3,7 +3,9 @@ import { uploadAvatar } from '../lib/cloud'
 import { weeklyGoonometerAverage } from '../lib/goonometer'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
+import { categoryTotals } from '../lib/snapshot'
 import type { Category, Entry } from '../types'
+import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
 import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
@@ -14,7 +16,6 @@ type ProfilePanelProps = {
   username?: string
   displayName: string
   avatarUrl?: string
-  cloudCode?: string
   entries: Entry[]
   totalMinutes: number
   level: number
@@ -32,7 +33,6 @@ export function ProfilePanel({
   username,
   displayName,
   avatarUrl,
-  cloudCode,
   entries,
   totalMinutes,
   level,
@@ -46,6 +46,7 @@ export function ProfilePanel({
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
+  const categories = useMemo(() => categoryTotals(entries), [entries])
   const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -124,11 +125,6 @@ export function ProfilePanel({
           maxLength={24}
           onChange={(e) => onNameChange(e.target.value)}
         />
-        {cloudCode && (
-          <p className="profile__code">
-            Freundes-Code: <strong>{cloudCode}</strong>
-          </p>
-        )}
       </section>
 
       <section className="block">
@@ -159,6 +155,8 @@ export function ProfilePanel({
         </p>
         <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
       </section>
+
+      <AchievementsSection categories={categories} />
 
       <section className="block">
         <div className="block__head">
