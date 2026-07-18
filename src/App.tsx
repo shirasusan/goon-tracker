@@ -318,6 +318,8 @@ export default function App() {
             <Avatar
               src={data.profile.avatarUrl}
               name={displayLabel}
+              goonStreak={goonStreak}
+              dryStreak={dryStreak}
               size="sm"
             />
             <span className="top__me-name">{displayLabel}</span>

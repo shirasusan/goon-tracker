@@ -408,6 +408,15 @@
   gap: 0.1rem;
 }
 
+.streak-ring__label {
+  margin: 0.15rem 0 0;
+  text-align: center;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
 .streak-ring__meta strong {
   font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 1rem;
