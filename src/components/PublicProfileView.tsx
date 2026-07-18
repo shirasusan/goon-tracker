@@ -3,6 +3,7 @@ import { rankFromMinutes } from '../lib/ranks'
 import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
 import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
+import { ProfileStreaks } from './ProfileStreaks'
 import { RankBadge } from './RankBadge'
 
 type PublicProfileViewProps = {
@@ -47,10 +48,13 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
         <p className="profile__stat">
           Level {profile.level} · {formatMinutes(profile.totalMinutes)}
         </p>
-        <p className="profile__stat">
-          Goon {profile.goonStreak}d · Dry {profile.dryStreak}d
-        </p>
       </section>
+
+      <ProfileStreaks
+        goonStreak={profile.goonStreak}
+        dryStreak={profile.dryStreak}
+        compact
+      />
 
       <AchievementsSection categories={profile.categories} />
 

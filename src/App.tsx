@@ -379,18 +379,18 @@ export default function App() {
                     <div className="block__head">
                       <h2>Streaks</h2>
                     </div>
-                    <div className="streaks">
+                    <div className="streaks streaks--dual">
                       <StreakRing
                         label="Goon"
-                        sublabel="täglich aktiv"
+                        sublabel="täglich aktiv · Korruption"
                         value={goonStreak}
-                        color="#e8ecf2"
+                        variant="evil"
                       />
                       <StreakRing
                         label="Dry"
-                        sublabel="ohne Session"
+                        sublabel="ohne Session · Reinheit"
                         value={dryStreak}
-                        color="#3dceb8"
+                        variant="good"
                       />
                     </div>
                   </section>

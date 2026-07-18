@@ -9,6 +9,7 @@ import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
 import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
+import { ProfileStreaks } from './ProfileStreaks'
 import { RankBadge } from './RankBadge'
 
 type ProfilePanelProps = {
@@ -137,10 +138,9 @@ export function ProfilePanel({
         <p className="profile__stat">
           Level {level} · {formatMinutes(totalMinutes)}
         </p>
-        <p className="profile__stat">
-          Goon {goonStreak}d · Dry {dryStreak}d
-        </p>
       </section>
+
+      <ProfileStreaks goonStreak={goonStreak} dryStreak={dryStreak} compact />
 
       <section className="block">
         <div className="block__head">
