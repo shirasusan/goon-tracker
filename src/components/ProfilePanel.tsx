@@ -140,7 +140,7 @@ export function ProfilePanel({
             <span>
               <strong>Monk Mode</strong>
               <span className="profile__switch-hint">
-                Blendet Eintragen, Ranked und Recs aus
+                Blendet Eintragen, Ranked, Recs und Stats aus
               </span>
             </span>
             <input
@@ -187,34 +187,36 @@ export function ProfilePanel({
         freshKeys={freshAchievementKeys}
       />
 
-      <section className="block">
-        <div className="block__head">
-          <h2>Stats</h2>
-          <span>tippen für Verlauf</span>
-        </div>
-        <CategoryStats
-          entries={entries}
-          selected={historyCategory}
-          onSelect={(cat) =>
-            setHistoryCategory((prev) => (prev === cat ? null : cat))
-          }
-        />
-        {historyCategory && (
-          <>
-            <div className="block__head">
-              <h2>Verlauf</h2>
-              <button
-                type="button"
-                className="section__close"
-                onClick={() => setHistoryCategory(null)}
-              >
-                schließen
-              </button>
-            </div>
-            <EntryList entries={recent} onRemove={onRemoveEntry} />
-          </>
-        )}
-      </section>
+      {!monkMode && (
+        <section className="block">
+          <div className="block__head">
+            <h2>Stats</h2>
+            <span>tippen für Verlauf</span>
+          </div>
+          <CategoryStats
+            entries={entries}
+            selected={historyCategory}
+            onSelect={(cat) =>
+              setHistoryCategory((prev) => (prev === cat ? null : cat))
+            }
+          />
+          {historyCategory && (
+            <>
+              <div className="block__head">
+                <h2>Verlauf</h2>
+                <button
+                  type="button"
+                  className="section__close"
+                  onClick={() => setHistoryCategory(null)}
+                >
+                  schließen
+                </button>
+              </div>
+              <EntryList entries={recent} onRemove={onRemoveEntry} />
+            </>
+          )}
+        </section>
+      )}
     </div>
   )
 }
