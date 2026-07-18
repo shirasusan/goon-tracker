@@ -1,7 +1,7 @@
 import { StreakRing } from './StreakRing'
 
 type ProfileStreaksProps = {
-  /** + Korruption / − Gut */
+  /** Signed streak: + / − */
   streak: number
   compact?: boolean
 }

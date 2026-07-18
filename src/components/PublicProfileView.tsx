@@ -5,6 +5,7 @@ import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
 import { ProfileStreaks } from './ProfileStreaks'
 import { RankBadge } from './RankBadge'
+import { goonDryToSigned } from '../lib/streaks'
 
 type PublicProfileViewProps = {
   profile: FriendSnapshot
@@ -51,13 +52,7 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
       </section>
 
       <ProfileStreaks
-        streak={
-          profile.goonStreak > 0
-            ? profile.goonStreak
-            : profile.dryStreak > 0
-              ? -profile.dryStreak
-              : 0
-        }
+        streak={goonDryToSigned(profile.goonStreak, profile.dryStreak)}
         compact
       />
 

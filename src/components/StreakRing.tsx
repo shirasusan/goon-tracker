@@ -1,5 +1,5 @@
 type StreakRingProps = {
-  /** + = Korruption (goon), − = Gut (dry) */
+  /** Signed streak: + goon days, − dry days */
   value: number
   cap?: number
   compact?: boolean
@@ -20,16 +20,8 @@ export function StreakRing({
   const abs = Math.abs(value)
   const progress = Math.min(abs / cap, 1)
   const offset = c * (1 - progress)
-  const isEvil = value > 0
-  const isGood = value < 0
-  const variant = isEvil ? 'evil' : isGood ? 'good' : 'neutral'
-  const color = isEvil ? '#ff2d4a' : isGood ? '#7dffb3' : '#8b95a3'
-  const label = isEvil ? 'Korruption' : isGood ? 'Gut' : 'Neutral'
-  const sublabel = isEvil
-    ? 'Goon-Streak'
-    : isGood
-      ? 'Dry-Streak'
-      : 'keine aktive Streak'
+  const variant = value > 0 ? 'evil' : value < 0 ? 'good' : 'neutral'
+  const color = value > 0 ? '#ff2d4a' : value < 0 ? '#7dffb3' : '#8b95a3'
   const display = value > 0 ? `+${value}` : value < 0 ? `${value}` : '0'
 
   return (
@@ -64,12 +56,7 @@ export function StreakRing({
           <span className="streak-ring__value" style={{ color }}>
             {display}
           </span>
-          <span className="streak-ring__unit">Tage</span>
         </div>
-      </div>
-      <div className="streak-ring__meta">
-        <strong style={{ color }}>{label}</strong>
-        <span>{sublabel}</span>
       </div>
     </div>
   )
