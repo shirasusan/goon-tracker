@@ -51,7 +51,7 @@ export function calcDryStreak(entries: Entry[], startedOn: string): number {
 /**
  * Signed streak (+/− only):
  * +N = consecutive goon days
- * −N = consecutive dry days
+ * −N = consecutive focus days
  *  0 = neutral
  */
 export function calcSignedStreak(entries: Entry[], startedOn: string): number {

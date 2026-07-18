@@ -1,5 +1,5 @@
 type StreakRingProps = {
-  /** Signed streak: + goon days, − dry days (internal) */
+  /** Signed streak: + goon days, − focus days (internal) */
   value: number
   cap?: number
   compact?: boolean
@@ -22,7 +22,7 @@ export function StreakRing({
   const offset = c * (1 - progress)
   const variant = value > 0 ? 'evil' : value < 0 ? 'good' : 'neutral'
   const color = value > 0 ? '#ff4b91' : value < 0 ? '#3dceb8' : '#8a93a0'
-  const label = value > 0 ? 'Goon Streak' : value < 0 ? 'Dry Streak' : 'Streak'
+  const label = value > 0 ? 'Goon Streak' : value < 0 ? 'Focus Streak' : 'Streak'
 
   return (
     <div
