@@ -26,7 +26,7 @@ import { toDateKey } from './lib/dates'
 import { formatMinutes } from './lib/format'
 import { levelFromXp, totalXp } from './lib/level'
 import { rankFromMinutes } from './lib/ranks'
-import { buildSnapshot, categoryTotals } from './lib/snapshot'
+import { buildSnapshot } from './lib/snapshot'
 import { loadData, saveData } from './lib/storage'
 import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
@@ -55,10 +55,8 @@ export default function App() {
     saveData(data)
   }, [data])
 
-  const categories = useMemo(() => categoryTotals(data.entries), [data.entries])
-
   useEffect(() => {
-    const newly = claimNewAchievements(categories)
+    const newly = claimNewAchievements(data.entries)
     if (newly.length === 0) return
     setUnlockQueue((prev) => [...prev, ...newly])
     setFreshKeys((prev) => {
@@ -68,7 +66,7 @@ export default function App() {
     })
     const clear = window.setTimeout(() => setFreshKeys(new Set()), 1800)
     return () => window.clearTimeout(clear)
-  }, [categories])
+  }, [data.entries])
 
   useEffect(() => {
     if (!cloudEnabled) {
@@ -320,8 +318,6 @@ export default function App() {
             <Avatar
               src={data.profile.avatarUrl}
               name={displayLabel}
-              goonStreak={goonStreak}
-              dryStreak={dryStreak}
               size="sm"
             />
             <span className="top__me-name">{displayLabel}</span>
@@ -378,7 +374,6 @@ export default function App() {
                   <section className="block block--streak" aria-label="Streak">
                     <div className="block__head">
                       <h2>Streak</h2>
-                      <span>+ Korruption · − Gut</span>
                     </div>
                     <div className="streaks streaks--single">
                       <StreakRing value={streak} embedded />

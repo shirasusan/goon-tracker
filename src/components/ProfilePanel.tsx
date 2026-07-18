@@ -3,7 +3,6 @@ import { uploadAvatar } from '../lib/cloud'
 import { weeklyGoonometerAverage } from '../lib/goonometer'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
-import { categoryTotals } from '../lib/snapshot'
 import type { Category, Entry } from '../types'
 import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
@@ -51,7 +50,6 @@ export function ProfilePanel({
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
-  const categories = useMemo(() => categoryTotals(entries), [entries])
   const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -160,7 +158,7 @@ export function ProfilePanel({
         <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
       </section>
 
-      <AchievementsSection categories={categories} freshKeys={freshAchievementKeys} />
+      <AchievementsSection entries={entries} freshKeys={freshAchievementKeys} />
 
       <section className="block">
         <div className="block__head">

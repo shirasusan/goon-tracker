@@ -36,7 +36,6 @@ export function StreakRing({
     <div
       className={`streak-ring streak-ring--${variant}${compact ? ' streak-ring--compact' : ''}${embedded ? ' streak-ring--embedded' : ''}`}
     >
-      <span className="streak-ring__tag">{label}</span>
       <div className="streak-ring__visual" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>
           <circle

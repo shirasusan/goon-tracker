@@ -38,12 +38,12 @@ export function AchievementUnlockOverlay({
         <div className="ach-fullscreen__badge ach-badge is-fresh" aria-hidden>
           <span className="ach-badge__ring" />
           <span className="ach-badge__core">
-            <span className="ach-badge__hours">{achievement.tier.short}</span>
-            <span className="ach-badge__cat">{achievement.categoryLabel}</span>
+            <span className="ach-badge__hours">{achievement.short}</span>
+            <span className="ach-badge__cat">{achievement.subtitle}</span>
           </span>
         </div>
-        <h2 className="ach-fullscreen__title">{achievement.tier.title}</h2>
-        <p className="ach-fullscreen__cat">{achievement.categoryLabel}</p>
+        <h2 className="ach-fullscreen__title">{achievement.title}</h2>
+        <p className="ach-fullscreen__cat">{achievement.subtitle}</p>
         <button type="button" className="btn btn--solid ach-fullscreen__ok" onClick={onDone}>
           Weiter
         </button>

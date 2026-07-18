@@ -12,7 +12,7 @@ export type Entry = {
   id: string
   category: Category
   minutes: number
-  /** Intensity 1–10 */
+  /** Intensity 0–10 */
   goonometer: number
   date: string
   createdAt: string

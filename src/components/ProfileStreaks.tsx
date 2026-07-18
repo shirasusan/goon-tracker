@@ -11,7 +11,6 @@ export function ProfileStreaks({ streak, compact = false }: ProfileStreaksProps)
     <section className="block block--streak">
       <div className="block__head">
         <h2>Streak</h2>
-        <span>+ Korruption · − Gut</span>
       </div>
       <div className="streaks streaks--single">
         <StreakRing value={streak} compact={compact} embedded />

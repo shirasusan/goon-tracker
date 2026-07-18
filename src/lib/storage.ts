@@ -25,7 +25,7 @@ function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
     date: raw.date,
     createdAt: raw.createdAt,
     minutes: typeof raw.minutes === 'number' && raw.minutes >= 0 ? raw.minutes : 0,
-    goonometer: Math.max(1, Math.min(10, Math.round(g) || 5)),
+    goonometer: Math.max(0, Math.min(10, Math.round(g) || 0)),
   }
 }
 

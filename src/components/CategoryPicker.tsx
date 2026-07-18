@@ -107,7 +107,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
         <>
           <div className="session__head">
             <p className="session__label">3 · Goonometer</p>
-            <p className="session__sub">Wie intensiv war die Session? (1–10)</p>
+            <p className="session__sub">Wie intensiv war die Session? (0–10)</p>
           </div>
           <div className="duration__value">
             <strong>{goonometer}</strong>
@@ -116,7 +116,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
           <input
             className="duration__slider"
             type="range"
-            min={1}
+            min={0}
             max={10}
             value={goonometer}
             onChange={(e) => setGoonometer(Number(e.target.value))}
