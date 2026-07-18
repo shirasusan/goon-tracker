@@ -15,11 +15,25 @@ function clampMinutes(n: number) {
 }
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
+  const [open, setOpen] = useState(false)
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [category, setCategory] = useState<Category | null>(null)
   const [minutes, setMinutes] = useState(30)
   const [goonometer, setGoonometer] = useState(5)
   const [comment, setComment] = useState('')
+
+  function resetFlow() {
+    setCategory(null)
+    setGoonometer(5)
+    setMinutes(30)
+    setComment('')
+    setStep(1)
+  }
+
+  function close() {
+    resetFlow()
+    setOpen(false)
+  }
 
   function pickCategory(cat: Category) {
     setCategory(cat)
@@ -29,15 +43,28 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
   function submit() {
     if (!category) return
     onLog(category, minutes, goonometer, comment.trim() || undefined)
-    setCategory(null)
-    setGoonometer(5)
-    setMinutes(30)
-    setComment('')
-    setStep(1)
+    close()
+  }
+
+  if (!open) {
+    return (
+      <button type="button" className="new-entry" onClick={() => setOpen(true)}>
+        <span className="new-entry__plus" aria-hidden>
+          +
+        </span>
+        <span className="new-entry__label">New Entry</span>
+      </button>
+    )
   }
 
   return (
     <div className="session">
+      <div className="session__toolbar">
+        <button type="button" className="section__close" onClick={close}>
+          schließen
+        </button>
+      </div>
+
       {step === 1 && (
         <>
           <div className="session__head">

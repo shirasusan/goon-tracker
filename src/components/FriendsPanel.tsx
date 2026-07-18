@@ -45,7 +45,6 @@ type FriendsPanelProps = {
   onViewedOtherProfile?: () => void
 }
 
-type SortKey = 'level' | 'time'
 type FriendsView = 'feed' | 'compare' | 'recs'
 type CategoryFilter = 'all' | (typeof CATEGORIES)[number]
 
@@ -71,7 +70,6 @@ export function FriendsPanel({
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [sort, setSort] = useState<SortKey>('time')
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [showAddFriend, setShowAddFriend] = useState(false)
   const [recs, setRecs] = useState<Recommendation[]>([])
@@ -114,11 +112,8 @@ export function FriendsPanel({
     ]
     return rows
       .map((row) => ({ ...row, _metric: metric(row) }))
-      .sort((a, b) => {
-        if (sort === 'level') return b.level - a.level || b._metric - a._metric
-        return b._metric - a._metric || b.level - a.level
-      })
-  }, [me, friends, displayName, sort, categoryFilter])
+      .sort((a, b) => b._metric - a._metric || b.level - a.level)
+  }, [me, friends, displayName, categoryFilter])
 
   async function refreshFeed(userId: string, expanded = feedExpanded) {
     setFeedBusy(true)
@@ -433,14 +428,6 @@ export function FriendsPanel({
             <div className="friends__board-head">
               <h3>Vergleich</h3>
               <div className="friends__filters">
-                <select
-                  value={sort}
-                  onChange={(e) => setSort(e.target.value as SortKey)}
-                  aria-label="Sortierung"
-                >
-                  <option value="level">Level</option>
-                  <option value="time">Zeit</option>
-                </select>
                 <select
                   value={categoryFilter}
                   onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}

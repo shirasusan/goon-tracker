@@ -21,7 +21,7 @@ export function StreakRing({
   const progress = Math.min(abs / cap, 1)
   const offset = c * (1 - progress)
   const variant = value > 0 ? 'evil' : value < 0 ? 'good' : 'neutral'
-  const color = value > 0 ? '#ff3d5c' : value < 0 ? '#6bffb8' : '#8b95a3'
+  const color = value > 0 ? '#ff4b91' : value < 0 ? '#3dceb8' : '#8b95a3'
   const label = value > 0 ? 'Goon Streak' : value < 0 ? 'Dry Streak' : 'Streak'
 
   return (

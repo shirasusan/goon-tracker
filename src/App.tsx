@@ -425,10 +425,10 @@ export default function App() {
                   {!monkMode && (
                     <section className="block block--primary">
                       <div className="block__head">
-                        <h2>Eintragen</h2>
+                        <h2>Heute</h2>
                         <span>
                           {todayEntries.length === 0
-                            ? 'heute leer'
+                            ? 'leer'
                             : `${todayEntries.length} · ${formatMinutes(todayMinutes)}`}
                         </span>
                       </div>
