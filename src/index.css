@@ -12,11 +12,18 @@
   --line-soft: #222830;
   --goon: #ff2d4a;
   --dry: #7dffb3;
+  --glow-goon: #ff4b91;
+  --glow-dry: #3dceb8;
   --accent: #f0f2f5;
-  --radius: 18px;
+  --danger: #ed2553;
+  --link: #5ec8ff;
+  --warm: #e8910f;
+  --radius-xs: 8px;
   --radius-sm: 12px;
+  --radius: 18px;
   --pad: 1.1rem;
-  --gap: 0.9rem;
+  --gap: 0.95rem;
+  --nav-h: 4.5rem;
   font-family: 'IBM Plex Sans', system-ui, sans-serif;
   line-height: 1.45;
   color: var(--ink);
@@ -42,8 +49,8 @@ body,
 body {
   min-width: 320px;
   background:
-    radial-gradient(780px 380px at 80% -8%, rgba(255, 45, 74, 0.09), transparent 55%),
-    radial-gradient(640px 320px at 0% 12%, rgba(125, 255, 179, 0.05), transparent 50%),
+    radial-gradient(720px 340px at 85% -10%, rgba(255, 75, 145, 0.07), transparent 58%),
+    radial-gradient(560px 280px at -5% 8%, rgba(61, 206, 184, 0.045), transparent 52%),
     var(--bg);
 }
 
@@ -59,6 +66,16 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--ink) 55%, transparent);
+  outline: 2px solid color-mix(in srgb, var(--ink) 45%, transparent);
   outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }

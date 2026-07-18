@@ -16,7 +16,11 @@ export function BottomNav({ active, onChange, hideRanked }: BottomNavProps) {
   const tabs = hideRanked ? ALL_TABS.filter((t) => t.id !== 'ranked') : ALL_TABS
 
   return (
-    <nav className="bottom-nav" aria-label="Hauptnavigation">
+    <nav
+      className="bottom-nav"
+      aria-label="Hauptnavigation"
+      style={{ ['--nav-cols' as string]: String(tabs.length) }}
+    >
       {tabs.map((tab) => (
         <button
           key={tab.id}
