@@ -473,6 +473,9 @@ export default function App() {
         onChange={openTab}
         hideRanked={monkMode}
       />
+      <p className="app-version" aria-label="Version">
+        Beta 1.0
+      </p>
     </div>
   )
 }

@@ -2075,3 +2075,26 @@ button.avatar {
     font-size: 2rem;
   }
 }
+
+.app-version {
+  position: fixed;
+  right: 0.85rem;
+  bottom: 0.55rem;
+  z-index: 35;
+  margin: 0;
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--muted) 75%, transparent);
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (max-width: 560px) {
+  .app-version {
+    bottom: calc(var(--nav-h) + 0.35rem);
+    right: 0.75rem;
+  }
+}
+
