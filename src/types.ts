@@ -81,7 +81,7 @@ export type TrackerData = {
     avatarUrl?: string
     cloudCode?: string
     cloudUserId?: string
-    /** Hide Eintragen, Ranked, and Recs */
+    /** Hide Eintragen, Rank, Ranked, Recs, Stats */
     monkMode?: boolean
   }
   friends: FriendSnapshot[]

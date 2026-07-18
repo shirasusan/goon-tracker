@@ -393,23 +393,25 @@ export default function App() {
             <>
               {tab === 'home' && (
                 <>
-                  <section className="block block--hero">
-                    <div className="home-hero">
-                      <div className="home-hero__rank">
-                        <p className="eyebrow">Rank</p>
-                        <RankBadge totalMinutes={totalMinutes} rank={rank} />
+                  {!monkMode && (
+                    <section className="block block--hero">
+                      <div className="home-hero">
+                        <div className="home-hero__rank">
+                          <p className="eyebrow">Rank</p>
+                          <RankBadge totalMinutes={totalMinutes} rank={rank} />
+                        </div>
+                        <div className="home-hero__level">
+                          <LevelBar
+                            level={level.level}
+                            intoLevel={level.intoLevel}
+                            toNext={level.toNext}
+                            progress={level.progress}
+                            totalXp={level.xp}
+                          />
+                        </div>
                       </div>
-                      <div className="home-hero__level">
-                        <LevelBar
-                          level={level.level}
-                          intoLevel={level.intoLevel}
-                          toNext={level.toNext}
-                          progress={level.progress}
-                          totalXp={level.xp}
-                        />
-                      </div>
-                    </div>
-                  </section>
+                    </section>
+                  )}
 
                   <section className="block block--streak" aria-label="Streak">
                     <div className="block__head">

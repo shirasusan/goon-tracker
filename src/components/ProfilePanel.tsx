@@ -140,7 +140,7 @@ export function ProfilePanel({
             <span>
               <strong>Monk Mode</strong>
               <span className="profile__switch-hint">
-                Blendet Eintragen, Ranked, Recs und Stats aus
+                Blendet Eintragen, Rank, Ranked, Recs, Stats und Goonometer aus
               </span>
             </span>
             <input
@@ -153,33 +153,37 @@ export function ProfilePanel({
         )}
       </section>
 
-      <section className="block">
-        <div className="block__head">
-          <h2>Rank</h2>
-        </div>
-        <RankBadge totalMinutes={totalMinutes} rank={rank} />
-        <p className="profile__stat">
-          Level {level} · {formatMinutes(totalMinutes)}
-        </p>
-      </section>
+      {!monkMode && (
+        <section className="block">
+          <div className="block__head">
+            <h2>Rank</h2>
+          </div>
+          <RankBadge totalMinutes={totalMinutes} rank={rank} />
+          <p className="profile__stat">
+            Level {level} · {formatMinutes(totalMinutes)}
+          </p>
+        </section>
+      )}
 
       <ProfileStreaks streak={streak} compact />
 
-      <section className="block">
-        <div className="block__head">
-          <h2>Goonometer</h2>
-        </div>
-        <p className="profile__goon">
-          {weekAvg == null ? (
-            'Noch keine Werte diese Woche'
-          ) : (
-            <>
-              Wochen-Schnitt: <strong>{weekAvg}</strong> / 10
-            </>
-          )}
-        </p>
-        <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
-      </section>
+      {!monkMode && (
+        <section className="block">
+          <div className="block__head">
+            <h2>Goonometer</h2>
+          </div>
+          <p className="profile__goon">
+            {weekAvg == null ? (
+              'Noch keine Werte diese Woche'
+            ) : (
+              <>
+                Wochen-Schnitt: <strong>{weekAvg}</strong> / 10
+              </>
+            )}
+          </p>
+          <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
+        </section>
+      )}
 
       <AchievementsSection
         entries={entries}
