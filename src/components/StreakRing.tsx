@@ -3,10 +3,17 @@ type StreakRingProps = {
   value: number
   cap?: number
   compact?: boolean
+  /** Inside a parent card — no extra border/background */
+  embedded?: boolean
 }
 
-export function StreakRing({ value, cap = 30, compact = false }: StreakRingProps) {
-  const size = compact ? 148 : 168
+export function StreakRing({
+  value,
+  cap = 30,
+  compact = false,
+  embedded = false,
+}: StreakRingProps) {
+  const size = compact ? 140 : 160
   const stroke = compact ? 8 : 9
   const r = (size - stroke) / 2
   const c = 2 * Math.PI * r
@@ -26,7 +33,9 @@ export function StreakRing({ value, cap = 30, compact = false }: StreakRingProps
   const display = value > 0 ? `+${value}` : value < 0 ? `${value}` : '0'
 
   return (
-    <div className={`streak-ring streak-ring--${variant}${compact ? ' streak-ring--compact' : ''}`}>
+    <div
+      className={`streak-ring streak-ring--${variant}${compact ? ' streak-ring--compact' : ''}${embedded ? ' streak-ring--embedded' : ''}`}
+    >
       <span className="streak-ring__tag">{label}</span>
       <div className="streak-ring__visual" style={{ width: size, height: size }}>
         <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden>

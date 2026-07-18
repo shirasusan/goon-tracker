@@ -33,9 +33,9 @@ import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
 const PAGE_META: Record<TabId, { title: string; sub: string }> = {
-  home: { title: 'Home', sub: 'Level, Rank, Streaks & Eintragen' },
+  home: { title: 'Home', sub: 'Track & climb' },
   friends: { title: 'Freunde', sub: 'Vergleich & Recs' },
-  ranked: { title: 'Ranked', sub: 'Season Progress & Leaderboard' },
+  ranked: { title: 'Ranked', sub: 'Season & Leaderboard' },
 }
 
 function newId() {
@@ -290,7 +290,7 @@ export default function App() {
   }
 
   const page = showProfile
-    ? { title: 'Profil', sub: 'Account, Stats, Avatar & Rank' }
+    ? { title: 'Profil', sub: 'Account & Stats' }
     : PAGE_META[tab]
   const displayLabel =
     data.profile.name.trim() || data.profile.username || 'Profil'
@@ -308,10 +308,8 @@ export default function App() {
         <header className="top">
           <div className="top__left">
             <p className="top__brand">Goon Tracker</p>
-            <div className="top__page">
-              <h1>{page.title}</h1>
-              <p>{page.sub}</p>
-            </div>
+            <h1 className="top__title">{page.title}</h1>
+            <p className="top__sub">{page.sub}</p>
           </div>
           <button
             type="button"
@@ -359,34 +357,35 @@ export default function App() {
             <>
               {tab === 'home' && (
                 <>
-                  <section className="block">
-                    <div className="block__head">
-                      <h2>Rank</h2>
+                  <section className="block block--hero">
+                    <div className="home-hero">
+                      <div className="home-hero__rank">
+                        <p className="eyebrow">Rank</p>
+                        <RankBadge totalMinutes={totalMinutes} rank={rank} />
+                      </div>
+                      <div className="home-hero__level">
+                        <LevelBar
+                          level={level.level}
+                          intoLevel={level.intoLevel}
+                          toNext={level.toNext}
+                          progress={level.progress}
+                          totalXp={level.xp}
+                        />
+                      </div>
                     </div>
-                    <RankBadge totalMinutes={totalMinutes} rank={rank} />
                   </section>
 
-                  <section className="block">
-                    <LevelBar
-                      level={level.level}
-                      intoLevel={level.intoLevel}
-                      toNext={level.toNext}
-                      progress={level.progress}
-                      totalXp={level.xp}
-                    />
-                  </section>
-
-                  <section className="block" aria-label="Streak">
+                  <section className="block block--streak" aria-label="Streak">
                     <div className="block__head">
                       <h2>Streak</h2>
                       <span>+ Korruption · − Gut</span>
                     </div>
                     <div className="streaks streaks--single">
-                      <StreakRing value={streak} />
+                      <StreakRing value={streak} embedded />
                     </div>
                   </section>
 
-                  <section className="block">
+                  <section className="block block--primary">
                     <div className="block__head">
                       <h2>Eintragen</h2>
                       <span>
@@ -402,29 +401,25 @@ export default function App() {
               )}
 
               {tab === 'friends' && (
-                <section className="block">
-                  <FriendsPanel
-                    me={mySnapshot}
-                    friends={data.friends}
-                    displayName={data.profile.name}
-                    username={data.profile.username}
-                    avatarUrl={data.profile.avatarUrl}
-                    cloudCode={data.profile.cloudCode}
-                    onCloudReady={onCloudReady}
-                    onFriendsSync={onFriendsSync}
-                    onRemoveLocal={removeFriend}
-                  />
-                </section>
+                <FriendsPanel
+                  me={mySnapshot}
+                  friends={data.friends}
+                  displayName={data.profile.name}
+                  username={data.profile.username}
+                  avatarUrl={data.profile.avatarUrl}
+                  cloudCode={data.profile.cloudCode}
+                  onCloudReady={onCloudReady}
+                  onFriendsSync={onFriendsSync}
+                  onRemoveLocal={removeFriend}
+                />
               )}
 
               {tab === 'ranked' && (
-                <section className="block block--flush">
-                  <RankedPanel
-                    entries={data.entries}
-                    highlightId={data.profile.cloudUserId || data.profile.id}
-                    userId={data.profile.cloudUserId}
-                  />
-                </section>
+                <RankedPanel
+                  entries={data.entries}
+                  highlightId={data.profile.cloudUserId || data.profile.id}
+                  userId={data.profile.cloudUserId}
+                />
               )}
             </>
           )}
