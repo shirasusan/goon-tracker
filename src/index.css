@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=IBM+Plex+Sans:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: dark;
+  --bg: #0b0d10;
+  --surface: #14181e;
+  --ink: #eef1f5;
+  --muted: #8b95a3;
+  --line: #252b34;
+  --goon: #e8ecf2;
+  --dry: #3dceb8;
+  --accent: #e8ecf2;
+  font-family: 'IBM Plex Sans', system-ui, sans-serif;
+  line-height: 1.45;
+  color: var(--ink);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  min-width: 320px;
+  background: radial-gradient(900px 420px at 50% -10%, #1a140c 0%, var(--bg) 55%);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
