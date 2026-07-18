@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { CATEGORIES, CATEGORY_META, type Category } from '../types'
 
 type CategoryPickerProps = {
-  onLog: (category: Category, minutes: number) => void
+  onLog: (category: Category, minutes: number, goonometer: number) => void
 }
 
 function clampMinutes(n: number) {
@@ -10,88 +10,139 @@ function clampMinutes(n: number) {
 }
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [category, setCategory] = useState<Category | null>(null)
   const [minutes, setMinutes] = useState(30)
+  const [goonometer, setGoonometer] = useState(5)
+
+  function pickCategory(cat: Category) {
+    setCategory(cat)
+    setStep(2)
+  }
 
   function submit() {
     if (!category) return
-    onLog(category, minutes)
+    onLog(category, minutes, goonometer)
     setCategory(null)
+    setGoonometer(5)
+    setMinutes(30)
+    setStep(1)
   }
 
   return (
     <div className="session">
-      <div className="session__head">
-        <p className="session__label">1 · Kategorie</p>
-      </div>
-      <div className="cat-grid">
-        {CATEGORIES.map((cat) => {
-          const meta = CATEGORY_META[cat]
-          const active = category === cat
-          return (
+      {step === 1 && (
+        <>
+          <div className="session__head">
+            <p className="session__label">1 · Kategorie</p>
+          </div>
+          <div className="cat-grid">
+            {CATEGORIES.map((cat) => {
+              const meta = CATEGORY_META[cat]
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  className="cat-tile"
+                  style={{
+                    ['--cat-color' as string]: meta.color,
+                    ['--cat-bg' as string]: meta.bg,
+                  }}
+                  onClick={() => pickCategory(cat)}
+                >
+                  <span className="cat-tile__swatch" />
+                  <span className="cat-tile__label">{meta.label}</span>
+                </button>
+              )
+            })}
+          </div>
+        </>
+      )}
+
+      {step === 2 && category && (
+        <>
+          <div className="session__head">
+            <p className="session__label">2 · Zeit · {CATEGORY_META[category].label}</p>
+          </div>
+          <div className="duration">
             <button
-              key={cat}
               type="button"
-              className={`cat-tile${active ? ' is-active' : ''}`}
-              style={{
-                ['--cat-color' as string]: meta.color,
-                ['--cat-bg' as string]: meta.bg,
-              }}
-              onClick={() => setCategory(cat)}
+              className="duration__btn"
+              onClick={() => setMinutes((m) => clampMinutes(m - 5))}
             >
-              <span className="cat-tile__swatch" />
-              <span className="cat-tile__label">{meta.label}</span>
+              −5
             </button>
-          )
-        })}
-      </div>
+            <div className="duration__value">
+              <strong>{minutes}</strong>
+              <span>min</span>
+            </div>
+            <button
+              type="button"
+              className="duration__btn"
+              onClick={() => setMinutes((m) => clampMinutes(m + 5))}
+            >
+              +5
+            </button>
+          </div>
+          <input
+            className="duration__slider"
+            type="range"
+            min={1}
+            max={180}
+            value={Math.min(180, minutes)}
+            onChange={(e) => setMinutes(clampMinutes(Number(e.target.value)))}
+          />
+          <div className="session__actions">
+            <button type="button" className="btn" onClick={() => setStep(1)}>
+              Zurück
+            </button>
+            <button type="button" className="btn btn--solid" onClick={() => setStep(3)}>
+              Weiter
+            </button>
+          </div>
+        </>
+      )}
 
-      <div className="session__head">
-        <p className="session__label">2 · Zeit</p>
-      </div>
-
-      <div className="duration">
-        <button
-          type="button"
-          className="duration__btn"
-          aria-label="weniger"
-          onClick={() => setMinutes((m) => clampMinutes(m - 5))}
-        >
-          −5
-        </button>
-        <div className="duration__value">
-          <strong>{minutes}</strong>
-          <span>min</span>
-        </div>
-        <button
-          type="button"
-          className="duration__btn"
-          aria-label="mehr"
-          onClick={() => setMinutes((m) => clampMinutes(m + 5))}
-        >
-          +5
-        </button>
-      </div>
-
-      <input
-        className="duration__slider"
-        type="range"
-        min={1}
-        max={180}
-        value={Math.min(180, minutes)}
-        onChange={(e) => setMinutes(clampMinutes(Number(e.target.value)))}
-      />
-
-      <button
-        type="button"
-        className="btn btn--solid btn--wide btn--lg"
-        disabled={!category}
-        onClick={submit}
-      >
-        {category
-          ? `${CATEGORY_META[category].label} · ${minutes} min eintragen`
-          : 'Kategorie wählen'}
-      </button>
+      {step === 3 && category && (
+        <>
+          <div className="session__head">
+            <p className="session__label">3 · Goonometer</p>
+            <p className="session__sub">Wie intensiv war die Session? (1–10)</p>
+          </div>
+          <div className="duration__value">
+            <strong>{goonometer}</strong>
+            <span>/ 10</span>
+          </div>
+          <input
+            className="duration__slider"
+            type="range"
+            min={1}
+            max={10}
+            value={goonometer}
+            onChange={(e) => setGoonometer(Number(e.target.value))}
+          />
+          <div className="goon-scale">
+            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
+              <button
+                key={n}
+                type="button"
+                className={`chip${goonometer === n ? ' is-active' : ''}`}
+                onClick={() => setGoonometer(n)}
+              >
+                {n}
+              </button>
+            ))}
+          </div>
+          <div className="session__actions">
+            <button type="button" className="btn" onClick={() => setStep(2)}>
+              Zurück
+            </button>
+            <button type="button" className="btn btn--solid" onClick={submit}>
+              Speichern · {minutes}m · G{goonometer}
+            </button>
+          </div>
+        </>
+      )}
     </div>
   )
 }

@@ -17,7 +17,7 @@ export function EntryList({ entries, onRemove }: EntryListProps) {
       {entries.map((entry) => {
         const meta = CATEGORY_META[entry.category]
         return (
-          <li key={entry.id} className="entry-row">
+          <li key={entry.id} className="entry-row entry-row--g">
             <span
               className="entry-row__chip"
               style={{
@@ -30,6 +30,7 @@ export function EntryList({ entries, onRemove }: EntryListProps) {
             </span>
             <span className="entry-row__date">{formatDisplayDate(entry.date)}</span>
             <span className="entry-row__time">{formatMinutes(entry.minutes)}</span>
+            <span className="entry-row__goon">G{entry.goonometer}</span>
             <button
               type="button"
               className="entry-row__remove"

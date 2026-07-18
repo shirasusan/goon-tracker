@@ -1,20 +1,25 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AuthScreen } from './components/AuthScreen'
 import { BottomNav, type TabId } from './components/BottomNav'
 import { CategoryPicker } from './components/CategoryPicker'
 import { CategoryStats } from './components/CategoryStats'
 import { EntryList } from './components/EntryList'
 import { FriendsPanel } from './components/FriendsPanel'
 import { LevelBar } from './components/LevelBar'
+import { ProfilePanel } from './components/ProfilePanel'
+import { RankBadge } from './components/RankBadge'
 import { StreakRing } from './components/StreakRing'
 import {
   cloudEnabled,
   ensureCloudProfile,
-  ensureCloudUser,
+  getSessionUser,
+  logoutUser,
   pushCloudProfile,
 } from './lib/cloud'
 import { toDateKey } from './lib/dates'
 import { formatMinutes } from './lib/format'
 import { levelFromXp, totalXp } from './lib/level'
+import { rankFromMinutes } from './lib/ranks'
 import { buildSnapshot } from './lib/snapshot'
 import { loadData, saveData } from './lib/storage'
 import { calcDryStreak, calcGoonStreak } from './lib/streaks'
@@ -28,9 +33,10 @@ import {
 import './App.css'
 
 const PAGE_META: Record<TabId, { title: string; sub: string }> = {
-  home: { title: 'Home', sub: 'Level, Streaks & Eintragen' },
+  home: { title: 'Home', sub: 'Level, Rank, Streaks & Eintragen' },
   stats: { title: 'Stats', sub: 'Kategorien & Verlauf' },
-  friends: { title: 'Freunde', sub: 'Live-Code teilen & vergleichen' },
+  friends: { title: 'Freunde', sub: 'Vergleich, Recs & Leaderboard' },
+  profile: { title: 'Profil', sub: 'Account, Rank & Goonometer' },
 }
 
 function newId() {
@@ -42,10 +48,54 @@ export default function App() {
   const [tab, setTab] = useState<TabId>('home')
   const [flash, setFlash] = useState<string | null>(null)
   const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
+  const [authed, setAuthed] = useState<boolean | null>(null)
 
   useEffect(() => {
     saveData(data)
   }, [data])
+
+  useEffect(() => {
+    if (!cloudEnabled) {
+      setAuthed(true)
+      return
+    }
+    let cancelled = false
+    async function check() {
+      const user = await getSessionUser()
+      if (cancelled) return
+      if (user) {
+        const username =
+          (user.user_metadata?.username as string | undefined) ||
+          data.profile.username ||
+          user.email?.split('@')[0]
+        const profile = await ensureCloudProfile(
+          user.id,
+          data.profile.name || username || 'User',
+          username,
+        )
+        if (!cancelled && !('error' in profile)) {
+          setData((prev) => ({
+            ...prev,
+            profile: {
+              ...prev.profile,
+              cloudUserId: user.id,
+              cloudCode: profile.code,
+              username: username,
+              name: prev.profile.name || username || '',
+            },
+          }))
+        }
+        setAuthed(true)
+      } else {
+        setAuthed(false)
+      }
+    }
+    void check()
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const goonStreak = useMemo(() => calcGoonStreak(data.entries), [data.entries])
   const dryStreak = useMemo(
@@ -54,63 +104,55 @@ export default function App() {
   )
   const xp = useMemo(() => totalXp(data.entries), [data.entries])
   const level = useMemo(() => levelFromXp(xp), [xp])
+  const totalMinutes = xp
+  const rank = useMemo(() => rankFromMinutes(totalMinutes), [totalMinutes])
 
   const mySnapshot = useMemo(
     () =>
       buildSnapshot({
         id: data.profile.cloudUserId || data.profile.id,
-        name: data.profile.name || 'Du',
+        name: data.profile.name || data.profile.username || 'Du',
         entries: data.entries,
         goonStreak,
         dryStreak,
       }),
-    [data.profile.cloudUserId, data.profile.id, data.profile.name, data.entries, goonStreak, dryStreak],
+    [
+      data.profile.cloudUserId,
+      data.profile.id,
+      data.profile.name,
+      data.profile.username,
+      data.entries,
+      goonStreak,
+      dryStreak,
+    ],
   )
 
-  // Push stats to Supabase whenever local progress changes
   useEffect(() => {
     if (!cloudEnabled) return
     if (!data.profile.cloudUserId || !data.profile.cloudCode) return
+    if (!authed) return
 
     const handle = window.setTimeout(() => {
       void pushCloudProfile({
         userId: data.profile.cloudUserId!,
         code: data.profile.cloudCode!,
         name: data.profile.name,
-        snapshot: mySnapshot,
+        username: data.profile.username,
+        snapshot: { ...mySnapshot, rankId: rank.id },
       })
     }, 400)
 
     return () => window.clearTimeout(handle)
-  }, [data.entries, data.profile.name, data.profile.cloudUserId, data.profile.cloudCode, mySnapshot])
-
-  // Ensure cloud identity early so logging syncs soon
-  useEffect(() => {
-    if (!cloudEnabled) return
-    let cancelled = false
-
-    async function init() {
-      const user = await ensureCloudUser()
-      if (cancelled || 'error' in user) return
-      const profile = await ensureCloudProfile(user.userId, data.profile.name)
-      if (cancelled || 'error' in profile) return
-      setData((prev) => ({
-        ...prev,
-        profile: {
-          ...prev.profile,
-          cloudUserId: user.userId,
-          cloudCode: profile.code,
-        },
-      }))
-    }
-
-    void init()
-    return () => {
-      cancelled = true
-    }
-    // only once on mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [
+    data.entries,
+    data.profile.name,
+    data.profile.username,
+    data.profile.cloudUserId,
+    data.profile.cloudCode,
+    mySnapshot,
+    rank.id,
+    authed,
+  ])
 
   const today = toDateKey()
   const todayEntries = data.entries.filter((e) => e.date === today)
@@ -133,16 +175,17 @@ export default function App() {
     setHistoryCategory((prev) => (prev === category ? null : category))
   }
 
-  function logCategory(category: Category, minutes: number) {
+  function logCategory(category: Category, minutes: number, goonometer: number) {
     const entry: Entry = {
       id: newId(),
       category,
       minutes,
+      goonometer,
       date: today,
       createdAt: new Date().toISOString(),
     }
     setData((prev) => ({ ...prev, entries: [...prev.entries, entry] }))
-    setFlash(`+${minutes} XP`)
+    setFlash(`+${minutes} XP · G${goonometer}`)
     window.setTimeout(() => setFlash(null), 1000)
   }
 
@@ -182,6 +225,44 @@ export default function App() {
     }))
   }
 
+  async function handleAuthed(info: { userId: string; username: string }) {
+    const profile = await ensureCloudProfile(info.userId, info.username, info.username)
+    setData((prev) => ({
+      ...prev,
+      profile: {
+        ...prev.profile,
+        cloudUserId: info.userId,
+        cloudCode: 'code' in profile ? profile.code : prev.profile.cloudCode,
+        username: info.username,
+        name: prev.profile.name || info.username,
+      },
+    }))
+    setAuthed(true)
+  }
+
+  async function handleLogout() {
+    await logoutUser()
+    setAuthed(false)
+  }
+
+  if (authed === null) {
+    return (
+      <div className="shell">
+        <p className="empty" style={{ padding: '2rem', textAlign: 'center' }}>
+          Laden…
+        </p>
+      </div>
+    )
+  }
+
+  if (!authed) {
+    return (
+      <div className="shell">
+        <AuthScreen onAuthed={(info) => void handleAuthed(info)} />
+      </div>
+    )
+  }
+
   const page = PAGE_META[tab]
 
   return (
@@ -198,6 +279,13 @@ export default function App() {
         <main className="page" key={tab}>
           {tab === 'home' && (
             <>
+              <section className="block">
+                <div className="block__head">
+                  <h2>Rank</h2>
+                </div>
+                <RankBadge totalMinutes={totalMinutes} rank={rank} />
+              </section>
+
               <section className="block">
                 <LevelBar
                   level={level.level}
@@ -278,9 +366,10 @@ export default function App() {
           {tab === 'friends' && (
             <section className="block">
               <FriendsPanel
-                me={mySnapshot}
+                me={{ ...mySnapshot, username: data.profile.username, rankId: rank.id }}
                 friends={data.friends}
                 displayName={data.profile.name}
+                username={data.profile.username}
                 cloudCode={data.profile.cloudCode}
                 onNameChange={setName}
                 onCloudReady={onCloudReady}
@@ -288,6 +377,19 @@ export default function App() {
                 onRemoveLocal={removeFriend}
               />
             </section>
+          )}
+
+          {tab === 'profile' && (
+            <ProfilePanel
+              username={data.profile.username}
+              displayName={data.profile.name}
+              cloudCode={data.profile.cloudCode}
+              entries={data.entries}
+              totalMinutes={totalMinutes}
+              level={level.level}
+              onNameChange={setName}
+              onLogout={() => void handleLogout()}
+            />
           )}
         </main>
       </div>

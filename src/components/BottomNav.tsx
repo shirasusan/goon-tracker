@@ -1,9 +1,10 @@
-export type TabId = 'home' | 'stats' | 'friends'
+export type TabId = 'home' | 'stats' | 'friends' | 'profile'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '◉' },
   { id: 'stats', label: 'Stats', icon: '▦' },
   { id: 'friends', label: 'Freunde', icon: '☰' },
+  { id: 'profile', label: 'Profil', icon: '◎' },
 ]
 
 type BottomNavProps = {

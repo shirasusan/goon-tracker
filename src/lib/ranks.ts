@@ -1,0 +1,42 @@
+export type RankInfo = {
+  id: string
+  title: string
+  minHours: number
+  maxHours: number
+  color: string
+}
+
+/** Hours of total goon time → rank (lower inclusive, upper exclusive except last) */
+export const RANKS: RankInfo[] = [
+  { id: 'unranked', title: 'Unranked', minHours: 0, maxHours: 2, color: '#8b95a3' },
+  { id: 'bronze', title: 'Bronze Beater', minHours: 2, maxHours: 5, color: '#cd7f32' },
+  { id: 'silver', title: 'Silver Stroker', minHours: 5, maxHours: 10, color: '#c0c0c0' },
+  { id: 'golden', title: 'Golden Gooner', minHours: 10, maxHours: 20, color: '#ffd700' },
+  { id: 'emerald', title: 'Emerald Edger', minHours: 20, maxHours: 30, color: '#50c878' },
+  { id: 'platinum', title: 'Platinum Puller', minHours: 30, maxHours: 40, color: '#e5e4e2' },
+  {
+    id: 'grandmaster',
+    title: 'Grandmaster Gripgod',
+    minHours: 40,
+    maxHours: 10_000_000,
+    color: '#ff4b91',
+  },
+]
+
+export function hoursFromMinutes(minutes: number): number {
+  return Math.max(0, minutes) / 60
+}
+
+export function rankFromMinutes(totalMinutes: number): RankInfo {
+  const hours = hoursFromMinutes(totalMinutes)
+  for (let i = 0; i < RANKS.length; i++) {
+    const r = RANKS[i]
+    const isLast = i === RANKS.length - 1
+    if (isLast) {
+      if (hours >= r.minHours) return r
+    } else if (hours >= r.minHours && hours < r.maxHours) {
+      return r
+    }
+  }
+  return RANKS[0]
+}

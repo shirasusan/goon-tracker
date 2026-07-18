@@ -3,19 +3,26 @@ import { formatMinutes } from '../lib/format'
 import {
   addFriendship,
   cloudEnabled,
+  createRecommendation,
+  deleteRecommendation,
   ensureCloudProfile,
   ensureCloudUser,
   fetchProfileByCode,
   loadFriendProfiles,
+  loadRecommendations,
   pushCloudProfile,
   removeFriendship,
 } from '../lib/cloud'
-import type { FriendSnapshot } from '../types'
+import { rankFromMinutes } from '../lib/ranks'
+import type { FriendSnapshot, Recommendation } from '../types'
+import { Leaderboard } from './Leaderboard'
+import { RankBadge } from './RankBadge'
 
 type FriendsPanelProps = {
   me: FriendSnapshot
   friends: FriendSnapshot[]
   displayName: string
+  username?: string
   cloudCode?: string
   onNameChange: (name: string) => void
   onCloudReady: (info: { cloudUserId: string; cloudCode: string }) => void
@@ -24,26 +31,32 @@ type FriendsPanelProps = {
 }
 
 type SortKey = 'xp' | 'level' | 'goon' | 'dry' | 'time'
+type FriendsView = 'compare' | 'recs' | 'board'
 
 export function FriendsPanel({
   me,
   friends,
   displayName,
+  username,
   cloudCode,
   onNameChange,
   onCloudReady,
   onFriendsSync,
   onRemoveLocal,
 }: FriendsPanelProps) {
+  const [view, setView] = useState<FriendsView>('compare')
   const [paste, setPaste] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
   const [sort, setSort] = useState<SortKey>('xp')
-  const [setupHint, setSetupHint] = useState(false)
+  const [recs, setRecs] = useState<Recommendation[]>([])
+  const [recName, setRecName] = useState('')
+  const [recLink, setRecLink] = useState('')
 
   const myCode = cloudCode ?? '…'
+  const myRank = rankFromMinutes(me.totalMinutes)
 
   const board = useMemo(() => {
     const rows = [
@@ -70,43 +83,39 @@ export function FriendsPanel({
       if (cancelled) return
       if ('error' in user) {
         setError(user.error)
-        setSetupHint(true)
         setBusy(false)
         return
       }
 
-      const profile = await ensureCloudProfile(user.userId, displayName)
+      const profile = await ensureCloudProfile(user.userId, displayName, username)
       if (cancelled) return
       if ('error' in profile) {
         setError(profile.error)
-        setSetupHint(true)
         setBusy(false)
         return
       }
 
       onCloudReady({ cloudUserId: user.userId, cloudCode: profile.code })
 
-      const push = await pushCloudProfile({
+      await pushCloudProfile({
         userId: user.userId,
         code: profile.code,
         name: displayName,
+        username,
         snapshot: me,
       })
-      if (cancelled) return
-      if (push.error) {
-        setError(push.error)
-        setBusy(false)
-        return
-      }
 
       const loaded = await loadFriendProfiles(user.userId)
       if (cancelled) return
-      if ('error' in loaded) {
-        setError(loaded.error)
-      } else {
+      if ('error' in loaded) setError(loaded.error)
+      else {
         onFriendsSync(loaded.friends)
-        setStatus('Online · live Sync')
+        setStatus('Online')
       }
+
+      const r = await loadRecommendations(user.userId)
+      if (!cancelled && !('error' in r)) setRecs(r.items)
+
       setBusy(false)
     }
 
@@ -114,7 +123,7 @@ export function FriendsPanel({
     return () => {
       cancelled = true
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- boot once per mount / code change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudCode])
 
   async function copyCode() {
@@ -128,39 +137,6 @@ export function FriendsPanel({
     }
   }
 
-  async function refresh() {
-    if (!cloudEnabled) return
-    setBusy(true)
-    setError(null)
-    const user = await ensureCloudUser()
-    if ('error' in user) {
-      setError(user.error)
-      setBusy(false)
-      return
-    }
-    const code = cloudCode ?? (await ensureCloudProfile(user.userId, displayName))
-    const resolvedCode = typeof code === 'object' && 'code' in code ? code.code : cloudCode
-    if (!resolvedCode || (typeof code === 'object' && 'error' in code)) {
-      setError(typeof code === 'object' && 'error' in code ? code.error : 'Kein Code')
-      setBusy(false)
-      return
-    }
-
-    await pushCloudProfile({
-      userId: user.userId,
-      code: resolvedCode,
-      name: displayName,
-      snapshot: me,
-    })
-    const loaded = await loadFriendProfiles(user.userId)
-    if ('error' in loaded) setError(loaded.error)
-    else {
-      onFriendsSync(loaded.friends)
-      setStatus('Aktualisiert')
-    }
-    setBusy(false)
-  }
-
   async function addFriend() {
     setError(null)
     const user = await ensureCloudUser()
@@ -168,7 +144,6 @@ export function FriendsPanel({
       setError(user.error)
       return
     }
-
     const found = await fetchProfileByCode(paste)
     if ('error' in found) {
       setError(found.error)
@@ -178,13 +153,11 @@ export function FriendsPanel({
       setError('Das ist dein eigener Code.')
       return
     }
-
     const linked = await addFriendship(user.userId, found.profile.id)
     if (linked.error) {
       setError(linked.error)
       return
     }
-
     const loaded = await loadFriendProfiles(user.userId)
     if ('error' in loaded) setError(loaded.error)
     else {
@@ -192,6 +165,8 @@ export function FriendsPanel({
       setPaste('')
       setStatus(`${found.profile.name} hinzugefügt`)
     }
+    const r = await loadRecommendations(user.userId)
+    if (!('error' in r)) setRecs(r.items)
   }
 
   async function removeFriend(id: string) {
@@ -206,117 +181,209 @@ export function FriendsPanel({
     if (!('error' in loaded)) onFriendsSync(loaded.friends)
   }
 
+  async function addRec() {
+    setError(null)
+    const user = await ensureCloudUser()
+    if ('error' in user) {
+      setError(user.error)
+      return
+    }
+    const result = await createRecommendation({
+      userId: user.userId,
+      authorName: displayName,
+      name: recName,
+      link: recLink,
+    })
+    if (result.error) {
+      setError(result.error)
+      return
+    }
+    setRecName('')
+    setRecLink('')
+    const r = await loadRecommendations(user.userId)
+    if (!('error' in r)) setRecs(r.items)
+  }
+
+  async function removeRec(id: string) {
+    const user = await ensureCloudUser()
+    if ('error' in user) return
+    await deleteRecommendation(user.userId, id)
+    const r = await loadRecommendations(user.userId)
+    if (!('error' in r)) setRecs(r.items)
+  }
+
   if (!cloudEnabled) {
-    return (
-      <p className="empty">
-        Cloud nicht konfiguriert. `.env` mit Supabase URL + Key setzen.
-      </p>
-    )
+    return <p className="empty">Cloud nicht konfiguriert.</p>
   }
 
   return (
     <div className="friends">
-      {setupHint && (
-        <div className="friends__setup">
-          <p>
-            Einmalig in Supabase:
-          </p>
-          <ol>
-            <li>Authentication → Providers → <strong>Anonymous</strong> einschalten</li>
-            <li>SQL Editor → Inhalt von <code>supabase/schema.sql</code> ausführen</li>
-          </ol>
+      <div className="friends__tabs">
+        <button
+          type="button"
+          className={`chip${view === 'compare' ? ' is-active' : ''}`}
+          onClick={() => setView('compare')}
+        >
+          Vergleich
+        </button>
+        <button
+          type="button"
+          className={`chip${view === 'recs' ? ' is-active' : ''}`}
+          onClick={() => setView('recs')}
+        >
+          Recs
+        </button>
+        <button
+          type="button"
+          className={`chip${view === 'board' ? ' is-active' : ''}`}
+          onClick={() => setView('board')}
+        >
+          Leaderboard
+        </button>
+      </div>
+
+      {view === 'compare' && (
+        <>
+          <div className="friends__profile">
+            <label htmlFor="display-name">Anzeigename</label>
+            <input
+              id="display-name"
+              value={displayName}
+              maxLength={24}
+              onChange={(e) => onNameChange(e.target.value)}
+            />
+            <RankBadge totalMinutes={me.totalMinutes} rank={myRank} compact />
+          </div>
+
+          <div className="friends__share">
+            <p>Dein Live-Code:</p>
+            <input className="friends__code" readOnly value={myCode} />
+            <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
+              {copied ? 'Kopiert' : 'Code kopieren'}
+            </button>
+            {status && <p className="friends__status">{status}</p>}
+          </div>
+
+          <div className="friends__add">
+            <label htmlFor="friend-code">Freund-Code</label>
+            <input
+              id="friend-code"
+              placeholder="AB12CD"
+              value={paste}
+              onChange={(e) => {
+                setPaste(e.target.value.toUpperCase())
+                setError(null)
+              }}
+            />
+            <button
+              type="button"
+              className="btn btn--solid"
+              onClick={() => void addFriend()}
+              disabled={busy}
+            >
+              Hinzufügen
+            </button>
+            {error && <p className="friends__error">{error}</p>}
+          </div>
+
+          <div className="friends__board">
+            <div className="friends__board-head">
+              <h3>Vergleich</h3>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as SortKey)}
+                aria-label="Sortierung"
+              >
+                <option value="xp">XP</option>
+                <option value="level">Level</option>
+                <option value="goon">Goon Streak</option>
+                <option value="dry">Dry Streak</option>
+                <option value="time">Zeit</option>
+              </select>
+            </div>
+            <ol className="leaderboard">
+              {board.map((row, i) => (
+                <li key={row.id} className={`leaderboard__row${row._you ? ' is-you' : ''}`}>
+                  <span className="leaderboard__rank">{i + 1}</span>
+                  <div className="leaderboard__main">
+                    <strong>
+                      {row.name}
+                      {row._you ? ' · du' : ''}
+                    </strong>
+                    <RankBadge
+                      totalMinutes={row.totalMinutes}
+                      rank={rankFromMinutes(row.totalMinutes)}
+                      compact
+                    />
+                    <span>
+                      Lv {row.level} · {formatMinutes(row.totalMinutes)}
+                    </span>
+                  </div>
+                  {!row._you && (
+                    <button
+                      type="button"
+                      className="leaderboard__remove"
+                      onClick={() => void removeFriend(row.id)}
+                    >
+                      ×
+                    </button>
+                  )}
+                </li>
+              ))}
+            </ol>
+          </div>
+        </>
+      )}
+
+      {view === 'recs' && (
+        <div className="recs">
+          <div className="friends__add">
+            <label htmlFor="rec-name">Empfehlung · Name</label>
+            <input
+              id="rec-name"
+              value={recName}
+              placeholder="Titel"
+              onChange={(e) => setRecName(e.target.value)}
+            />
+            <label htmlFor="rec-link">Link</label>
+            <input
+              id="rec-link"
+              value={recLink}
+              placeholder="https://…"
+              onChange={(e) => setRecLink(e.target.value)}
+            />
+            <button type="button" className="btn btn--solid" onClick={() => void addRec()}>
+              Teilen
+            </button>
+            {error && <p className="friends__error">{error}</p>}
+          </div>
+          <ul className="rec-list">
+            {recs.map((r) => (
+              <li key={r.id} className="rec-row">
+                <div>
+                  <strong>{r.name}</strong>
+                  <span className="rec-row__meta">von @{r.authorName}</span>
+                  <a href={r.link} target="_blank" rel="noreferrer">
+                    {r.link}
+                  </a>
+                </div>
+                {r.userId === me.id && (
+                  <button
+                    type="button"
+                    className="leaderboard__remove"
+                    onClick={() => void removeRec(r.id)}
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+          {recs.length === 0 && <p className="empty">Noch keine Recommendations.</p>}
         </div>
       )}
 
-      <div className="friends__profile">
-        <label htmlFor="display-name">Dein Name</label>
-        <input
-          id="display-name"
-          value={displayName}
-          maxLength={24}
-          placeholder="Name für den Vergleich"
-          onChange={(e) => onNameChange(e.target.value)}
-        />
-      </div>
-
-      <div className="friends__share">
-        <p>Dein Live-Code (funktioniert auf jedem Gerät):</p>
-        <input className="friends__code" readOnly value={myCode} />
-        <div className="friends__share-actions">
-          <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
-            {copied ? 'Kopiert' : 'Code kopieren'}
-          </button>
-          <button type="button" className="btn" onClick={() => void refresh()} disabled={busy}>
-            {busy ? '…' : 'Sync'}
-          </button>
-        </div>
-        {status && <p className="friends__status">{status}</p>}
-      </div>
-
-      <div className="friends__add">
-        <label htmlFor="friend-code">Freund-Code</label>
-        <input
-          id="friend-code"
-          placeholder="z.B. AB12CD"
-          value={paste}
-          autoCapitalize="characters"
-          onChange={(e) => {
-            setPaste(e.target.value.toUpperCase())
-            setError(null)
-          }}
-        />
-        <button type="button" className="btn btn--solid" onClick={() => void addFriend()} disabled={busy}>
-          Hinzufügen
-        </button>
-        {error && <p className="friends__error">{error}</p>}
-      </div>
-
-      <div className="friends__board">
-        <div className="friends__board-head">
-          <h3>Vergleich</h3>
-          <select value={sort} onChange={(e) => setSort(e.target.value as SortKey)} aria-label="Sortierung">
-            <option value="xp">XP</option>
-            <option value="level">Level</option>
-            <option value="goon">Goon Streak</option>
-            <option value="dry">Dry Streak</option>
-            <option value="time">Zeit</option>
-          </select>
-        </div>
-
-        {board.length === 1 && (
-          <p className="empty">Noch keine Freunde — deren 6-stelligen Code einfügen.</p>
-        )}
-
-        <ol className="leaderboard">
-          {board.map((row, i) => (
-            <li key={row.id} className={`leaderboard__row${row._you ? ' is-you' : ''}`}>
-              <span className="leaderboard__rank">{i + 1}</span>
-              <div className="leaderboard__main">
-                <strong>
-                  {row.name}
-                  {row._you ? ' · du' : ''}
-                </strong>
-                <span>
-                  Lv {row.level} · {row.xp} XP · {formatMinutes(row.totalMinutes)}
-                </span>
-                <span>
-                  Goon {row.goonStreak}d · Dry {row.dryStreak}d
-                </span>
-              </div>
-              {!row._you && (
-                <button
-                  type="button"
-                  className="leaderboard__remove"
-                  aria-label={`${row.name} entfernen`}
-                  onClick={() => void removeFriend(row.id)}
-                >
-                  ×
-                </button>
-              )}
-            </li>
-          ))}
-        </ol>
-      </div>
+      {view === 'board' && <Leaderboard highlightId={me.id} />}
     </div>
   )
 }

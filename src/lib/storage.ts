@@ -18,12 +18,14 @@ function emptyData(): TrackerData {
 
 function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
   if (!raw.id || !raw.category || !raw.date || !raw.createdAt) return null
+  const g = typeof raw.goonometer === 'number' ? raw.goonometer : 5
   return {
     id: raw.id,
     category: raw.category,
     date: raw.date,
     createdAt: raw.createdAt,
     minutes: typeof raw.minutes === 'number' && raw.minutes >= 0 ? raw.minutes : 0,
+    goonometer: Math.max(1, Math.min(10, Math.round(g) || 5)),
   }
 }
 
@@ -32,6 +34,7 @@ function normalizeFriend(raw: Partial<FriendSnapshot>): FriendSnapshot | null {
   return {
     id: raw.id,
     name: String(raw.name),
+    username: raw.username,
     level: Number(raw.level) || 1,
     xp: Number(raw.xp) || 0,
     goonStreak: Number(raw.goonStreak) || 0,
@@ -44,6 +47,7 @@ function normalizeFriend(raw: Partial<FriendSnapshot>): FriendSnapshot | null {
       illustration: 0,
       eroga: 0,
     },
+    rankId: raw.rankId,
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
   }
 }
@@ -62,6 +66,7 @@ export function loadData(): TrackerData {
       profile: {
         id: parsed.profile?.id || newProfileId(),
         name: parsed.profile?.name ?? '',
+        username: parsed.profile?.username,
         cloudCode: parsed.profile?.cloudCode,
         cloudUserId: parsed.profile?.cloudUserId,
       },

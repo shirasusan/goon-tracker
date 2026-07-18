@@ -12,19 +12,32 @@ export type Entry = {
   id: string
   category: Category
   minutes: number
+  /** Intensity 1–10 */
+  goonometer: number
   date: string
+  createdAt: string
+}
+
+export type Recommendation = {
+  id: string
+  userId: string
+  authorName: string
+  name: string
+  link: string
   createdAt: string
 }
 
 export type FriendSnapshot = {
   id: string
   name: string
+  username?: string
   level: number
   xp: number
   goonStreak: number
   dryStreak: number
   totalMinutes: number
   categories: Record<Category, number>
+  rankId?: string
   updatedAt: string
 }
 
@@ -34,14 +47,13 @@ export type TrackerData = {
   profile: {
     id: string
     name: string
-    /** Short share code from Supabase, e.g. AB12CD */
+    username?: string
     cloudCode?: string
     cloudUserId?: string
   }
   friends: FriendSnapshot[]
 }
 
-/** Strongly separated hues (still brand-inspired where possible) */
 export const CATEGORY_META: Record<
   Category,
   { label: string; color: string; bg: string; hint: string }
