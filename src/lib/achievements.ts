@@ -72,3 +72,25 @@ export function loadSeenAchievements(): Set<string> {
 export function saveSeenAchievements(keys: Iterable<string>): void {
   localStorage.setItem(SEEN_KEY, JSON.stringify([...keys]))
 }
+
+/** Returns newly unlocked achievements and marks them as seen. First run seeds without returning. */
+export function claimNewAchievements(
+  categories: Record<Category, number>,
+): UnlockedAchievement[] {
+  const unlocked = unlockedAchievements(categories)
+  const keys = unlocked.map((a) => a.key)
+  const seen = loadSeenAchievements()
+
+  if (seen.size === 0) {
+    if (keys.length > 0) saveSeenAchievements(keys)
+    return []
+  }
+
+  const newly = unlocked.filter((a) => !seen.has(a.key))
+  if (newly.length === 0) return []
+
+  const next = new Set(seen)
+  for (const a of newly) next.add(a.key)
+  saveSeenAchievements(next)
+  return newly
+}

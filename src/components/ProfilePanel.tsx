@@ -26,6 +26,7 @@ type ProfilePanelProps = {
   onLogout: () => void
   onRemoveEntry: (id: string) => void
   onBack?: () => void
+  freshAchievementKeys?: Set<string>
 }
 
 export function ProfilePanel({
@@ -43,6 +44,7 @@ export function ProfilePanel({
   onLogout,
   onRemoveEntry,
   onBack,
+  freshAchievementKeys,
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
@@ -156,7 +158,7 @@ export function ProfilePanel({
         <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
       </section>
 
-      <AchievementsSection categories={categories} celebrate />
+      <AchievementsSection categories={categories} freshKeys={freshAchievementKeys} />
 
       <section className="block">
         <div className="block__head">

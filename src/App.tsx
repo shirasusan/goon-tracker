@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { AchievementUnlockOverlay } from './components/AchievementUnlockOverlay'
 import { AuthScreen } from './components/AuthScreen'
 import { Avatar } from './components/Avatar'
 import { BottomNav, type TabId } from './components/BottomNav'
@@ -17,11 +18,15 @@ import {
   pushCloudProfile,
   pushSeasonStats,
 } from './lib/cloud'
+import {
+  claimNewAchievements,
+  type UnlockedAchievement,
+} from './lib/achievements'
 import { toDateKey } from './lib/dates'
 import { formatMinutes } from './lib/format'
 import { levelFromXp, totalXp } from './lib/level'
 import { rankFromMinutes } from './lib/ranks'
-import { buildSnapshot } from './lib/snapshot'
+import { buildSnapshot, categoryTotals } from './lib/snapshot'
 import { loadData, saveData } from './lib/storage'
 import { calcDryStreak, calcGoonStreak } from './lib/streaks'
 import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
@@ -43,10 +48,27 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
   const [authed, setAuthed] = useState<boolean | null>(null)
+  const [unlockQueue, setUnlockQueue] = useState<UnlockedAchievement[]>([])
+  const [freshKeys, setFreshKeys] = useState<Set<string>>(() => new Set())
 
   useEffect(() => {
     saveData(data)
   }, [data])
+
+  const categories = useMemo(() => categoryTotals(data.entries), [data.entries])
+
+  useEffect(() => {
+    const newly = claimNewAchievements(categories)
+    if (newly.length === 0) return
+    setUnlockQueue((prev) => [...prev, ...newly])
+    setFreshKeys((prev) => {
+      const next = new Set(prev)
+      for (const a of newly) next.add(a.key)
+      return next
+    })
+    const clear = window.setTimeout(() => setFreshKeys(new Set()), 1800)
+    return () => window.clearTimeout(clear)
+  }, [categories])
 
   useEffect(() => {
     if (!cloudEnabled) {
@@ -272,9 +294,16 @@ export default function App() {
     : PAGE_META[tab]
   const displayLabel =
     data.profile.name.trim() || data.profile.username || 'Profil'
+  const activeUnlock = unlockQueue[0] ?? null
 
   return (
     <div className="shell">
+      {activeUnlock && (
+        <AchievementUnlockOverlay
+          achievement={activeUnlock}
+          onDone={() => setUnlockQueue((q) => q.slice(1))}
+        />
+      )}
       <div className="app">
         <header className="top">
           <div className="top__left">
@@ -323,6 +352,7 @@ export default function App() {
               onLogout={() => void handleLogout()}
               onRemoveEntry={removeEntry}
               onBack={() => setShowProfile(false)}
+              freshAchievementKeys={freshKeys}
             />
           ) : (
             <>
