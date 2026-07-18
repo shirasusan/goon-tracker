@@ -78,6 +78,7 @@ export function FriendsPanel({
   const [recName, setRecName] = useState('')
   const [recLink, setRecLink] = useState('')
   const [recImage, setRecImage] = useState<File | null>(null)
+  const [recImagePreview, setRecImagePreview] = useState<string | null>(null)
   const [recFile, setRecFile] = useState<File | null>(null)
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
   const [feed, setFeed] = useState<GoonPost[]>([])
@@ -90,6 +91,16 @@ export function FriendsPanel({
   useEffect(() => {
     if (hideRecs && view === 'recs') setView('feed')
   }, [hideRecs, view])
+
+  useEffect(() => {
+    if (!recImage) {
+      setRecImagePreview(null)
+      return
+    }
+    const url = URL.createObjectURL(recImage)
+    setRecImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [recImage])
 
   const board = useMemo(() => {
     const metric = (row: FriendSnapshot) =>
@@ -523,6 +534,18 @@ export function FriendsPanel({
               accept="image/*"
               onChange={(e) => setRecImage(e.target.files?.[0] ?? null)}
             />
+            {recImagePreview && (
+              <div className="rec-preview">
+                <img src={recImagePreview} alt="Vorschau" />
+                <button
+                  type="button"
+                  className="section__close"
+                  onClick={() => setRecImage(null)}
+                >
+                  entfernen
+                </button>
+              </div>
+            )}
             <label htmlFor="rec-file">Datei</label>
             <input
               id="rec-file"

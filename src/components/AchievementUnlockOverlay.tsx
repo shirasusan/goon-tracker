@@ -1,5 +1,7 @@
+import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import type { UnlockedAchievement } from '../lib/achievements'
+import { playAchievementSound } from '../lib/sounds'
 
 type AchievementUnlockOverlayProps = {
   achievement: UnlockedAchievement
@@ -12,6 +14,10 @@ export function AchievementUnlockOverlay({
   achievement,
   onDone,
 }: AchievementUnlockOverlayProps) {
+  useEffect(() => {
+    playAchievementSound()
+  }, [achievement.key])
+
   return createPortal(
     <div
       className="ach-fullscreen"

@@ -93,32 +93,32 @@ export const CATEGORY_META: Record<
 > = {
   porn: {
     label: 'Porn',
-    color: '#FF9900',
-    bg: '#000000',
+    color: '#c9954a',
+    bg: '#14110c',
     hint: 'Pornhub',
   },
   hentai: {
     label: 'Hentai',
-    color: '#FF2D55',
-    bg: '#2a0a12',
+    color: '#c45b6e',
+    bg: '#151014',
     hint: 'nhentai red',
   },
   dojin: {
     label: 'Doujin',
-    color: '#00E676',
-    bg: '#062214',
+    color: '#4a9e6e',
+    bg: '#0e1512',
     hint: 'Comiket green',
   },
   illustration: {
     label: 'Illustration',
-    color: '#2979FF',
-    bg: '#071428',
+    color: '#5a7ec4',
+    bg: '#0e1218',
     hint: 'Pixiv blue',
   },
   eroga: {
     label: 'Eroge',
-    color: '#D500F9',
-    bg: '#1a0624',
+    color: '#9a6bb8',
+    bg: '#141018',
     hint: 'galgame purple',
   },
 }
