@@ -676,6 +676,16 @@
   grid-template-columns: auto 1fr auto auto auto;
 }
 
+.entry-row__comment {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .entry-row__chip {
   font-size: 0.82rem;
   font-weight: 700;
@@ -1716,6 +1726,145 @@ button.avatar {
 
 .compare-cat-tag {
   font-weight: 600;
+}
+
+.session__comment {
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5rem;
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  color: var(--ink);
+  border-radius: var(--radius-sm);
+  padding: 0.72rem 0.85rem;
+  font: inherit;
+}
+
+.profile__switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  cursor: pointer;
+}
+
+.profile__switch strong {
+  display: block;
+  font-size: 0.95rem;
+}
+
+.profile__switch-hint {
+  display: block;
+  margin-top: 0.2rem;
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.profile__switch input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--goon, #ff2d4a);
+  flex-shrink: 0;
+}
+
+.goon-feed {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.goon-feed__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.goon-card {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #10141a;
+}
+
+.goon-card__head {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.65rem;
+  align-items: center;
+}
+
+.goon-card__meta {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.goon-card__meta strong {
+  font-size: 0.95rem;
+}
+
+.goon-card__meta span {
+  color: var(--muted);
+  font-size: 0.8rem;
+}
+
+.goon-card__cat {
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid;
+  border-radius: 6px;
+}
+
+.goon-card__comment {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.goon-card__comment--empty {
+  color: var(--muted);
+  font-style: italic;
+}
+
+.goon-card__replies {
+  list-style: none;
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  display: grid;
+  gap: 0.4rem;
+  border-left: 2px solid var(--line);
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 0 8px 8px 0;
+}
+
+.goon-card__replies li {
+  display: grid;
+  gap: 0.1rem;
+  font-size: 0.85rem;
+}
+
+.goon-card__replies strong {
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.goon-card__compose {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.45rem;
+}
+
+.goon-card__compose input {
+  margin: 0;
 }
 
 @media (max-width: 520px) {

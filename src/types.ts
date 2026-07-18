@@ -16,6 +16,32 @@ export type Entry = {
   goonometer: number
   date: string
   createdAt: string
+  /** Optional note shown in the friends feed */
+  comment?: string
+}
+
+export type GoonComment = {
+  id: string
+  postId: string
+  userId: string
+  authorName: string
+  authorAvatarUrl?: string
+  body: string
+  createdAt: string
+}
+
+export type GoonPost = {
+  id: string
+  userId: string
+  authorName: string
+  authorAvatarUrl?: string
+  category: Category
+  minutes: number
+  goonometer: number
+  comment: string
+  date: string
+  createdAt: string
+  comments: GoonComment[]
 }
 
 export type Recommendation = {
@@ -55,6 +81,8 @@ export type TrackerData = {
     avatarUrl?: string
     cloudCode?: string
     cloudUserId?: string
+    /** Hide Eintragen, Ranked, and Recs */
+    monkMode?: boolean
   }
   friends: FriendSnapshot[]
 }

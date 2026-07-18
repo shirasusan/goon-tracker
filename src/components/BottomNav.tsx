@@ -1,6 +1,6 @@
 export type TabId = 'home' | 'friends' | 'ranked'
 
-const TABS: { id: TabId; label: string; icon: string }[] = [
+const ALL_TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '◉' },
   { id: 'friends', label: 'Freunde', icon: '☰' },
   { id: 'ranked', label: 'Ranked', icon: '◆' },
@@ -9,12 +9,15 @@ const TABS: { id: TabId; label: string; icon: string }[] = [
 type BottomNavProps = {
   active: TabId | null
   onChange: (tab: TabId) => void
+  hideRanked?: boolean
 }
 
-export function BottomNav({ active, onChange }: BottomNavProps) {
+export function BottomNav({ active, onChange, hideRanked }: BottomNavProps) {
+  const tabs = hideRanked ? ALL_TABS.filter((t) => t.id !== 'ranked') : ALL_TABS
+
   return (
     <nav className="bottom-nav" aria-label="Hauptnavigation">
-      {TABS.map((tab) => (
+      {tabs.map((tab) => (
         <button
           key={tab.id}
           type="button"

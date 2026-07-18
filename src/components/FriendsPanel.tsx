@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { formatMinutes } from '../lib/format'
 import {
   addFriendship,
+  addGoonComment,
   cloudEnabled,
   createRecommendation,
   deleteRecommendation,
@@ -10,12 +11,20 @@ import {
   fetchProfileByCode,
   fetchProfileById,
   loadFriendProfiles,
+  loadGoonFeed,
   loadRecommendations,
   pushCloudProfile,
   removeFriendship,
 } from '../lib/cloud'
-import { CATEGORIES, CATEGORY_META, type FriendSnapshot, type Recommendation } from '../types'
+import {
+  CATEGORIES,
+  CATEGORY_META,
+  type FriendSnapshot,
+  type GoonPost,
+  type Recommendation,
+} from '../types'
 import { Avatar } from './Avatar'
+import { GoonFeed } from './GoonFeed'
 import { PublicProfileView } from './PublicProfileView'
 
 type FriendsPanelProps = {
@@ -25,14 +34,23 @@ type FriendsPanelProps = {
   username?: string
   avatarUrl?: string
   cloudCode?: string
-  onCloudReady: (info: { cloudUserId: string; cloudCode: string; avatarUrl?: string | null }) => void
+  hideRecs?: boolean
+  onCloudReady: (info: {
+    cloudUserId: string
+    cloudCode: string
+    avatarUrl?: string | null
+  }) => void
   onFriendsSync: (friends: FriendSnapshot[]) => void
   onRemoveLocal: (id: string) => void
+  onViewedOtherProfile?: () => void
 }
 
 type SortKey = 'level' | 'time'
-type FriendsView = 'compare' | 'recs'
+type FriendsView = 'feed' | 'compare' | 'recs'
 type CategoryFilter = 'all' | (typeof CATEGORIES)[number]
+
+const FEED_PREVIEW = 5
+const FEED_FULL = 100
 
 export function FriendsPanel({
   me,
@@ -41,11 +59,13 @@ export function FriendsPanel({
   username,
   avatarUrl,
   cloudCode,
+  hideRecs,
   onCloudReady,
   onFriendsSync,
   onRemoveLocal,
+  onViewedOtherProfile,
 }: FriendsPanelProps) {
-  const [view, setView] = useState<FriendsView>('compare')
+  const [view, setView] = useState<FriendsView>('feed')
   const [paste, setPaste] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -60,8 +80,16 @@ export function FriendsPanel({
   const [recImage, setRecImage] = useState<File | null>(null)
   const [recFile, setRecFile] = useState<File | null>(null)
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
+  const [feed, setFeed] = useState<GoonPost[]>([])
+  const [feedExpanded, setFeedExpanded] = useState(false)
+  const [feedError, setFeedError] = useState<string | null>(null)
+  const [feedBusy, setFeedBusy] = useState(false)
 
   const myCode = cloudCode ?? '…'
+
+  useEffect(() => {
+    if (hideRecs && view === 'recs') setView('feed')
+  }, [hideRecs, view])
 
   const board = useMemo(() => {
     const metric = (row: FriendSnapshot) =>
@@ -80,6 +108,20 @@ export function FriendsPanel({
         return b._metric - a._metric || b.level - a.level
       })
   }, [me, friends, displayName, sort, categoryFilter])
+
+  async function refreshFeed(userId: string, expanded = feedExpanded) {
+    setFeedBusy(true)
+    const result = await loadGoonFeed(userId, {
+      limit: expanded ? FEED_FULL : FEED_PREVIEW,
+    })
+    setFeedBusy(false)
+    if ('error' in result) {
+      setFeedError(result.error)
+      return
+    }
+    setFeedError(null)
+    setFeed(result.posts)
+  }
 
   useEffect(() => {
     if (!cloudEnabled) return
@@ -122,12 +164,12 @@ export function FriendsPanel({
       const loaded = await loadFriendProfiles(user.userId)
       if (cancelled) return
       if ('error' in loaded) setError(loaded.error)
-      else {
-        onFriendsSync(loaded.friends)
-      }
+      else onFriendsSync(loaded.friends)
 
       const r = await loadRecommendations(user.userId)
       if (!cancelled && !('error' in r)) setRecs(r.items)
+
+      if (!cancelled) await refreshFeed(user.userId, false)
 
       setBusy(false)
     }
@@ -189,6 +231,7 @@ export function FriendsPanel({
     }
     const r = await loadRecommendations(user.userId)
     if (!('error' in r)) setRecs(r.items)
+    await refreshFeed(user.userId)
   }
 
   async function removeFriend(id: string) {
@@ -201,6 +244,7 @@ export function FriendsPanel({
     onRemoveLocal(id)
     const loaded = await loadFriendProfiles(user.userId)
     if (!('error' in loaded)) onFriendsSync(loaded.friends)
+    await refreshFeed(user.userId)
   }
 
   async function addRec() {
@@ -238,12 +282,46 @@ export function FriendsPanel({
     if (!('error' in r)) setRecs(r.items)
   }
 
+  async function expandFeed() {
+    const user = await ensureCloudUser()
+    if ('error' in user) {
+      setFeedError(user.error)
+      return
+    }
+    setFeedExpanded(true)
+    await refreshFeed(user.userId, true)
+  }
+
+  async function commentOnPost(postId: string, body: string) {
+    const user = await ensureCloudUser()
+    if ('error' in user) {
+      setFeedError(user.error)
+      return
+    }
+    const result = await addGoonComment({
+      userId: user.userId,
+      postId,
+      body,
+    })
+    if (result.error) {
+      setFeedError(result.error)
+      return
+    }
+    await refreshFeed(user.userId)
+  }
+
   if (!cloudEnabled) {
     return <p className="empty">Cloud nicht konfiguriert.</p>
   }
 
   if (viewing) {
-    return <PublicProfileView profile={viewing} onBack={() => setViewing(null)} />
+    return (
+      <PublicProfileView
+        profile={viewing}
+        onBack={() => setViewing(null)}
+        onViewedOtherProfile={onViewedOtherProfile}
+      />
+    )
   }
 
   return (
@@ -251,19 +329,39 @@ export function FriendsPanel({
       <div className="friends__tabs">
         <button
           type="button"
+          className={`chip${view === 'feed' ? ' is-active' : ''}`}
+          onClick={() => setView('feed')}
+        >
+          Feed
+        </button>
+        <button
+          type="button"
           className={`chip${view === 'compare' ? ' is-active' : ''}`}
           onClick={() => setView('compare')}
         >
           Vergleich
         </button>
-        <button
-          type="button"
-          className={`chip${view === 'recs' ? ' is-active' : ''}`}
-          onClick={() => setView('recs')}
-        >
-          Recs
-        </button>
+        {!hideRecs && (
+          <button
+            type="button"
+            className={`chip${view === 'recs' ? ' is-active' : ''}`}
+            onClick={() => setView('recs')}
+          >
+            Recs
+          </button>
+        )}
       </div>
+
+      {view === 'feed' && (
+        <GoonFeed
+          posts={feed}
+          expanded={feedExpanded}
+          busy={feedBusy || busy}
+          error={feedError}
+          onExpand={() => void expandFeed()}
+          onComment={commentOnPost}
+        />
+      )}
 
       {view === 'compare' && (
         <>
@@ -401,7 +499,7 @@ export function FriendsPanel({
         </>
       )}
 
-      {view === 'recs' && (
+      {view === 'recs' && !hideRecs && (
         <div className="recs">
           <div className="friends__add">
             <label htmlFor="rec-name">Empfehlung · Name</label>
@@ -447,9 +545,7 @@ export function FriendsPanel({
                       {r.link}
                     </a>
                   )}
-                  {r.imageUrl && (
-                    <img className="rec-row__img" src={r.imageUrl} alt="" />
-                  )}
+                  {r.imageUrl && <img className="rec-row__img" src={r.imageUrl} alt="" />}
                   {r.fileUrl && (
                     <a href={r.fileUrl} target="_blank" rel="noreferrer">
                       📎 {r.fileName || 'Datei'}
@@ -471,7 +567,6 @@ export function FriendsPanel({
           {recs.length === 0 && <p className="empty">Noch keine Recommendations.</p>}
         </div>
       )}
-
     </div>
   )
 }

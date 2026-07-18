@@ -1,5 +1,12 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
-import type { Category, Entry, FriendSnapshot, Recommendation } from '../types'
+import type {
+  Category,
+  Entry,
+  FriendSnapshot,
+  GoonComment,
+  GoonPost,
+  Recommendation,
+} from '../types'
 import { CATEGORIES } from '../types'
 import { rankFromMinutes } from './ranks'
 import { getSeasonInfo } from './season'
@@ -584,5 +591,176 @@ export async function deleteRecommendation(
     .delete()
     .eq('id', id)
     .eq('user_id', userId)
+  return error ? { error: error.message } : {}
+}
+
+export async function pushGoonPost(input: {
+  userId: string
+  entry: Entry
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { error } = await supabase.from('goon_posts').upsert(
+    {
+      id: input.entry.id,
+      user_id: input.userId,
+      category: input.entry.category,
+      minutes: input.entry.minutes,
+      goonometer: input.entry.goonometer,
+      comment: (input.entry.comment || '').slice(0, 280),
+      date: input.entry.date,
+      created_at: input.entry.createdAt,
+    },
+    { onConflict: 'id' },
+  )
+  if (error) {
+    return {
+      error: error.message.includes('relation')
+        ? 'Tabelle fehlt. SQL aus supabase/goon_feed.sql im SQL Editor ausführen.'
+        : error.message,
+    }
+  }
+  return {}
+}
+
+export async function deleteGoonPost(
+  userId: string,
+  postId: string,
+): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { error } = await supabase
+    .from('goon_posts')
+    .delete()
+    .eq('id', postId)
+    .eq('user_id', userId)
+  return error ? { error: error.message } : {}
+}
+
+export async function loadGoonFeed(
+  userId: string,
+  options?: { limit?: number },
+): Promise<{ posts: GoonPost[] } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const limit = options?.limit ?? 5
+
+  const { data: links } = await supabase
+    .from('friendships')
+    .select('friend_id')
+    .eq('user_id', userId)
+
+  const friendIds = (links ?? []).map((l) => l.friend_id)
+  const ids = [userId, ...friendIds]
+
+  const { data, error } = await supabase
+    .from('goon_posts')
+    .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
+    .in('user_id', ids)
+    .order('created_at', { ascending: false })
+    .limit(limit)
+
+  if (error) {
+    return {
+      error: error.message.includes('relation')
+        ? 'Tabelle fehlt. SQL aus supabase/goon_feed.sql im SQL Editor ausführen.'
+        : error.message,
+    }
+  }
+
+  const posts = data ?? []
+  if (posts.length === 0) return { posts: [] }
+
+  const postIds = posts.map((p) => p.id as string)
+  const authorIds = [...new Set(posts.map((p) => p.user_id as string))]
+
+  const [{ data: profiles }, { data: comments }] = await Promise.all([
+    supabase.from('profiles').select('id, name, username, avatar_url').in('id', authorIds),
+    supabase
+      .from('goon_comments')
+      .select('id, post_id, user_id, body, created_at')
+      .in('post_id', postIds)
+      .order('created_at', { ascending: true }),
+  ])
+
+  const profileById = new Map(
+    (profiles ?? []).map((p) => [
+      p.id as string,
+      {
+        name: ((p.username || p.name || 'Anon') as string),
+        avatarUrl: (p.avatar_url as string | null) || undefined,
+      },
+    ]),
+  )
+
+  const commenterIds = [
+    ...new Set((comments ?? []).map((c) => c.user_id as string)),
+  ]
+  let commenterById = new Map<string, { name: string; avatarUrl?: string }>()
+  if (commenterIds.length > 0) {
+    const { data: commenters } = await supabase
+      .from('profiles')
+      .select('id, name, username, avatar_url')
+      .in('id', commenterIds)
+    commenterById = new Map(
+      (commenters ?? []).map((p) => [
+        p.id as string,
+        {
+          name: ((p.username || p.name || 'Anon') as string),
+          avatarUrl: (p.avatar_url as string | null) || undefined,
+        },
+      ]),
+    )
+  }
+
+  const commentsByPost = new Map<string, GoonComment[]>()
+  for (const c of comments ?? []) {
+    const postId = c.post_id as string
+    const author = commenterById.get(c.user_id as string)
+    const item: GoonComment = {
+      id: c.id as string,
+      postId,
+      userId: c.user_id as string,
+      authorName: author?.name || 'Anon',
+      authorAvatarUrl: author?.avatarUrl,
+      body: c.body as string,
+      createdAt: c.created_at as string,
+    }
+    const list = commentsByPost.get(postId) ?? []
+    list.push(item)
+    commentsByPost.set(postId, list)
+  }
+
+  return {
+    posts: posts.map((p) => {
+      const author = profileById.get(p.user_id as string)
+      return {
+        id: p.id as string,
+        userId: p.user_id as string,
+        authorName: author?.name || 'Anon',
+        authorAvatarUrl: author?.avatarUrl,
+        category: p.category as Category,
+        minutes: Number(p.minutes) || 0,
+        goonometer: Number(p.goonometer) || 0,
+        comment: (p.comment as string) || '',
+        date: p.date as string,
+        createdAt: p.created_at as string,
+        comments: commentsByPost.get(p.id as string) ?? [],
+      }
+    }),
+  }
+}
+
+export async function addGoonComment(input: {
+  userId: string
+  postId: string
+  body: string
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const body = input.body.trim().slice(0, 280)
+  if (!body) return { error: 'Kommentar leer.' }
+
+  const { error } = await supabase.from('goon_comments').insert({
+    post_id: input.postId,
+    user_id: input.userId,
+    body,
+  })
   return error ? { error: error.message } : {}
 }

@@ -17,9 +17,15 @@ type RankedPanelProps = {
   entries: Entry[]
   highlightId?: string
   userId?: string
+  onViewedOtherProfile?: () => void
 }
 
-export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) {
+export function RankedPanel({
+  entries,
+  highlightId,
+  userId,
+  onViewedOtherProfile,
+}: RankedPanelProps) {
   const [seasonInfo, setSeasonInfo] = useState<SeasonInfo>(() => getSeasonInfo())
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
   const [syncError, setSyncError] = useState<string | null>(null)
@@ -71,6 +77,7 @@ export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) 
       <PublicProfileView
         profile={viewing}
         onBack={() => setViewing(null)}
+        onViewedOtherProfile={onViewedOtherProfile}
       />
     )
   }

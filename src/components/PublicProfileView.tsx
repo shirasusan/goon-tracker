@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
@@ -10,11 +11,20 @@ import { goonDryToSigned } from '../lib/streaks'
 type PublicProfileViewProps = {
   profile: FriendSnapshot
   onBack: () => void
+  onViewedOtherProfile?: () => void
 }
 
-export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
+export function PublicProfileView({
+  profile,
+  onBack,
+  onViewedOtherProfile,
+}: PublicProfileViewProps) {
   const rank = rankFromMinutes(profile.totalMinutes)
   const maxCat = Math.max(1, ...CATEGORIES.map((c) => profile.categories[c] || 0))
+
+  useEffect(() => {
+    onViewedOtherProfile?.()
+  }, [onViewedOtherProfile, profile.id])
 
   return (
     <div className="profile public-profile">

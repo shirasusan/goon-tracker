@@ -17,6 +17,7 @@ type ProfilePanelProps = {
   displayName: string
   avatarUrl?: string
   entries: Entry[]
+  startedOn: string
   totalMinutes: number
   level: number
   goonStreak: number
@@ -28,6 +29,8 @@ type ProfilePanelProps = {
   onRemoveEntry: (id: string) => void
   onBack?: () => void
   freshAchievementKeys?: Set<string>
+  monkMode?: boolean
+  onMonkModeChange?: (on: boolean) => void
 }
 
 export function ProfilePanel({
@@ -36,6 +39,7 @@ export function ProfilePanel({
   displayName,
   avatarUrl,
   entries,
+  startedOn,
   totalMinutes,
   level,
   goonStreak,
@@ -47,6 +51,8 @@ export function ProfilePanel({
   onRemoveEntry,
   onBack,
   freshAchievementKeys,
+  monkMode,
+  onMonkModeChange,
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
@@ -128,6 +134,23 @@ export function ProfilePanel({
           maxLength={24}
           onChange={(e) => onNameChange(e.target.value)}
         />
+
+        {onMonkModeChange && (
+          <label className="profile__switch" htmlFor="monk-mode">
+            <span>
+              <strong>Monk Mode</strong>
+              <span className="profile__switch-hint">
+                Blendet Eintragen, Ranked und Recs aus
+              </span>
+            </span>
+            <input
+              id="monk-mode"
+              type="checkbox"
+              checked={Boolean(monkMode)}
+              onChange={(e) => onMonkModeChange(e.target.checked)}
+            />
+          </label>
+        )}
       </section>
 
       <section className="block">
@@ -158,7 +181,11 @@ export function ProfilePanel({
         <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
       </section>
 
-      <AchievementsSection entries={entries} freshKeys={freshAchievementKeys} />
+      <AchievementsSection
+        entries={entries}
+        startedOn={startedOn}
+        freshKeys={freshAchievementKeys}
+      />
 
       <section className="block">
         <div className="block__head">

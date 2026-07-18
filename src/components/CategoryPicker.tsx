@@ -2,7 +2,12 @@ import { useState } from 'react'
 import { CATEGORIES, CATEGORY_META, type Category } from '../types'
 
 type CategoryPickerProps = {
-  onLog: (category: Category, minutes: number, goonometer: number) => void
+  onLog: (
+    category: Category,
+    minutes: number,
+    goonometer: number,
+    comment?: string,
+  ) => void
 }
 
 function clampMinutes(n: number) {
@@ -10,10 +15,11 @@ function clampMinutes(n: number) {
 }
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
-  const [step, setStep] = useState<1 | 2 | 3>(1)
+  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
   const [category, setCategory] = useState<Category | null>(null)
   const [minutes, setMinutes] = useState(30)
   const [goonometer, setGoonometer] = useState(5)
+  const [comment, setComment] = useState('')
 
   function pickCategory(cat: Category) {
     setCategory(cat)
@@ -22,10 +28,11 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
 
   function submit() {
     if (!category) return
-    onLog(category, minutes, goonometer)
+    onLog(category, minutes, goonometer, comment.trim() || undefined)
     setCategory(null)
     setGoonometer(5)
     setMinutes(30)
+    setComment('')
     setStep(1)
   }
 
@@ -123,6 +130,32 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
           />
           <div className="session__actions">
             <button type="button" className="btn" onClick={() => setStep(2)}>
+              Zurück
+            </button>
+            <button type="button" className="btn btn--solid" onClick={() => setStep(4)}>
+              Weiter
+            </button>
+          </div>
+        </>
+      )}
+
+      {step === 4 && category && (
+        <>
+          <div className="session__head">
+            <p className="session__label">4 · Kommentar</p>
+            <p className="session__sub">Optional — erscheint im Freunde-Feed</p>
+          </div>
+          <textarea
+            className="session__comment"
+            value={comment}
+            maxLength={280}
+            rows={3}
+            placeholder="Was ging ab…"
+            onChange={(e) => setComment(e.target.value)}
+          />
+          <p className="session__sub">{comment.length}/280</p>
+          <div className="session__actions">
+            <button type="button" className="btn" onClick={() => setStep(3)}>
               Zurück
             </button>
             <button type="button" className="btn btn--solid" onClick={submit}>

@@ -7,6 +7,7 @@ import type { Category, Entry } from '../types'
 
 type AchievementsSectionProps = {
   entries?: Entry[]
+  startedOn?: string
   /** Fallback when only category totals are known (public profiles) */
   categories?: Record<Category, number>
   freshKeys?: Set<string>
@@ -14,14 +15,15 @@ type AchievementsSectionProps = {
 
 export function AchievementsSection({
   entries,
+  startedOn,
   categories,
   freshKeys,
 }: AchievementsSectionProps) {
   const unlocked = useMemo(() => {
-    if (entries) return unlockedAchievementsFromEntries(entries)
+    if (entries && startedOn) return unlockedAchievementsFromEntries(entries, startedOn)
     if (categories) return unlockedAchievementsFromCategories(categories)
     return []
-  }, [entries, categories])
+  }, [entries, startedOn, categories])
 
   if (unlocked.length === 0) {
     return (

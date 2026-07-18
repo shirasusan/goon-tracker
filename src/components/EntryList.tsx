@@ -39,6 +39,11 @@ export function EntryList({ entries, onRemove }: EntryListProps) {
             >
               ×
             </button>
+            {entry.comment ? (
+              <span className="entry-row__comment" title={entry.comment}>
+                {entry.comment}
+              </span>
+            ) : null}
           </li>
         )
       })}

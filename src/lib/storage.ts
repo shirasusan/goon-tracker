@@ -19,6 +19,10 @@ function emptyData(): TrackerData {
 function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
   if (!raw.id || !raw.category || !raw.date || !raw.createdAt) return null
   const g = typeof raw.goonometer === 'number' ? raw.goonometer : 5
+  const comment =
+    typeof raw.comment === 'string' && raw.comment.trim()
+      ? raw.comment.trim().slice(0, 280)
+      : undefined
   return {
     id: raw.id,
     category: raw.category,
@@ -26,6 +30,7 @@ function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
     createdAt: raw.createdAt,
     minutes: typeof raw.minutes === 'number' && raw.minutes >= 0 ? raw.minutes : 0,
     goonometer: Math.max(0, Math.min(10, Math.round(g) || 0)),
+    ...(comment ? { comment } : {}),
   }
 }
 
@@ -70,6 +75,7 @@ export function loadData(): TrackerData {
         cloudCode: parsed.profile?.cloudCode,
         cloudUserId: parsed.profile?.cloudUserId,
         avatarUrl: parsed.profile?.avatarUrl,
+        monkMode: Boolean(parsed.profile?.monkMode),
       },
       friends: Array.isArray(parsed.friends)
         ? parsed.friends

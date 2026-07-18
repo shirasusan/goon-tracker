@@ -12,13 +12,16 @@ import { RankedPanel } from './components/RankedPanel'
 import { StreakRing } from './components/StreakRing'
 import {
   cloudEnabled,
+  deleteGoonPost,
   ensureCloudProfile,
   getSessionUser,
   logoutUser,
   pushCloudProfile,
+  pushGoonPost,
   pushSeasonStats,
 } from './lib/cloud'
 import {
+  claimCuckAchievement,
   claimNewAchievements,
   type UnlockedAchievement,
 } from './lib/achievements'
@@ -34,7 +37,7 @@ import './App.css'
 
 const PAGE_META: Record<TabId, { title: string; sub: string }> = {
   home: { title: 'Home', sub: 'Track & climb' },
-  friends: { title: 'Freunde', sub: 'Vergleich & Recs' },
+  friends: { title: 'Freunde', sub: 'Feed, Vergleich & Recs' },
   ranked: { title: 'Ranked', sub: 'Season & Leaderboard' },
 }
 
@@ -55,8 +58,13 @@ export default function App() {
     saveData(data)
   }, [data])
 
+  const todayKey = toDateKey()
+
   useEffect(() => {
-    const newly = claimNewAchievements(data.entries)
+    enqueueUnlocks(claimNewAchievements(data.entries, data.startedOn))
+  }, [data.entries, data.startedOn, todayKey])
+
+  function enqueueUnlocks(newly: UnlockedAchievement[]) {
     if (newly.length === 0) return
     setUnlockQueue((prev) => [...prev, ...newly])
     setFreshKeys((prev) => {
@@ -64,9 +72,12 @@ export default function App() {
       for (const a of newly) next.add(a.key)
       return next
     })
-    const clear = window.setTimeout(() => setFreshKeys(new Set()), 1800)
-    return () => window.clearTimeout(clear)
-  }, [data.entries])
+    window.setTimeout(() => setFreshKeys(new Set()), 1800)
+  }
+
+  function handleViewedOtherProfile() {
+    enqueueUnlocks(claimCuckAchievement(data.entries, data.startedOn))
+  }
 
   useEffect(() => {
     if (!cloudEnabled) {
@@ -184,7 +195,12 @@ export default function App() {
   const todayEntries = data.entries.filter((e) => e.date === today)
   const todayMinutes = todayEntries.reduce((sum, e) => sum + e.minutes, 0)
 
-  function logCategory(category: Category, minutes: number, goonometer: number) {
+  function logCategory(
+    category: Category,
+    minutes: number,
+    goonometer: number,
+    comment?: string,
+  ) {
     const entry: Entry = {
       id: newId(),
       category,
@@ -192,10 +208,16 @@ export default function App() {
       goonometer,
       date: today,
       createdAt: new Date().toISOString(),
+      ...(comment ? { comment } : {}),
     }
     setData((prev) => ({ ...prev, entries: [...prev.entries, entry] }))
     setFlash(`+${minutes} XP · G${goonometer}`)
     window.setTimeout(() => setFlash(null), 1000)
+
+    const userId = data.profile.cloudUserId
+    if (userId && cloudEnabled) {
+      void pushGoonPost({ userId, entry })
+    }
   }
 
   function removeEntry(id: string) {
@@ -203,6 +225,18 @@ export default function App() {
       ...prev,
       entries: prev.entries.filter((e) => e.id !== id),
     }))
+    const userId = data.profile.cloudUserId
+    if (userId && cloudEnabled) {
+      void deleteGoonPost(userId, id)
+    }
+  }
+
+  function setMonkMode(on: boolean) {
+    setData((prev) => ({
+      ...prev,
+      profile: { ...prev.profile, monkMode: on },
+    }))
+    if (on && tab === 'ranked') setTab('home')
   }
 
   function setName(name: string) {
@@ -293,6 +327,7 @@ export default function App() {
   const displayLabel =
     data.profile.name.trim() || data.profile.username || 'Profil'
   const activeUnlock = unlockQueue[0] ?? null
+  const monkMode = Boolean(data.profile.monkMode)
 
   return (
     <div className="shell">
@@ -334,6 +369,7 @@ export default function App() {
               displayName={data.profile.name}
               avatarUrl={data.profile.avatarUrl}
               entries={data.entries}
+              startedOn={data.startedOn}
               totalMinutes={totalMinutes}
               level={level.level}
               goonStreak={goonStreak}
@@ -350,6 +386,8 @@ export default function App() {
               onRemoveEntry={removeEntry}
               onBack={() => setShowProfile(false)}
               freshAchievementKeys={freshKeys}
+              monkMode={monkMode}
+              onMonkModeChange={setMonkMode}
             />
           ) : (
             <>
@@ -382,18 +420,20 @@ export default function App() {
                     </div>
                   </section>
 
-                  <section className="block block--primary">
-                    <div className="block__head">
-                      <h2>Eintragen</h2>
-                      <span>
-                        {todayEntries.length === 0
-                          ? 'heute leer'
-                          : `${todayEntries.length} · ${formatMinutes(todayMinutes)}`}
-                      </span>
-                    </div>
-                    <CategoryPicker onLog={logCategory} />
-                    {flash && <p className="flash">{flash}</p>}
-                  </section>
+                  {!monkMode && (
+                    <section className="block block--primary">
+                      <div className="block__head">
+                        <h2>Eintragen</h2>
+                        <span>
+                          {todayEntries.length === 0
+                            ? 'heute leer'
+                            : `${todayEntries.length} · ${formatMinutes(todayMinutes)}`}
+                        </span>
+                      </div>
+                      <CategoryPicker onLog={logCategory} />
+                      {flash && <p className="flash">{flash}</p>}
+                    </section>
+                  )}
                 </>
               )}
 
@@ -405,17 +445,20 @@ export default function App() {
                   username={data.profile.username}
                   avatarUrl={data.profile.avatarUrl}
                   cloudCode={data.profile.cloudCode}
+                  hideRecs={monkMode}
                   onCloudReady={onCloudReady}
                   onFriendsSync={onFriendsSync}
                   onRemoveLocal={removeFriend}
+                  onViewedOtherProfile={handleViewedOtherProfile}
                 />
               )}
 
-              {tab === 'ranked' && (
+              {tab === 'ranked' && !monkMode && (
                 <RankedPanel
                   entries={data.entries}
                   highlightId={data.profile.cloudUserId || data.profile.id}
                   userId={data.profile.cloudUserId}
+                  onViewedOtherProfile={handleViewedOtherProfile}
                 />
               )}
             </>
@@ -423,7 +466,11 @@ export default function App() {
         </main>
       </div>
 
-      <BottomNav active={showProfile ? null : tab} onChange={openTab} />
+      <BottomNav
+        active={showProfile ? null : tab}
+        onChange={openTab}
+        hideRanked={monkMode}
+      />
     </div>
   )
 }

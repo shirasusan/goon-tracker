@@ -1,6 +1,7 @@
 import { CATEGORIES, CATEGORY_META, type Category, type Entry } from '../types'
 import { hoursFromMinutes } from './ranks'
 import { categoryTotals } from './snapshot'
+import { calcSignedStreak } from './streaks'
 
 export type AchievementTier = {
   id: string
@@ -37,7 +38,13 @@ export type AchievementContext = {
   maxGoonometer: number
   minGoonometer: number | null
   maxSessionsInDay: number
+  maxMinutesInDay: number
+  minSessionMinutes: number | null
+  streak: number
+  viewedOtherProfile: boolean
 }
+
+const MINUTE = 1
 
 export const SPECIAL_ACHIEVEMENTS: SpecialAchievementDef[] = [
   {
@@ -88,6 +95,129 @@ export const SPECIAL_ACHIEVEMENTS: SpecialAchievementDef[] = [
     color: '#ed2553',
     unlocked: (ctx) => ctx.maxSessionsInDay >= 10,
   },
+  {
+    id: 'cheater',
+    title: 'Cheater!!!!!',
+    short: '>24h',
+    subtitle: 'Daily',
+    color: '#ff0033',
+    unlocked: (ctx) => ctx.maxMinutesInDay > 24 * 60,
+  },
+  {
+    id: 'cuck',
+    title: 'Cuck',
+    short: '👀',
+    subtitle: 'Social',
+    color: '#c77dff',
+    unlocked: (ctx) => ctx.viewedOtherProfile,
+  },
+  {
+    id: 'goon-journey',
+    title: 'The Journey Begins',
+    short: '+2',
+    subtitle: 'Goon Streak',
+    color: '#ff2d4a',
+    unlocked: (ctx) => ctx.streak >= 2,
+  },
+  {
+    id: 'goon-first-week',
+    title: 'The First Week!',
+    short: '+7',
+    subtitle: 'Goon Streak',
+    color: '#ff2d4a',
+    unlocked: (ctx) => ctx.streak >= 7,
+  },
+  {
+    id: 'gooooner',
+    title: 'Gooooner',
+    short: '+14',
+    subtitle: 'Goon Streak',
+    color: '#ff2d4a',
+    unlocked: (ctx) => ctx.streak >= 14,
+  },
+  {
+    id: 'goon-baseline',
+    title: 'Setting a Base Line',
+    short: '+30',
+    subtitle: 'Goon Streak',
+    color: '#ff2d4a',
+    unlocked: (ctx) => ctx.streak >= 30,
+  },
+  {
+    id: 'goon-pinnacle',
+    title: 'Pinnacle of Gooning',
+    short: '+360',
+    subtitle: 'Goon Streak',
+    color: '#ff2d4a',
+    unlocked: (ctx) => ctx.streak >= 360,
+  },
+  {
+    id: 'dry-journey',
+    title: 'The Journey Begins',
+    short: '−2',
+    subtitle: 'Dry Streak',
+    color: '#7dffb3',
+    unlocked: (ctx) => ctx.streak <= -2,
+  },
+  {
+    id: 'dry-focused',
+    title: 'Stay Focused Brother',
+    short: '−7',
+    subtitle: 'Dry Streak',
+    color: '#7dffb3',
+    unlocked: (ctx) => ctx.streak <= -7,
+  },
+  {
+    id: 'dry-apprentice',
+    title: 'The Master Apprentice',
+    short: '−14',
+    subtitle: 'Dry Streak',
+    color: '#7dffb3',
+    unlocked: (ctx) => ctx.streak <= -14,
+  },
+  {
+    id: 'dry-nnn',
+    title: 'NNN',
+    short: '−30',
+    subtitle: 'Dry Streak',
+    color: '#7dffb3',
+    unlocked: (ctx) => ctx.streak <= -30,
+  },
+  {
+    id: 'dry-monk',
+    title: 'True Monk',
+    short: '−360',
+    subtitle: 'Dry Streak',
+    color: '#7dffb3',
+    unlocked: (ctx) => ctx.streak <= -360,
+  },
+  {
+    id: 'premature',
+    title: 'Premature Ejaculation',
+    short: '<5m',
+    subtitle: 'Session',
+    color: '#ff9900',
+    unlocked: (ctx) =>
+      ctx.minSessionMinutes !== null && ctx.minSessionMinutes < 5 * MINUTE,
+  },
+  {
+    id: 'true-master',
+    title: 'True Master Over Here',
+    short: '<2m',
+    subtitle: 'Session',
+    color: '#ff6b2d',
+    unlocked: (ctx) =>
+      ctx.minSessionMinutes !== null && ctx.minSessionMinutes < 2 * MINUTE,
+  },
+  {
+    id: 'its-ok-bro',
+    title: "It's Ok Bro",
+    short: '≤1m',
+    subtitle: 'Session',
+    color: '#ed2553',
+    unlocked: (ctx) =>
+      ctx.minSessionMinutes !== null && ctx.minSessionMinutes <= 1 * MINUTE,
+  },
 ]
 
 export type UnlockedAchievement = {
@@ -99,26 +229,66 @@ export type UnlockedAchievement = {
 }
 
 const SEEN_KEY = 'goon-tracker-achievements-seen'
+const FLAGS_KEY = 'goon-tracker-achievement-flags'
+
+type AchievementFlags = {
+  viewedOtherProfile?: boolean
+}
 
 export function achievementKey(category: Category, tierId: string): string {
   return `${category}:${tierId}`
 }
 
-export function buildAchievementContext(entries: Entry[]): AchievementContext {
+function loadFlags(): AchievementFlags {
+  try {
+    const raw = localStorage.getItem(FLAGS_KEY)
+    if (!raw) return {}
+    return JSON.parse(raw) as AchievementFlags
+  } catch {
+    return {}
+  }
+}
+
+function saveFlags(flags: AchievementFlags): void {
+  localStorage.setItem(FLAGS_KEY, JSON.stringify(flags))
+}
+
+export function markViewedOtherProfile(): void {
+  const flags = loadFlags()
+  if (flags.viewedOtherProfile) return
+  saveFlags({ ...flags, viewedOtherProfile: true })
+}
+
+export function buildAchievementContext(
+  entries: Entry[],
+  startedOn: string,
+): AchievementContext {
   const categories = categoryTotals(entries)
   let maxGoonometer = 0
   let minGoonometer: number | null = null
-  const byDay = new Map<string, number>()
+  let minSessionMinutes: number | null = null
+  const sessionsByDay = new Map<string, number>()
+  const minutesByDay = new Map<string, number>()
 
   for (const e of entries) {
     maxGoonometer = Math.max(maxGoonometer, e.goonometer)
     minGoonometer =
       minGoonometer === null ? e.goonometer : Math.min(minGoonometer, e.goonometer)
-    byDay.set(e.date, (byDay.get(e.date) || 0) + 1)
+    minSessionMinutes =
+      minSessionMinutes === null
+        ? e.minutes
+        : Math.min(minSessionMinutes, e.minutes)
+    sessionsByDay.set(e.date, (sessionsByDay.get(e.date) || 0) + 1)
+    minutesByDay.set(e.date, (minutesByDay.get(e.date) || 0) + e.minutes)
   }
 
   let maxSessionsInDay = 0
-  for (const n of byDay.values()) maxSessionsInDay = Math.max(maxSessionsInDay, n)
+  for (const n of sessionsByDay.values()) maxSessionsInDay = Math.max(maxSessionsInDay, n)
+
+  let maxMinutesInDay = 0
+  for (const n of minutesByDay.values()) maxMinutesInDay = Math.max(maxMinutesInDay, n)
+
+  const flags = loadFlags()
 
   return {
     entries,
@@ -126,12 +296,18 @@ export function buildAchievementContext(entries: Entry[]): AchievementContext {
     maxGoonometer,
     minGoonometer,
     maxSessionsInDay,
+    maxMinutesInDay,
+    minSessionMinutes,
+    streak: calcSignedStreak(entries, startedOn),
+    viewedOtherProfile: Boolean(flags.viewedOtherProfile),
   }
 }
 
-export function unlockedAchievementsFromEntries(entries: Entry[]): UnlockedAchievement[] {
-  const ctx = buildAchievementContext(entries)
-  return unlockedAchievementsFromContext(ctx)
+export function unlockedAchievementsFromEntries(
+  entries: Entry[],
+  startedOn: string,
+): UnlockedAchievement[] {
+  return unlockedAchievementsFromContext(buildAchievementContext(entries, startedOn))
 }
 
 export function unlockedAchievementsFromCategories(
@@ -193,8 +369,11 @@ export function saveSeenAchievements(keys: Iterable<string>): void {
 }
 
 /** Returns newly unlocked achievements and marks them as seen. First run seeds without returning. */
-export function claimNewAchievements(entries: Entry[]): UnlockedAchievement[] {
-  const unlocked = unlockedAchievementsFromEntries(entries)
+export function claimNewAchievements(
+  entries: Entry[],
+  startedOn: string,
+): UnlockedAchievement[] {
+  const unlocked = unlockedAchievementsFromEntries(entries, startedOn)
   const keys = unlocked.map((a) => a.key)
   const seen = loadSeenAchievements()
 
@@ -210,4 +389,13 @@ export function claimNewAchievements(entries: Entry[]): UnlockedAchievement[] {
   for (const a of newly) next.add(a.key)
   saveSeenAchievements(next)
   return newly
+}
+
+/** Call when opening another user's profile — unlocks Cuck if new. */
+export function claimCuckAchievement(
+  entries: Entry[],
+  startedOn: string,
+): UnlockedAchievement[] {
+  markViewedOtherProfile()
+  return claimNewAchievements(entries, startedOn)
 }
