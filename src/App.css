@@ -1433,21 +1433,35 @@ button.avatar {
   inset: 0;
   z-index: 40;
   display: grid;
-  place-items: end center;
+  place-items: center;
   padding: 1rem;
   background: color-mix(in srgb, var(--bg) 55%, transparent);
   backdrop-filter: blur(4px);
 }
 
 .recs__modal-card {
-  width: min(100%, 420px);
-  max-height: min(85vh, 640px);
+  width: min(100%, 360px);
+  max-height: min(70vh, 420px);
   overflow: auto;
-  padding: 1rem;
+  padding: 0.85rem 0.9rem;
   border-radius: var(--radius);
   border: 1px solid var(--line);
   background: var(--bg-elevated);
   box-shadow: 0 12px 40px color-mix(in srgb, #000 45%, transparent);
+}
+
+.recs__modal-card .friends__add {
+  gap: 0.4rem;
+}
+
+.recs__modal-card .friends__add label {
+  font-size: 0.78rem;
+  margin-top: 0.15rem;
+}
+
+.recs__modal-card .friends__add input {
+  padding: 0.4rem 0.55rem;
+  font-size: 0.85rem;
 }
 
 .friends__requests {
