@@ -68,7 +68,7 @@ export function FriendsPanel({
   onRemoveLocal,
   onViewedOtherProfile,
 }: FriendsPanelProps) {
-  const [view, setView] = useState<FriendsView>('feed')
+  const [view, setView] = useState<FriendsView>('compare')
   const [paste, setPaste] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -106,7 +106,7 @@ export function FriendsPanel({
   }, [recs, recQuery])
 
   useEffect(() => {
-    if (hideRecs && view === 'recs') setView('feed')
+    if (hideRecs && view === 'recs') setView('compare')
   }, [hideRecs, view])
 
   useEffect(() => {

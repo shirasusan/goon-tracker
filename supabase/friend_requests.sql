@@ -1,9 +1,8 @@
 -- Friend requests (run in Supabase SQL Editor)
 -- Replaces instant mutual friendships with pending → accept
 
--- Stop auto-reciprocal friendship inserts
-drop trigger if exists friendships_reciprocal on public.friendships;
-drop function if exists public.friendship_reciprocal();
+-- Stop auto-reciprocal only during migration from instant-friends;
+-- re-enable via friendship_reciprocal.sql (needed so accept works under RLS)
 
 create table if not exists public.friend_requests (
   id uuid primary key default gen_random_uuid(),
@@ -50,3 +49,24 @@ create policy "friend_requests_delete"
   on public.friend_requests for delete
   to authenticated
   using (auth.uid() = from_user or auth.uid() = to_user);
+
+-- Reciprocal friendship under RLS (accept inserts one row → both directions)
+create or replace function public.friendship_reciprocal()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.friendships (user_id, friend_id)
+  values (new.friend_id, new.user_id)
+  on conflict do nothing;
+  return new;
+end;
+$$;
+
+drop trigger if exists friendships_reciprocal on public.friendships;
+create trigger friendships_reciprocal
+  after insert on public.friendships
+  for each row
+  execute function public.friendship_reciprocal();

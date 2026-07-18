@@ -69,9 +69,26 @@ create index if not exists friend_requests_to_pending_idx
   on public.friend_requests (to_user)
   where status = 'pending';
 
--- Legacy: remove auto-reciprocal if present
+-- Legacy reciprocal trigger: keep for accept (one insert → both directions under RLS)
+create or replace function public.friendship_reciprocal()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.friendships (user_id, friend_id)
+  values (new.friend_id, new.user_id)
+  on conflict do nothing;
+  return new;
+end;
+$$;
+
 drop trigger if exists friendships_reciprocal on public.friendships;
-drop function if exists public.friendship_reciprocal();
+create trigger friendships_reciprocal
+  after insert on public.friendships
+  for each row
+  execute function public.friendship_reciprocal();
 
 alter table public.profiles enable row level security;
 alter table public.friend_requests enable row level security;

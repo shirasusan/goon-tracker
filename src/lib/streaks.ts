@@ -6,17 +6,17 @@ export function goonDates(entries: Entry[]): Set<string> {
 }
 
 /**
- * Consecutive days with at least one goon.
- * If today has no entry yet, yesterday still counts (streak not broken until day ends).
+ * Consecutive days with at least one goon, ending today.
+ * No entry today → streak is 0 (broken); focus streak takes over.
  */
 export function calcGoonStreak(entries: Entry[]): number {
   const dates = goonDates(entries)
   if (dates.size === 0) return 0
 
   const today = toDateKey()
-  let cursor = dates.has(today) ? today : addDays(today, -1)
-  if (!dates.has(cursor)) return 0
+  if (!dates.has(today)) return 0
 
+  let cursor = today
   let streak = 0
   while (dates.has(cursor)) {
     streak += 1

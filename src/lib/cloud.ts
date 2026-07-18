@@ -440,12 +440,12 @@ export async function acceptFriendRequest(
   if (data.status !== 'pending') return { error: 'Anfrage ist nicht mehr offen.' }
 
   const from = data.from_user as string
-  const to = data.to_user as string
 
-  const { error: e1 } = await supabase.from('friendships').upsert([
-    { user_id: from, friend_id: to },
-    { user_id: to, friend_id: from },
-  ])
+  // Only own side — reciprocal trigger creates the other row (RLS blocks inserting as the other user)
+  const { error: e1 } = await supabase.from('friendships').upsert({
+    user_id: userId,
+    friend_id: from,
+  })
   if (e1) return { error: e1.message }
 
   const { error: e2 } = await supabase
