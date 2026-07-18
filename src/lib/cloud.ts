@@ -40,6 +40,7 @@ export type CloudProfileRow = {
   total_minutes: number
   categories: Record<string, number>
   rank_id: string | null
+  ranked_anonymous?: boolean | null
   updated_at: string
 }
 
@@ -68,6 +69,7 @@ export function rowToSnapshot(row: CloudProfileRow): FriendSnapshot {
     totalMinutes: row.total_minutes,
     categories,
     rankId: row.rank_id ?? rankFromMinutes(row.total_minutes).id,
+    rankedAnonymous: Boolean(row.ranked_anonymous),
     updatedAt: row.updated_at,
   }
 }
@@ -155,12 +157,14 @@ export async function ensureCloudProfile(
   userId: string,
   displayName: string,
   username?: string,
-): Promise<{ code: string; avatarUrl?: string | null } | { error: string }> {
+): Promise<
+  { code: string; avatarUrl?: string | null; rankedAnonymous?: boolean } | { error: string }
+> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
   const { data: existing, error: readError } = await supabase
     .from('profiles')
-    .select('code, avatar_url')
+    .select('code, avatar_url, ranked_anonymous')
     .eq('id', userId)
     .maybeSingle()
 
@@ -179,7 +183,11 @@ export async function ensureCloudProfile(
         .update({ username, name: displayName.trim() || username })
         .eq('id', userId)
     }
-    return { code: existing.code, avatarUrl: existing.avatar_url as string | null }
+    return {
+      code: existing.code,
+      avatarUrl: existing.avatar_url as string | null,
+      rankedAnonymous: Boolean(existing.ranked_anonymous),
+    }
   }
 
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -192,7 +200,7 @@ export async function ensureCloudProfile(
       categories: emptyCategories(),
       rank_id: 'unranked',
     })
-    if (!error) return { code, avatarUrl: null }
+    if (!error) return { code, avatarUrl: null, rankedAnonymous: false }
     if (error.code !== '23505') return { error: error.message }
   }
 
@@ -205,6 +213,7 @@ export async function pushCloudProfile(input: {
   name: string
   username?: string
   avatarUrl?: string
+  rankedAnonymous?: boolean
   snapshot: FriendSnapshot
 }): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
@@ -223,6 +232,7 @@ export async function pushCloudProfile(input: {
     total_minutes: input.snapshot.totalMinutes,
     categories: input.snapshot.categories,
     rank_id: rank.id,
+    ranked_anonymous: Boolean(input.rankedAnonymous),
     updated_at: new Date().toISOString(),
   })
 
@@ -285,6 +295,209 @@ export async function addFriendship(
     friend_id: friendId,
   })
   return error ? { error: error.message } : {}
+}
+
+export type FriendRequestRow = {
+  id: string
+  fromUserId: string
+  toUserId: string
+  status: 'pending' | 'accepted' | 'declined'
+  createdAt: string
+  fromProfile?: FriendSnapshot
+  toProfile?: FriendSnapshot
+}
+
+async function areFriends(userId: string, otherId: string): Promise<boolean> {
+  if (!supabase) return false
+  const { data } = await supabase
+    .from('friendships')
+    .select('friend_id')
+    .eq('user_id', userId)
+    .eq('friend_id', otherId)
+    .maybeSingle()
+  return Boolean(data)
+}
+
+export async function sendFriendRequest(
+  fromUserId: string,
+  toUserId: string,
+): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  if (fromUserId === toUserId) return { error: 'Das bist du selbst.' }
+
+  if (await areFriends(fromUserId, toUserId)) {
+    return { error: 'Ihr seid schon Freunde.' }
+  }
+
+  const { data: existing } = await supabase
+    .from('friend_requests')
+    .select('id, status, from_user, to_user')
+    .or(
+      `and(from_user.eq.${fromUserId},to_user.eq.${toUserId}),and(from_user.eq.${toUserId},to_user.eq.${fromUserId})`,
+    )
+    .eq('status', 'pending')
+    .maybeSingle()
+
+  if (existing) {
+    if (existing.from_user === toUserId) {
+      return acceptFriendRequest(existing.id as string, fromUserId)
+    }
+    return { error: 'Anfrage läuft bereits.' }
+  }
+
+  const { error } = await supabase.from('friend_requests').upsert(
+    {
+      from_user: fromUserId,
+      to_user: toUserId,
+      status: 'pending',
+    },
+    { onConflict: 'from_user,to_user' },
+  )
+  if (error) {
+    if (error.code === '23505') return { error: 'Anfrage läuft bereits.' }
+    return { error: error.message }
+  }
+  return {}
+}
+
+export async function listIncomingFriendRequests(
+  userId: string,
+): Promise<{ requests: FriendRequestRow[] } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('id, from_user, to_user, status, created_at')
+    .eq('to_user', userId)
+    .eq('status', 'pending')
+    .order('created_at', { ascending: false })
+
+  if (error) return { error: error.message }
+  const rows = data ?? []
+  if (rows.length === 0) return { requests: [] }
+
+  const ids = rows.map((r) => r.from_user as string)
+  const { data: profiles, error: pErr } = await supabase
+    .from('profiles')
+    .select('*')
+    .in('id', ids)
+  if (pErr) return { error: pErr.message }
+  const byId = new Map((profiles as CloudProfileRow[]).map((p) => [p.id, p]))
+
+  return {
+    requests: rows.map((r) => {
+      const from = byId.get(r.from_user as string)
+      return {
+        id: r.id as string,
+        fromUserId: r.from_user as string,
+        toUserId: r.to_user as string,
+        status: r.status as FriendRequestRow['status'],
+        createdAt: r.created_at as string,
+        fromProfile: from ? rowToSnapshot(from) : undefined,
+      }
+    }),
+  }
+}
+
+export async function getFriendRelation(
+  meId: string,
+  otherId: string,
+): Promise<'self' | 'friends' | 'outgoing' | 'incoming' | 'none' | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  if (meId === otherId) return 'self'
+  if (await areFriends(meId, otherId)) return 'friends'
+
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('from_user, to_user, status')
+    .or(
+      `and(from_user.eq.${meId},to_user.eq.${otherId}),and(from_user.eq.${otherId},to_user.eq.${meId})`,
+    )
+    .eq('status', 'pending')
+    .maybeSingle()
+
+  if (error) return { error: error.message }
+  if (!data) return 'none'
+  if (data.from_user === meId) return 'outgoing'
+  return 'incoming'
+}
+
+export async function acceptFriendRequest(
+  requestId: string,
+  userId: string,
+): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('id, from_user, to_user, status')
+    .eq('id', requestId)
+    .maybeSingle()
+
+  if (error) return { error: error.message }
+  if (!data) return { error: 'Anfrage nicht gefunden.' }
+  if (data.to_user !== userId) return { error: 'Nur der Empfänger kann akzeptieren.' }
+  if (data.status !== 'pending') return { error: 'Anfrage ist nicht mehr offen.' }
+
+  const from = data.from_user as string
+  const to = data.to_user as string
+
+  const { error: e1 } = await supabase.from('friendships').upsert([
+    { user_id: from, friend_id: to },
+    { user_id: to, friend_id: from },
+  ])
+  if (e1) return { error: e1.message }
+
+  const { error: e2 } = await supabase
+    .from('friend_requests')
+    .update({ status: 'accepted' })
+    .eq('id', requestId)
+  if (e2) return { error: e2.message }
+
+  return {}
+}
+
+export async function declineFriendRequest(
+  requestId: string,
+  userId: string,
+): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+
+  const { data, error } = await supabase
+    .from('friend_requests')
+    .select('id, to_user, status')
+    .eq('id', requestId)
+    .maybeSingle()
+
+  if (error) return { error: error.message }
+  if (!data) return { error: 'Anfrage nicht gefunden.' }
+  if (data.to_user !== userId) return { error: 'Nur der Empfänger kann ablehnen.' }
+
+  const { error: e2 } = await supabase
+    .from('friend_requests')
+    .update({ status: 'declined' })
+    .eq('id', requestId)
+  return e2 ? { error: e2.message } : {}
+}
+
+export async function fetchMySeasonHistory(
+  userId: string,
+): Promise<{ seasons: { season: number; rankId: string; totalMinutes: number }[] } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { data, error } = await supabase
+    .from('season_stats')
+    .select('season, rank_id, total_minutes')
+    .eq('user_id', userId)
+    .order('season', { ascending: true })
+
+  if (error) return { error: error.message }
+  return {
+    seasons: (data ?? []).map((r) => ({
+      season: Number(r.season),
+      rankId: (r.rank_id as string) || 'unranked',
+      totalMinutes: Number(r.total_minutes) || 0,
+    })),
+  }
 }
 
 export async function removeFriendship(

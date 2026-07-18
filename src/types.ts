@@ -68,6 +68,8 @@ export type FriendSnapshot = {
   totalMinutes: number
   categories: Record<Category, number>
   rankId?: string
+  /** Hide identity on ranked leaderboards */
+  rankedAnonymous?: boolean
   updatedAt: string
 }
 
@@ -83,6 +85,8 @@ export type TrackerData = {
     cloudUserId?: string
     /** Hide Eintragen, Rank, Ranked, Recs, Stats */
     monkMode?: boolean
+    /** Appear as Anonymous on ranked leaderboards */
+    rankedAnonymous?: boolean
   }
   friends: FriendSnapshot[]
 }

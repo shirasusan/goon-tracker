@@ -15,6 +15,7 @@ import {
   deleteGoonPost,
   deleteOwnAccount,
   ensureCloudProfile,
+  fetchMySeasonHistory,
   getSessionUser,
   logoutUser,
   pushCloudProfile,
@@ -24,6 +25,7 @@ import {
 import {
   claimCuckAchievement,
   claimNewAchievements,
+  claimSeasonAchievementsFromCloud,
   type UnlockedAchievement,
 } from './lib/achievements'
 import { toDateKey } from './lib/dates'
@@ -109,8 +111,23 @@ export default function App() {
               username: username,
               name: prev.profile.name || username || '',
               avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
+              rankedAnonymous:
+                typeof profile.rankedAnonymous === 'boolean'
+                  ? profile.rankedAnonymous
+                  : prev.profile.rankedAnonymous,
             },
           }))
+          const hist = await fetchMySeasonHistory(user.id)
+          if (!cancelled && !('error' in hist)) {
+            const local = loadData()
+            enqueueUnlocks(
+              claimSeasonAchievementsFromCloud(
+                hist.seasons.map((s) => ({ season: s.season, rankId: s.rankId })),
+                local.entries,
+                local.startedOn,
+              ),
+            )
+          }
         }
         setAuthed(true)
       } else {
@@ -172,6 +189,7 @@ export default function App() {
         name: data.profile.name,
         username: data.profile.username,
         avatarUrl: data.profile.avatarUrl,
+        rankedAnonymous: data.profile.rankedAnonymous,
         snapshot: mySnapshot,
       })
       void pushSeasonStats({
@@ -188,6 +206,7 @@ export default function App() {
     data.profile.avatarUrl,
     data.profile.cloudUserId,
     data.profile.cloudCode,
+    data.profile.rankedAnonymous,
     mySnapshot,
     authed,
   ])
@@ -238,6 +257,13 @@ export default function App() {
       profile: { ...prev.profile, monkMode: on },
     }))
     if (on && tab === 'ranked') setTab('home')
+  }
+
+  function setRankedAnonymous(on: boolean) {
+    setData((prev) => ({
+      ...prev,
+      profile: { ...prev.profile, rankedAnonymous: on },
+    }))
   }
 
   function setName(name: string) {
@@ -340,6 +366,7 @@ export default function App() {
     data.profile.name.trim() || data.profile.username || 'Profil'
   const activeUnlock = unlockQueue[0] ?? null
   const monkMode = Boolean(data.profile.monkMode)
+  const rankedAnonymous = Boolean(data.profile.rankedAnonymous)
 
   return (
     <div className="shell">
@@ -401,6 +428,8 @@ export default function App() {
               freshAchievementKeys={freshKeys}
               monkMode={monkMode}
               onMonkModeChange={setMonkMode}
+              rankedAnonymous={rankedAnonymous}
+              onRankedAnonymousChange={setRankedAnonymous}
             />
           ) : (
             <>
@@ -473,6 +502,7 @@ export default function App() {
                   entries={data.entries}
                   highlightId={data.profile.cloudUserId || data.profile.id}
                   userId={data.profile.cloudUserId}
+                  onFriendsChanged={(friends) => onFriendsSync(friends)}
                   onViewedOtherProfile={handleViewedOtherProfile}
                 />
               )}

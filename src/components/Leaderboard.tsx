@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchAllTimeLeaderboard, fetchSeasonLeaderboard } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
-import { getSeasonInfo } from '../lib/season'
+import { getSeasonInfo, seasonDisplayName } from '../lib/season'
 import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
@@ -14,6 +14,20 @@ type LeaderboardProps = {
   season?: number
   highlightId?: string
   onSelectUser?: (id: string) => void
+}
+
+function displayRow(row: FriendSnapshot, highlightId?: string) {
+  const isYou = row.id === highlightId
+  const anon = Boolean(row.rankedAnonymous) && !isYou
+  return {
+    anon,
+    label: anon ? 'Anonymous' : row.username ? `@${row.username}` : row.name,
+    name: anon ? 'Anonymous' : row.name,
+    avatarUrl: anon ? undefined : row.avatarUrl,
+    goonStreak: anon ? 0 : row.goonStreak,
+    dryStreak: anon ? 0 : row.dryStreak,
+    clickable: !anon && !isYou,
+  }
 }
 
 export function Leaderboard({
@@ -60,7 +74,7 @@ export function Leaderboard({
   return (
     <div className="leaderboard-wrap">
       <div className="friends__board-head">
-        <h3>{mode === 'alltime' ? 'All Time' : `Season ${activeSeason}`}</h3>
+        <h3>{mode === 'alltime' ? 'All Time' : seasonDisplayName(activeSeason)}</h3>
         <div className="friends__filters">
           <select
             value={category}
@@ -81,35 +95,33 @@ export function Leaderboard({
       <ol className="leaderboard">
         {rows.map((row, i) => {
           const rank = rankFromMinutes(row.totalMinutes)
+          const view = displayRow(row, highlightId)
           return (
             <li
               key={row.id}
-              className={`leaderboard__row leaderboard__row--click${row.id === highlightId ? ' is-you' : ''}`}
+              className={`leaderboard__row${view.clickable ? ' leaderboard__row--click' : ''}${row.id === highlightId ? ' is-you' : ''}`}
             >
               <span className="leaderboard__rank">{i + 1}</span>
               <Avatar
-                src={row.avatarUrl}
-                name={row.name}
-                goonStreak={row.goonStreak}
-                dryStreak={row.dryStreak}
+                src={view.avatarUrl}
+                name={view.name}
+                goonStreak={view.goonStreak}
+                dryStreak={view.dryStreak}
                 size="sm"
                 onClick={
-                  row.id === highlightId || !onSelectUser
-                    ? undefined
-                    : () => onSelectUser(row.id)
+                  view.clickable && onSelectUser ? () => onSelectUser(row.id) : undefined
                 }
               />
               <button
                 type="button"
                 className="leaderboard__main leaderboard__name-btn"
+                disabled={!view.clickable || !onSelectUser}
                 onClick={
-                  row.id === highlightId || !onSelectUser
-                    ? undefined
-                    : () => onSelectUser(row.id)
+                  view.clickable && onSelectUser ? () => onSelectUser(row.id) : undefined
                 }
               >
                 <strong>
-                  {row.username ? `@${row.username}` : row.name}
+                  {view.label}
                   {row.id === highlightId ? ' · du' : ''}
                 </strong>
                 <RankBadge totalMinutes={row.totalMinutes} rank={rank} compact />

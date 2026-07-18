@@ -1,4 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
+import {
+  acceptFriendRequest,
+  getFriendRelation,
+  listIncomingFriendRequests,
+  sendFriendRequest,
+} from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
@@ -8,23 +14,87 @@ import { ProfileStreaks } from './ProfileStreaks'
 import { RankBadge } from './RankBadge'
 import { goonDryToSigned } from '../lib/streaks'
 
+type Relation = 'self' | 'friends' | 'outgoing' | 'incoming' | 'none'
+
 type PublicProfileViewProps = {
   profile: FriendSnapshot
   onBack: () => void
   onViewedOtherProfile?: () => void
+  /** Current user id — enables friend request actions */
+  meId?: string
+  onFriendsChanged?: () => void
 }
 
 export function PublicProfileView({
   profile,
   onBack,
   onViewedOtherProfile,
+  meId,
+  onFriendsChanged,
 }: PublicProfileViewProps) {
   const rank = rankFromMinutes(profile.totalMinutes)
   const maxCat = Math.max(1, ...CATEGORIES.map((c) => profile.categories[c] || 0))
+  const [relation, setRelation] = useState<Relation>('none')
+  const [incomingId, setIncomingId] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState<string | null>(null)
 
   useEffect(() => {
     onViewedOtherProfile?.()
   }, [onViewedOtherProfile, profile.id])
+
+  useEffect(() => {
+    if (!meId) return
+    let cancelled = false
+    async function load() {
+      const rel = await getFriendRelation(meId!, profile.id)
+      if (cancelled || typeof rel === 'object') return
+      setRelation(rel)
+      if (rel === 'incoming') {
+        const list = await listIncomingFriendRequests(meId!)
+        if (cancelled || 'error' in list) return
+        const hit = list.requests.find((r) => r.fromUserId === profile.id)
+        setIncomingId(hit?.id ?? null)
+      } else {
+        setIncomingId(null)
+      }
+    }
+    void load()
+    return () => {
+      cancelled = true
+    }
+  }, [meId, profile.id])
+
+  async function sendRequest() {
+    if (!meId) return
+    setBusy(true)
+    setMsg(null)
+    const result = await sendFriendRequest(meId, profile.id)
+    setBusy(false)
+    if (result.error) {
+      setMsg(result.error)
+      return
+    }
+    setRelation('outgoing')
+    setMsg('Anfrage gesendet')
+    onFriendsChanged?.()
+  }
+
+  async function acceptIncoming() {
+    if (!meId || !incomingId) return
+    setBusy(true)
+    setMsg(null)
+    const result = await acceptFriendRequest(incomingId, meId)
+    setBusy(false)
+    if (result.error) {
+      setMsg(result.error)
+      return
+    }
+    setRelation('friends')
+    setIncomingId(null)
+    setMsg('Freundschaft akzeptiert')
+    onFriendsChanged?.()
+  }
 
   return (
     <div className="profile public-profile">
@@ -49,6 +119,38 @@ export function PublicProfileView({
             <p className="profile__stat">{profile.name}</p>
           </div>
         </div>
+
+        {meId && relation !== 'self' && (
+          <div className="public-profile__actions">
+            {relation === 'none' && (
+              <button
+                type="button"
+                className="btn btn--solid"
+                disabled={busy}
+                onClick={() => void sendRequest()}
+              >
+                Freundschaftsanfrage
+              </button>
+            )}
+            {relation === 'outgoing' && (
+              <p className="friends__status">Anfrage ausstehend…</p>
+            )}
+            {relation === 'incoming' && (
+              <button
+                type="button"
+                className="btn btn--solid"
+                disabled={busy || !incomingId}
+                onClick={() => void acceptIncoming()}
+              >
+                Anfrage akzeptieren
+              </button>
+            )}
+            {relation === 'friends' && (
+              <p className="friends__status">Bereits Freunde</p>
+            )}
+            {msg && <p className="friends__status">{msg}</p>}
+          </div>
+        )}
       </section>
 
       <section className="block">
@@ -61,10 +163,7 @@ export function PublicProfileView({
         </p>
       </section>
 
-      <ProfileStreaks
-        streak={goonDryToSigned(profile.goonStreak, profile.dryStreak)}
-        compact
-      />
+      <ProfileStreaks streak={goonDryToSigned(profile.goonStreak, profile.dryStreak)} compact />
 
       <AchievementsSection categories={profile.categories} />
 

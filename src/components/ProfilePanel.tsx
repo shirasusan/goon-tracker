@@ -32,6 +32,8 @@ type ProfilePanelProps = {
   freshAchievementKeys?: Set<string>
   monkMode?: boolean
   onMonkModeChange?: (on: boolean) => void
+  rankedAnonymous?: boolean
+  onRankedAnonymousChange?: (on: boolean) => void
 }
 
 export function ProfilePanel({
@@ -55,6 +57,8 @@ export function ProfilePanel({
   freshAchievementKeys,
   monkMode,
   onMonkModeChange,
+  rankedAnonymous,
+  onRankedAnonymousChange,
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
@@ -164,6 +168,23 @@ export function ProfilePanel({
               type="checkbox"
               checked={Boolean(monkMode)}
               onChange={(e) => onMonkModeChange(e.target.checked)}
+            />
+          </label>
+        )}
+
+        {onRankedAnonymousChange && (
+          <label className="profile__switch" htmlFor="ranked-anon">
+            <span>
+              <strong>Ranked anonym</strong>
+              <span className="profile__switch-hint">
+                Im Ranked-Leaderboard als Anonymous erscheinen
+              </span>
+            </span>
+            <input
+              id="ranked-anon"
+              type="checkbox"
+              checked={Boolean(rankedAnonymous)}
+              onChange={(e) => onRankedAnonymousChange(e.target.checked)}
             />
           </label>
         )}

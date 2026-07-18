@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import {
   fetchProfileById,
+  loadFriendProfiles,
   pushSeasonStats,
   seasonMinutesFromEntries,
 } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankProgressFromMinutes } from '../lib/ranks'
-import { formatCountdown, getSeasonInfo, type SeasonInfo } from '../lib/season'
+import { formatCountdown, getSeasonInfo, seasonDisplayName, type SeasonInfo } from '../lib/season'
 import type { Entry, FriendSnapshot } from '../types'
 import { Leaderboard, type LeaderboardMode } from './Leaderboard'
 import { PublicProfileView } from './PublicProfileView'
@@ -18,6 +19,7 @@ type RankedPanelProps = {
   highlightId?: string
   userId?: string
   onViewedOtherProfile?: () => void
+  onFriendsChanged?: (friends: FriendSnapshot[]) => void
 }
 
 export function RankedPanel({
@@ -25,6 +27,7 @@ export function RankedPanel({
   highlightId,
   userId,
   onViewedOtherProfile,
+  onFriendsChanged,
 }: RankedPanelProps) {
   const [seasonInfo, setSeasonInfo] = useState<SeasonInfo>(() => getSeasonInfo())
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
@@ -72,12 +75,20 @@ export function RankedPanel({
     setViewing(result.profile)
   }
 
+  async function refreshFriends() {
+    if (!userId || !onFriendsChanged) return
+    const loaded = await loadFriendProfiles(userId)
+    if (!('error' in loaded)) onFriendsChanged(loaded.friends)
+  }
+
   if (viewing) {
     return (
       <PublicProfileView
         profile={viewing}
         onBack={() => setViewing(null)}
         onViewedOtherProfile={onViewedOtherProfile}
+        meId={userId}
+        onFriendsChanged={() => void refreshFriends()}
       />
     )
   }
@@ -86,7 +97,7 @@ export function RankedPanel({
     <div className="ranked">
       <section className="ranked__season">
         <p className="ranked__eyebrow">Competitive</p>
-        <h2 className="ranked__title">Season {seasonInfo.season}</h2>
+        <h2 className="ranked__title">{seasonDisplayName(seasonInfo.season)}</h2>
         <p className="ranked__reset">
           Reset in <strong>{formatCountdown(seasonInfo.msUntilReset)}</strong>
         </p>

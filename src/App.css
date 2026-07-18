@@ -1394,6 +1394,122 @@ button.avatar {
   gap: 0.5rem;
 }
 
+.recs__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.recs__search {
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  padding: 0.4rem 0.65rem;
+  font-size: 0.85rem;
+}
+
+.recs__add-btn {
+  flex-shrink: 0;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line);
+  background: var(--surface-2);
+  color: var(--ink);
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.recs__add-btn:hover {
+  border-color: var(--goon);
+  color: var(--goon);
+}
+
+.recs__modal {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-items: end center;
+  padding: 1rem;
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  backdrop-filter: blur(4px);
+}
+
+.recs__modal-card {
+  width: min(100%, 420px);
+  max-height: min(85vh, 640px);
+  overflow: auto;
+  padding: 1rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--bg-elevated);
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 45%, transparent);
+}
+
+.friends__requests {
+  display: grid;
+  gap: 0.55rem;
+  margin-top: 0.35rem;
+}
+
+.friends__requests h3 {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.friends__request-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+
+.friends__request-row {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem 0.65rem;
+  align-items: center;
+  padding: 0.65rem 0.7rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--surface-2);
+}
+
+.friends__request-meta {
+  display: grid;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.friends__request-meta strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.friends__request-meta span {
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.friends__request-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.public-profile__actions {
+  margin-top: 0.85rem;
+  display: grid;
+  gap: 0.45rem;
+}
+
 .rec-preview {
   display: grid;
   grid-template-columns: auto 1fr;

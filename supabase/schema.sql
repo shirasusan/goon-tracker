@@ -20,6 +20,7 @@ create table if not exists public.profiles (
 alter table public.profiles add column if not exists username text;
 alter table public.profiles add column if not exists rank_id text default 'unranked';
 alter table public.profiles add column if not exists avatar_url text;
+alter table public.profiles add column if not exists ranked_anonymous boolean not null default false;
 
 create unique index if not exists profiles_username_idx on public.profiles (username)
   where username is not null;
@@ -52,28 +53,28 @@ alter table public.recommendations alter column link set default '';
 
 create index if not exists recommendations_user_idx on public.recommendations (user_id);
 
--- Auto mutual friendship (one code add = both directions)
-create or replace function public.friendship_reciprocal()
-returns trigger
-language plpgsql
-security definer
-set search_path = public
-as $$
-begin
-  insert into public.friendships (user_id, friend_id)
-  values (new.friend_id, new.user_id)
-  on conflict do nothing;
-  return new;
-end;
-$$;
+-- Friend requests (pending until accept → then mutual friendships)
+create table if not exists public.friend_requests (
+  id uuid primary key default gen_random_uuid(),
+  from_user uuid not null references auth.users (id) on delete cascade,
+  to_user uuid not null references public.profiles (id) on delete cascade,
+  status text not null default 'pending'
+    check (status in ('pending', 'accepted', 'declined')),
+  created_at timestamptz not null default now(),
+  unique (from_user, to_user),
+  constraint friend_requests_no_self check (from_user <> to_user)
+);
 
+create index if not exists friend_requests_to_pending_idx
+  on public.friend_requests (to_user)
+  where status = 'pending';
+
+-- Legacy: remove auto-reciprocal if present
 drop trigger if exists friendships_reciprocal on public.friendships;
-create trigger friendships_reciprocal
-  after insert on public.friendships
-  for each row
-  execute function public.friendship_reciprocal();
+drop function if exists public.friendship_reciprocal();
 
 alter table public.profiles enable row level security;
+alter table public.friend_requests enable row level security;
 alter table public.friendships enable row level security;
 alter table public.recommendations enable row level security;
 
@@ -113,6 +114,31 @@ create policy "friendships_delete_own"
   on public.friendships for delete
   to authenticated
   using (auth.uid() = user_id or auth.uid() = friend_id);
+
+drop policy if exists "friend_requests_select" on public.friend_requests;
+create policy "friend_requests_select"
+  on public.friend_requests for select
+  to authenticated
+  using (auth.uid() = from_user or auth.uid() = to_user);
+
+drop policy if exists "friend_requests_insert" on public.friend_requests;
+create policy "friend_requests_insert"
+  on public.friend_requests for insert
+  to authenticated
+  with check (auth.uid() = from_user);
+
+drop policy if exists "friend_requests_update" on public.friend_requests;
+create policy "friend_requests_update"
+  on public.friend_requests for update
+  to authenticated
+  using (auth.uid() = to_user or auth.uid() = from_user)
+  with check (auth.uid() = to_user or auth.uid() = from_user);
+
+drop policy if exists "friend_requests_delete" on public.friend_requests;
+create policy "friend_requests_delete"
+  on public.friend_requests for delete
+  to authenticated
+  using (auth.uid() = from_user or auth.uid() = to_user);
 
 drop policy if exists "rec_select" on public.recommendations;
 create policy "rec_select"

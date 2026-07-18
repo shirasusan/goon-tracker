@@ -76,6 +76,7 @@ export function loadData(): TrackerData {
         cloudUserId: parsed.profile?.cloudUserId,
         avatarUrl: parsed.profile?.avatarUrl,
         monkMode: Boolean(parsed.profile?.monkMode),
+        rankedAnonymous: Boolean(parsed.profile?.rankedAnonymous),
       },
       friends: Array.isArray(parsed.friends)
         ? parsed.friends
@@ -97,4 +98,5 @@ export function clearLocalTrackerData(): void {
   localStorage.removeItem(KEY)
   localStorage.removeItem('goon-tracker-achievements-seen')
   localStorage.removeItem('goon-tracker-achievement-flags')
+  localStorage.removeItem('goon-tracker-season-ranks')
 }

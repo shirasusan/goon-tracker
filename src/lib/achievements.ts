@@ -1,5 +1,6 @@
 import { CATEGORIES, CATEGORY_META, type Category, type Entry } from '../types'
-import { hoursFromMinutes } from './ranks'
+import { hoursFromMinutes, RANKS } from './ranks'
+import { seasonDisplayName, getSeasonInfo } from './season'
 import { categoryTotals } from './snapshot'
 import { calcSignedStreak } from './streaks'
 
@@ -253,6 +254,48 @@ function saveFlags(flags: AchievementFlags): void {
   localStorage.setItem(FLAGS_KEY, JSON.stringify(flags))
 }
 
+const SEASON_RANKS_KEY = 'goon-tracker-season-ranks'
+
+export type PastSeasonRank = {
+  season: number
+  rankId: string
+}
+
+export function loadPastSeasonRanks(): PastSeasonRank[] {
+  try {
+    const raw = localStorage.getItem(SEASON_RANKS_KEY)
+    if (!raw) return []
+    const parsed = JSON.parse(raw) as unknown
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter(
+        (x): x is PastSeasonRank =>
+          typeof x === 'object' &&
+          x !== null &&
+          typeof (x as PastSeasonRank).season === 'number' &&
+          typeof (x as PastSeasonRank).rankId === 'string',
+      )
+      .filter((x) => x.season >= 1)
+  } catch {
+    return []
+  }
+}
+
+/** Merge completed-season ranks from cloud (only seasons before current). */
+export function syncPastSeasonRanks(rows: PastSeasonRank[]): PastSeasonRank[] {
+  const current = getSeasonInfo().season
+  const completed = rows.filter((r) => r.season >= 1 && r.season < current)
+  const bySeason = new Map(loadPastSeasonRanks().map((r) => [r.season, r]))
+  for (const r of completed) bySeason.set(r.season, r)
+  const next = [...bySeason.values()].sort((a, b) => a.season - b.season)
+  localStorage.setItem(SEASON_RANKS_KEY, JSON.stringify(next))
+  return next
+}
+
+export function clearPastSeasonRanks(): void {
+  localStorage.removeItem(SEASON_RANKS_KEY)
+}
+
 export function markViewedOtherProfile(): void {
   const flags = loadFlags()
   if (flags.viewedOtherProfile) return
@@ -346,10 +389,32 @@ function unlockedSpecialAchievements(ctx: AchievementContext): UnlockedAchieveme
   }))
 }
 
+function unlockedSeasonAchievements(
+  past: PastSeasonRank[] = loadPastSeasonRanks(),
+): UnlockedAchievement[] {
+  const current = getSeasonInfo().season
+  return past
+    .filter((r) => r.season >= 1 && r.season < current)
+    .map((r) => {
+      const rank = RANKS.find((x) => x.id === r.rankId) ?? RANKS[0]
+      return {
+        key: `special:season-${r.season}`,
+        color: rank.color,
+        subtitle: 'Season',
+        title: `${seasonDisplayName(r.season)} · ${rank.title}`,
+        short: `S${r.season}`,
+      }
+    })
+}
+
 export function unlockedAchievementsFromContext(
   ctx: AchievementContext,
 ): UnlockedAchievement[] {
-  return [...unlockedSpecialAchievements(ctx), ...unlockedCategoryAchievements(ctx.categories)]
+  return [
+    ...unlockedSpecialAchievements(ctx),
+    ...unlockedSeasonAchievements(),
+    ...unlockedCategoryAchievements(ctx.categories),
+  ]
 }
 
 export function loadSeenAchievements(): Set<string> {
@@ -389,6 +454,16 @@ export function claimNewAchievements(
   for (const a of newly) next.add(a.key)
   saveSeenAchievements(next)
   return newly
+}
+
+/** After syncing past season ranks from cloud — claim Season N · Rank badges. */
+export function claimSeasonAchievementsFromCloud(
+  rows: PastSeasonRank[],
+  entries: Entry[],
+  startedOn: string,
+): UnlockedAchievement[] {
+  syncPastSeasonRanks(rows)
+  return claimNewAchievements(entries, startedOn)
 }
 
 /** Call when opening another user's profile — unlocks Cuck if new. */

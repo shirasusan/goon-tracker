@@ -1,20 +1,24 @@
 import { useEffect, useMemo, useState } from 'react'
 import { formatMinutes } from '../lib/format'
 import {
-  addFriendship,
+  acceptFriendRequest,
   addGoonComment,
   cloudEnabled,
   createRecommendation,
+  declineFriendRequest,
   deleteRecommendation,
   ensureCloudProfile,
   ensureCloudUser,
   fetchProfileByCode,
   fetchProfileById,
+  listIncomingFriendRequests,
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
   pushCloudProfile,
   removeFriendship,
+  sendFriendRequest,
+  type FriendRequestRow,
 } from '../lib/cloud'
 import {
   CATEGORIES,
@@ -72,19 +76,34 @@ export function FriendsPanel({
   const [copied, setCopied] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
   const [showAddFriend, setShowAddFriend] = useState(false)
+  const [incoming, setIncoming] = useState<FriendRequestRow[]>([])
   const [recs, setRecs] = useState<Recommendation[]>([])
+  const [recQuery, setRecQuery] = useState('')
+  const [showRecCreate, setShowRecCreate] = useState(false)
   const [recName, setRecName] = useState('')
   const [recLink, setRecLink] = useState('')
   const [recImage, setRecImage] = useState<File | null>(null)
   const [recImagePreview, setRecImagePreview] = useState<string | null>(null)
   const [recFile, setRecFile] = useState<File | null>(null)
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
+  const [meId, setMeId] = useState<string | undefined>()
   const [feed, setFeed] = useState<GoonPost[]>([])
   const [feedExpanded, setFeedExpanded] = useState(false)
   const [feedError, setFeedError] = useState<string | null>(null)
   const [feedBusy, setFeedBusy] = useState(false)
 
   const myCode = cloudCode ?? '…'
+
+  const filteredRecs = useMemo(() => {
+    const q = recQuery.trim().toLowerCase()
+    if (!q) return recs
+    return recs.filter(
+      (r) =>
+        r.name.toLowerCase().includes(q) ||
+        r.authorName.toLowerCase().includes(q) ||
+        r.link.toLowerCase().includes(q),
+    )
+  }, [recs, recQuery])
 
   useEffect(() => {
     if (hideRecs && view === 'recs') setView('feed')
@@ -152,6 +171,7 @@ export function FriendsPanel({
         return
       }
 
+      setMeId(user.userId)
       onCloudReady({
         cloudUserId: user.userId,
         cloudCode: profile.code,
@@ -171,6 +191,9 @@ export function FriendsPanel({
       if (cancelled) return
       if ('error' in loaded) setError(loaded.error)
       else onFriendsSync(loaded.friends)
+
+      const reqs = await listIncomingFriendRequests(user.userId)
+      if (!cancelled && !('error' in reqs)) setIncoming(reqs.requests)
 
       const r = await loadRecommendations(user.userId)
       if (!cancelled && !('error' in r)) setRecs(r.items)
@@ -207,8 +230,14 @@ export function FriendsPanel({
     }
   }
 
+  async function refreshIncoming(userId: string) {
+    const reqs = await listIncomingFriendRequests(userId)
+    if (!('error' in reqs)) setIncoming(reqs.requests)
+  }
+
   async function addFriend() {
     setError(null)
+    setStatus(null)
     const user = await ensureCloudUser()
     if ('error' in user) {
       setError(user.error)
@@ -223,21 +252,45 @@ export function FriendsPanel({
       setError('Das ist dein eigener Code.')
       return
     }
-    const linked = await addFriendship(user.userId, found.profile.id)
-    if (linked.error) {
-      setError(linked.error)
+    const sent = await sendFriendRequest(user.userId, found.profile.id)
+    if (sent.error) {
+      setError(sent.error)
+      return
+    }
+    setPaste('')
+    setStatus(`Anfrage an ${found.profile.name} gesendet — wartet auf Bestätigung`)
+    const loaded = await loadFriendProfiles(user.userId)
+    if (!('error' in loaded)) onFriendsSync(loaded.friends)
+    await refreshIncoming(user.userId)
+    await refreshFeed(user.userId)
+  }
+
+  async function acceptRequest(id: string) {
+    const user = await ensureCloudUser()
+    if ('error' in user) {
+      setError(user.error)
+      return
+    }
+    const result = await acceptFriendRequest(id, user.userId)
+    if (result.error) {
+      setError(result.error)
       return
     }
     const loaded = await loadFriendProfiles(user.userId)
-    if ('error' in loaded) setError(loaded.error)
-    else {
-      onFriendsSync(loaded.friends)
-      setPaste('')
-      setStatus(`${found.profile.name} hinzugefügt (beide Seiten)`)
-    }
-    const r = await loadRecommendations(user.userId)
-    if (!('error' in r)) setRecs(r.items)
+    if (!('error' in loaded)) onFriendsSync(loaded.friends)
+    await refreshIncoming(user.userId)
     await refreshFeed(user.userId)
+    setStatus('Freundschaft akzeptiert')
+  }
+
+  async function declineRequest(id: string) {
+    const user = await ensureCloudUser()
+    if ('error' in user) {
+      setError(user.error)
+      return
+    }
+    await declineFriendRequest(id, user.userId)
+    await refreshIncoming(user.userId)
   }
 
   async function removeFriend(id: string) {
@@ -276,6 +329,7 @@ export function FriendsPanel({
     setRecLink('')
     setRecImage(null)
     setRecFile(null)
+    setShowRecCreate(false)
     const r = await loadRecommendations(user.userId)
     if (!('error' in r)) setRecs(r.items)
   }
@@ -326,6 +380,15 @@ export function FriendsPanel({
         profile={viewing}
         onBack={() => setViewing(null)}
         onViewedOtherProfile={onViewedOtherProfile}
+        meId={meId}
+        onFriendsChanged={() => {
+          if (!meId) return
+          void loadFriendProfiles(meId).then((loaded) => {
+            if (!('error' in loaded)) onFriendsSync(loaded.friends)
+          })
+          void refreshIncoming(meId)
+          void refreshFeed(meId)
+        }}
       />
     )
   }
@@ -392,7 +455,7 @@ export function FriendsPanel({
                 </button>
               </div>
               <div className="friends__share">
-                <p>Dein Code — einmal teilen reicht (Freundschaft ist gegenseitig):</p>
+                <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren:</p>
                 <input className="friends__code" readOnly value={myCode} />
                 <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
                   {copied ? 'Kopiert' : 'Code kopieren'}
@@ -417,10 +480,58 @@ export function FriendsPanel({
                   onClick={() => void addFriend()}
                   disabled={busy}
                 >
-                  Hinzufügen
+                  Anfrage senden
                 </button>
                 {error && <p className="friends__error">{error}</p>}
               </div>
+            </div>
+          )}
+
+          {incoming.length > 0 && (
+            <div className="friends__requests">
+              <h3>Anfragen</h3>
+              <ul className="friends__request-list">
+                {incoming.map((req) => (
+                  <li key={req.id} className="friends__request-row">
+                    <Avatar
+                      src={req.fromProfile?.avatarUrl}
+                      name={req.fromProfile?.name || 'User'}
+                      goonStreak={req.fromProfile?.goonStreak || 0}
+                      dryStreak={req.fromProfile?.dryStreak || 0}
+                      size="sm"
+                      onClick={
+                        req.fromProfile
+                          ? () => void openProfile(req.fromProfile!.id)
+                          : undefined
+                      }
+                    />
+                    <div className="friends__request-meta">
+                      <strong>
+                        {req.fromProfile?.username
+                          ? `@${req.fromProfile.username}`
+                          : req.fromProfile?.name || 'User'}
+                      </strong>
+                      <span>möchte befreundet sein</span>
+                    </div>
+                    <div className="friends__request-actions">
+                      <button
+                        type="button"
+                        className="btn btn--solid"
+                        onClick={() => void acceptRequest(req.id)}
+                      >
+                        Annehmen
+                      </button>
+                      <button
+                        type="button"
+                        className="btn"
+                        onClick={() => void declineRequest(req.id)}
+                      >
+                        Ablehnen
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
           )}
 
@@ -499,53 +610,93 @@ export function FriendsPanel({
 
       {view === 'recs' && !hideRecs && (
         <div className="recs">
-          <div className="friends__add">
-            <label htmlFor="rec-name">Empfehlung · Name</label>
+          <div className="recs__toolbar">
             <input
-              id="rec-name"
-              value={recName}
-              placeholder="Titel"
-              onChange={(e) => setRecName(e.target.value)}
+              className="recs__search"
+              type="search"
+              placeholder="Suche…"
+              value={recQuery}
+              onChange={(e) => setRecQuery(e.target.value)}
+              aria-label="Recs suchen"
             />
-            <label htmlFor="rec-link">Link (optional)</label>
-            <input
-              id="rec-link"
-              value={recLink}
-              placeholder="https://…"
-              onChange={(e) => setRecLink(e.target.value)}
-            />
-            <label htmlFor="rec-image">Foto</label>
-            <input
-              id="rec-image"
-              type="file"
-              accept="image/*"
-              onChange={(e) => setRecImage(e.target.files?.[0] ?? null)}
-            />
-            {recImagePreview && (
-              <div className="rec-preview">
-                <img src={recImagePreview} alt="Vorschau" />
-                <button
-                  type="button"
-                  className="section__close"
-                  onClick={() => setRecImage(null)}
-                >
-                  entfernen
-                </button>
-              </div>
-            )}
-            <label htmlFor="rec-file">Datei</label>
-            <input
-              id="rec-file"
-              type="file"
-              onChange={(e) => setRecFile(e.target.files?.[0] ?? null)}
-            />
-            <button type="button" className="btn btn--solid" onClick={() => void addRec()}>
-              Teilen
+            <button
+              type="button"
+              className="recs__add-btn"
+              aria-label="Empfehlung erstellen"
+              onClick={() => setShowRecCreate(true)}
+            >
+              +
             </button>
-            {error && <p className="friends__error">{error}</p>}
           </div>
+
+          {showRecCreate && (
+            <div className="recs__modal" role="dialog" aria-modal="true">
+              <div className="recs__modal-card">
+                <div className="block__head">
+                  <h3>Neue Rec</h3>
+                  <button
+                    type="button"
+                    className="section__close"
+                    onClick={() => setShowRecCreate(false)}
+                  >
+                    schließen
+                  </button>
+                </div>
+                <div className="friends__add">
+                  <label htmlFor="rec-name">Name</label>
+                  <input
+                    id="rec-name"
+                    value={recName}
+                    placeholder="Titel"
+                    onChange={(e) => setRecName(e.target.value)}
+                  />
+                  <label htmlFor="rec-link">Link (optional)</label>
+                  <input
+                    id="rec-link"
+                    value={recLink}
+                    placeholder="https://…"
+                    onChange={(e) => setRecLink(e.target.value)}
+                  />
+                  <label htmlFor="rec-image">Foto</label>
+                  <input
+                    id="rec-image"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setRecImage(e.target.files?.[0] ?? null)}
+                  />
+                  {recImagePreview && (
+                    <div className="rec-preview">
+                      <img src={recImagePreview} alt="Vorschau" />
+                      <button
+                        type="button"
+                        className="section__close"
+                        onClick={() => setRecImage(null)}
+                      >
+                        entfernen
+                      </button>
+                    </div>
+                  )}
+                  <label htmlFor="rec-file">Datei</label>
+                  <input
+                    id="rec-file"
+                    type="file"
+                    onChange={(e) => setRecFile(e.target.files?.[0] ?? null)}
+                  />
+                  <button
+                    type="button"
+                    className="btn btn--solid"
+                    onClick={() => void addRec()}
+                  >
+                    Teilen
+                  </button>
+                  {error && <p className="friends__error">{error}</p>}
+                </div>
+              </div>
+            </div>
+          )}
+
           <ul className="rec-list">
-            {recs.map((r) => (
+            {filteredRecs.map((r) => (
               <li key={r.id} className="rec-row">
                 <div>
                   <strong>{r.name}</strong>
@@ -574,7 +725,11 @@ export function FriendsPanel({
               </li>
             ))}
           </ul>
-          {recs.length === 0 && <p className="empty">Noch keine Recommendations.</p>}
+          {filteredRecs.length === 0 && (
+            <p className="empty">
+              {recs.length === 0 ? 'Noch keine Recommendations.' : 'Keine Treffer.'}
+            </p>
+          )}
         </div>
       )}
     </div>

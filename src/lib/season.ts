@@ -1,6 +1,14 @@
-/** Season 1 starts here; each season lasts 30 days, then season number +1 */
+/**
+ * Season 0 is pre-launch (no competitive board).
+ * Season 1 starts at this epoch; each season lasts 30 days, then season number +1.
+ */
 const SEASON_EPOCH_UTC = Date.UTC(2026, 6, 1) // 2026-07-01
 const SEASON_MS = 30 * 24 * 60 * 60 * 1000
+
+export function seasonDisplayName(season: number): string {
+  if (season <= 0) return 'Season 0'
+  return `Season ${season}`
+}
 
 export type SeasonInfo = {
   season: number
