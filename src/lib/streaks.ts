@@ -6,17 +6,18 @@ export function goonDates(entries: Entry[]): Set<string> {
 }
 
 /**
- * Consecutive days with at least one goon, ending today.
- * No entry today → streak is 0 (broken); focus streak takes over.
+ * Consecutive days with at least one goon.
+ * Grace: no entry yet today still counts yesterday (day isn't over).
+ * After a full day without a goon, the streak breaks.
  */
 export function calcGoonStreak(entries: Entry[]): number {
   const dates = goonDates(entries)
   if (dates.size === 0) return 0
 
   const today = toDateKey()
-  if (!dates.has(today)) return 0
+  let cursor = dates.has(today) ? today : addDays(today, -1)
+  if (!dates.has(cursor)) return 0
 
-  let cursor = today
   let streak = 0
   while (dates.has(cursor)) {
     streak += 1
@@ -26,9 +27,9 @@ export function calcGoonStreak(entries: Entry[]): number {
 }
 
 /**
- * Consecutive days without gooning, counting back from today.
+ * Consecutive completed days without gooning.
+ * Today is not counted until it ends (same grace as goon).
  * Logging today resets this to 0.
- * Bounded by the day the tracker was first opened.
  */
 export function calcDryStreak(entries: Entry[], startedOn: string): number {
   const dates = goonDates(entries)
@@ -36,9 +37,12 @@ export function calcDryStreak(entries: Entry[], startedOn: string): number {
 
   if (dates.has(today)) return 0
 
-  let streak = 0
-  let cursor = today
+  // Only finished days — start at yesterday
+  let cursor = addDays(today, -1)
+  if (cursor < startedOn) return 0
+  if (dates.has(cursor)) return 0
 
+  let streak = 0
   while (!dates.has(cursor)) {
     streak += 1
     if (cursor <= startedOn) break
