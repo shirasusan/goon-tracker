@@ -29,8 +29,7 @@ export function AchievementsSection({
     return (
       <section className="block">
         <div className="block__head">
-          <h2>Achievements</h2>
-          <span>Sessions & Stunden</span>
+          <h2>0 Achievements</h2>
         </div>
         <p className="achievements__empty">Noch keine freigeschaltet.</p>
       </section>
@@ -40,8 +39,9 @@ export function AchievementsSection({
   return (
     <section className="block">
       <div className="block__head">
-        <h2>Achievements</h2>
-        <span>{unlocked.length} freigeschaltet</span>
+        <h2>
+          {unlocked.length} Achievement{unlocked.length === 1 ? '' : 's'}
+        </h2>
       </div>
 
       <ul className="achievements-grid">

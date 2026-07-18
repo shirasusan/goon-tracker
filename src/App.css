@@ -330,10 +330,6 @@
   stroke: #3a151c;
 }
 
-.streak-ring--evil .streak-ring__progress {
-  filter: drop-shadow(0 0 6px rgba(255, 45, 74, 0.7));
-}
-
 .streak-ring--good {
   background:
     radial-gradient(90% 70% at 50% 0%, rgba(125, 255, 179, 0.16), transparent 60%),
@@ -347,10 +343,6 @@
 
 .streak-ring--good .streak-ring__track {
   stroke: #163226;
-}
-
-.streak-ring--good .streak-ring__progress {
-  filter: drop-shadow(0 0 6px rgba(125, 255, 179, 0.6));
 }
 
 .streak-ring--neutral {
@@ -373,68 +365,28 @@
   place-items: center;
 }
 
-.streak-ring__sparks {
-  position: absolute;
-  inset: -14%;
-  pointer-events: none;
-  z-index: 2;
+.streak-ring--evil .streak-ring__progress {
+  filter: drop-shadow(0 0 6px rgba(255, 61, 92, 0.85))
+    drop-shadow(0 0 16px rgba(255, 61, 92, 0.45));
 }
 
-.streak-ring__spark {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  width: 3px;
-  height: 3px;
-  margin: -1.5px 0 0 -1.5px;
-  border-radius: 50%;
-  background: var(--spark);
-  box-shadow:
-    0 0 4px var(--spark),
-    0 0 8px color-mix(in srgb, var(--spark) 50%, transparent);
-  opacity: 0;
-  transform: rotate(calc(var(--i) * 30deg)) translateY(-42%) scale(0.4);
-  animation: streak-spark 2.4s ease-in-out infinite;
-  animation-delay: calc(var(--i) * -0.18s);
+.streak-ring--good .streak-ring__progress {
+  filter: drop-shadow(0 0 6px rgba(107, 255, 184, 0.85))
+    drop-shadow(0 0 16px rgba(107, 255, 184, 0.4));
 }
 
-.streak-ring--evil .streak-ring__spark:nth-child(odd) {
-  width: 2px;
-  height: 5px;
-  margin: -2.5px 0 0 -1px;
-  border-radius: 1px;
+.streak-ring--evil .streak-ring__value,
+.streak-ring--evil .streak-ring__label {
+  text-shadow:
+    0 0 12px rgba(255, 61, 92, 0.75),
+    0 0 28px rgba(255, 61, 92, 0.35);
 }
 
-.streak-ring--good .streak-ring__spark:nth-child(even) {
-  width: 4px;
-  height: 4px;
-  margin: -2px 0 0 -2px;
-}
-
-@keyframes streak-spark {
-  0%,
-  100% {
-    opacity: 0;
-    transform: rotate(calc(var(--i) * 30deg)) translateY(-38%) scale(0.35);
-  }
-  18% {
-    opacity: 0.85;
-  }
-  55% {
-    opacity: 0.55;
-    transform: rotate(calc(var(--i) * 30deg + 8deg)) translateY(-58%) scale(1);
-  }
-  100% {
-    opacity: 0;
-    transform: rotate(calc(var(--i) * 30deg + 14deg)) translateY(-72%) scale(0.2);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .streak-ring__spark {
-    animation: none;
-    opacity: 0;
-  }
+.streak-ring--good .streak-ring__value,
+.streak-ring--good .streak-ring__label {
+  text-shadow:
+    0 0 12px rgba(107, 255, 184, 0.7),
+    0 0 28px rgba(107, 255, 184, 0.3);
 }
 
 .streak-ring__track {
@@ -451,6 +403,7 @@
   display: grid;
   place-content: center;
   text-align: center;
+  pointer-events: none;
 }
 
 .streak-ring__value {
@@ -579,9 +532,9 @@
 
 .cat-tile {
   appearance: none;
-  border: 1px solid color-mix(in srgb, var(--cat-color) 55%, var(--line));
+  border: 2px solid var(--cat-color);
   background: var(--cat-bg);
-  color: color-mix(in srgb, var(--cat-color) 75%, var(--ink));
+  color: var(--cat-color);
   border-radius: 14px;
   padding: 0.95rem 1rem;
   display: flex;
@@ -591,28 +544,26 @@
   cursor: pointer;
   transition:
     transform 0.15s ease,
-    border-color 0.15s ease,
-    background 0.15s ease;
+    box-shadow 0.15s ease,
+    filter 0.15s ease;
 }
 
 .cat-tile:hover {
   transform: translateY(-1px);
-  border-color: var(--cat-color);
-  background: color-mix(in srgb, var(--cat-bg) 80%, var(--cat-color));
+  filter: brightness(1.08);
 }
 
 .cat-tile.is-active {
   box-shadow:
     0 0 0 2px var(--bg),
-    0 0 0 3px color-mix(in srgb, var(--cat-color) 60%, transparent);
+    0 0 0 4px var(--cat-color);
 }
 
 .cat-tile__swatch {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
   border-radius: 4px;
   background: var(--cat-color);
-  opacity: 0.85;
   flex-shrink: 0;
 }
 
