@@ -76,7 +76,7 @@ export const CATEGORY_META: Record<
     hint: 'nhentai red',
   },
   dojin: {
-    label: 'Dojin',
+    label: 'Doujin',
     color: '#00E676',
     bg: '#062214',
     hint: 'Comiket green',
@@ -88,7 +88,7 @@ export const CATEGORY_META: Record<
     hint: 'Pixiv blue',
   },
   eroga: {
-    label: 'Eroga',
+    label: 'Eroge',
     color: '#D500F9',
     bg: '#1a0624',
     hint: 'galgame purple',

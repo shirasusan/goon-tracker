@@ -156,7 +156,7 @@ export function ProfilePanel({
         <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
       </section>
 
-      <AchievementsSection categories={categories} />
+      <AchievementsSection categories={categories} celebrate />
 
       <section className="block">
         <div className="block__head">
