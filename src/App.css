@@ -991,6 +991,82 @@ button.avatar {
   gap: 0.5rem;
 }
 
+.block--flush {
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.ranked {
+  display: grid;
+  gap: 1rem;
+}
+
+.ranked__season {
+  padding: 1.1rem 1rem 1.2rem;
+  border-radius: 16px;
+  background:
+    radial-gradient(120% 80% at 10% 0%, rgba(255, 75, 145, 0.18), transparent 55%),
+    linear-gradient(160deg, #151a22 0%, #0d1117 100%);
+  border: 1px solid var(--line);
+}
+
+.ranked__eyebrow {
+  margin: 0;
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.ranked__title {
+  margin: 0.2rem 0 0.35rem;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.85rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ranked__reset {
+  margin: 0;
+  color: #e8ecf2;
+}
+
+.ranked__reset strong {
+  color: #ff4b91;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranked__dates {
+  margin: 0.35rem 0 0;
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ranked__bar {
+  height: 10px;
+  border-radius: 999px;
+  background: #1a2029;
+  overflow: hidden;
+  margin-top: 0.75rem;
+}
+
+.ranked__bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width 0.35s ease;
+}
+
+.ranked__next {
+  margin: 0.45rem 0 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.ranked__board .friends__board-head {
+  margin-bottom: 0.5rem;
+}
+
 @media (max-width: 520px) {
   .streak-ring__visual,
   .streak-ring__visual svg {

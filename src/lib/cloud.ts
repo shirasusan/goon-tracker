@@ -1,7 +1,9 @@
 import { createClient, type SupabaseClient, type User } from '@supabase/supabase-js'
-import type { Category, FriendSnapshot, Recommendation } from '../types'
+import type { Category, Entry, FriendSnapshot, Recommendation } from '../types'
 import { CATEGORIES } from '../types'
 import { rankFromMinutes } from './ranks'
+import { getSeasonInfo } from './season'
+import { categoryTotals } from './snapshot'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -285,29 +287,122 @@ export async function removeFriendship(
   return {}
 }
 
-export async function fetchLeaderboard(options?: {
+export function seasonMinutesFromEntries(entries: Entry[]): {
+  totalMinutes: number
+  categories: ReturnType<typeof categoryTotals>
+  season: number
+} {
+  const info = getSeasonInfo()
+  const inSeason = entries.filter(
+    (e) => e.date >= info.startKey && e.date < info.endKeyExclusive,
+  )
+  return {
+    season: info.season,
+    totalMinutes: inSeason.reduce((s, e) => s + e.minutes, 0),
+    categories: categoryTotals(inSeason),
+  }
+}
+
+export async function pushSeasonStats(input: {
+  userId: string
+  entries: Entry[]
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { season, totalMinutes, categories } = seasonMinutesFromEntries(input.entries)
+  const rank = rankFromMinutes(totalMinutes)
+  const { error } = await supabase.from('season_stats').upsert(
+    {
+      user_id: input.userId,
+      season,
+      total_minutes: totalMinutes,
+      categories,
+      rank_id: rank.id,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: 'user_id,season' },
+  )
+  return error ? { error: error.message } : {}
+}
+
+export async function fetchSeasonLeaderboard(options?: {
+  season?: number
   category?: Category
   limit?: number
-}): Promise<{ rows: FriendSnapshot[] } | { error: string }> {
+}): Promise<{ rows: FriendSnapshot[]; season: number } | { error: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const season = options?.season ?? getSeasonInfo().season
   const limit = options?.limit ?? 50
 
   const { data, error } = await supabase
-    .from('profiles')
-    .select('*')
+    .from('season_stats')
+    .select('user_id, season, total_minutes, categories, rank_id, updated_at')
+    .eq('season', season)
     .order('total_minutes', { ascending: false })
     .limit(200)
 
   if (error) return { error: error.message }
 
-  let rows = (data as CloudProfileRow[]).map(rowToSnapshot)
+  let rows: FriendSnapshot[] = []
+
+  if ((data ?? []).length > 0) {
+    const ids = (data ?? []).map((r) => r.user_id as string)
+    const { data: profiles, error: pErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .in('id', ids)
+    if (pErr) return { error: pErr.message }
+
+    const profileById = new Map(
+      (profiles as CloudProfileRow[]).map((p) => [p.id, p]),
+    )
+
+    rows = (data ?? []).map((r) => {
+      const profile = profileById.get(r.user_id as string)
+      const cats = {
+        ...emptyCategories(),
+        ...((r.categories as Record<string, number>) ?? {}),
+      }
+      const base = profile
+        ? rowToSnapshot(profile)
+        : ({
+            id: r.user_id as string,
+            name: 'Anon',
+            level: 1,
+            xp: 0,
+            goonStreak: 0,
+            dryStreak: 0,
+            totalMinutes: 0,
+            categories: emptyCategories(),
+            updatedAt: r.updated_at as string,
+          } satisfies FriendSnapshot)
+      return {
+        ...base,
+        totalMinutes: Number(r.total_minutes) || 0,
+        categories: cats as FriendSnapshot['categories'],
+        rankId:
+          (r.rank_id as string) ||
+          rankFromMinutes(Number(r.total_minutes) || 0).id,
+      }
+    })
+  } else {
+    // Until clients sync season_stats, fall back to all profiles
+    const { data: profiles, error: pErr } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('total_minutes', { ascending: false })
+      .limit(200)
+    if (pErr) return { error: pErr.message }
+    rows = (profiles as CloudProfileRow[]).map(rowToSnapshot)
+  }
+
   if (options?.category) {
     const cat = options.category
     rows = rows
       .map((r) => ({ ...r, totalMinutes: r.categories[cat] || 0 }))
       .sort((a, b) => b.totalMinutes - a.totalMinutes)
   }
-  return { rows: rows.slice(0, limit) }
+
+  return { rows: rows.slice(0, limit), season }
 }
 
 export async function fetchProfileById(

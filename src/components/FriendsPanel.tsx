@@ -17,7 +17,6 @@ import {
 import { rankFromMinutes } from '../lib/ranks'
 import type { FriendSnapshot, Recommendation } from '../types'
 import { Avatar } from './Avatar'
-import { Leaderboard } from './Leaderboard'
 import { PublicProfileView } from './PublicProfileView'
 import { RankBadge } from './RankBadge'
 
@@ -35,7 +34,7 @@ type FriendsPanelProps = {
 }
 
 type SortKey = 'xp' | 'level' | 'goon' | 'dry' | 'time'
-type FriendsView = 'compare' | 'recs' | 'board'
+type FriendsView = 'compare' | 'recs'
 
 export function FriendsPanel({
   me,
@@ -263,13 +262,6 @@ export function FriendsPanel({
         >
           Recs
         </button>
-        <button
-          type="button"
-          className={`chip${view === 'board' ? ' is-active' : ''}`}
-          onClick={() => setView('board')}
-        >
-          Leaderboard
-        </button>
       </div>
 
       {view === 'compare' && (
@@ -450,12 +442,6 @@ export function FriendsPanel({
         </div>
       )}
 
-      {view === 'board' && (
-        <Leaderboard
-          highlightId={me.id}
-          onSelectUser={(id) => void openProfile(id)}
-        />
-      )}
     </div>
   )
 }

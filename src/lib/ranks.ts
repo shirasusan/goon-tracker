@@ -40,3 +40,21 @@ export function rankFromMinutes(totalMinutes: number): RankInfo {
   }
   return RANKS[0]
 }
+
+export function rankProgressFromMinutes(totalMinutes: number): {
+  rank: RankInfo
+  next: RankInfo | null
+  hours: number
+  intoBand: number
+  bandSize: number
+  progress: number
+} {
+  const hours = hoursFromMinutes(totalMinutes)
+  const rank = rankFromMinutes(totalMinutes)
+  const idx = RANKS.findIndex((r) => r.id === rank.id)
+  const next = idx >= 0 && idx < RANKS.length - 1 ? RANKS[idx + 1] : null
+  const intoBand = Math.max(0, hours - rank.minHours)
+  const bandSize = next ? next.minHours - rank.minHours : 1
+  const progress = next ? Math.min(1, intoBand / bandSize) : 1
+  return { rank, next, hours, intoBand, bandSize, progress }
+}

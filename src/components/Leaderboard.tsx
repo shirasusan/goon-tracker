@@ -1,17 +1,20 @@
 import { useEffect, useState } from 'react'
-import { fetchLeaderboard } from '../lib/cloud'
+import { fetchSeasonLeaderboard } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
+import { getSeasonInfo } from '../lib/season'
 import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
 type LeaderboardProps = {
+  season?: number
   highlightId?: string
   onSelectUser?: (id: string) => void
 }
 
-export function Leaderboard({ highlightId, onSelectUser }: LeaderboardProps) {
+export function Leaderboard({ season, highlightId, onSelectUser }: LeaderboardProps) {
+  const activeSeason = season ?? getSeasonInfo().season
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [rows, setRows] = useState<FriendSnapshot[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -21,9 +24,10 @@ export function Leaderboard({ highlightId, onSelectUser }: LeaderboardProps) {
     let cancelled = false
     async function load() {
       setBusy(true)
-      const result = await fetchLeaderboard({
+      const result = await fetchSeasonLeaderboard({
+        season: activeSeason,
         category: category === 'all' ? undefined : category,
-        limit: 30,
+        limit: 50,
       })
       if (cancelled) return
       if ('error' in result) setError(result.error)
@@ -37,12 +41,12 @@ export function Leaderboard({ highlightId, onSelectUser }: LeaderboardProps) {
     return () => {
       cancelled = true
     }
-  }, [category])
+  }, [category, activeSeason])
 
   return (
     <div className="leaderboard-wrap">
       <div className="friends__board-head">
-        <h3>Leaderboard</h3>
+        <h3>Season {activeSeason}</h3>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as Category | 'all')}
@@ -99,7 +103,9 @@ export function Leaderboard({ highlightId, onSelectUser }: LeaderboardProps) {
           )
         })}
       </ol>
-      {!busy && rows.length === 0 && <p className="empty">Noch keine Einträge.</p>}
+      {!busy && rows.length === 0 && (
+        <p className="empty">Noch keine Season-Einträge. Logge Zeit, um aufzutauchen.</p>
+      )}
     </div>
   )
 }

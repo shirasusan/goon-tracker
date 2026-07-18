@@ -26,7 +26,7 @@ export function buildSnapshot(input: {
   const xp = totalXp(input.entries)
   const { level } = levelFromXp(xp)
   return {
-    id: shortId(input.id),
+    id: input.id,
     name: input.name.trim() || 'Anon',
     level,
     xp,

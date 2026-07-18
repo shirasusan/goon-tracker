@@ -6,6 +6,7 @@ import { FriendsPanel } from './components/FriendsPanel'
 import { LevelBar } from './components/LevelBar'
 import { ProfilePanel } from './components/ProfilePanel'
 import { RankBadge } from './components/RankBadge'
+import { RankedPanel } from './components/RankedPanel'
 import { StreakRing } from './components/StreakRing'
 import {
   cloudEnabled,
@@ -13,6 +14,7 @@ import {
   getSessionUser,
   logoutUser,
   pushCloudProfile,
+  pushSeasonStats,
 } from './lib/cloud'
 import { toDateKey } from './lib/dates'
 import { formatMinutes } from './lib/format'
@@ -26,7 +28,8 @@ import './App.css'
 
 const PAGE_META: Record<TabId, { title: string; sub: string }> = {
   home: { title: 'Home', sub: 'Level, Rank, Streaks & Eintragen' },
-  friends: { title: 'Freunde', sub: 'Vergleich, Recs & Leaderboard' },
+  friends: { title: 'Freunde', sub: 'Vergleich & Recs' },
+  ranked: { title: 'Ranked', sub: 'Season Progress & Leaderboard' },
   profile: { title: 'Profil', sub: 'Account, Stats, Avatar & Rank' },
 }
 
@@ -137,6 +140,10 @@ export default function App() {
         username: data.profile.username,
         avatarUrl: data.profile.avatarUrl,
         snapshot: mySnapshot,
+      })
+      void pushSeasonStats({
+        userId: data.profile.cloudUserId!,
+        entries: data.entries,
       })
     }, 400)
 
@@ -334,6 +341,16 @@ export default function App() {
                 onCloudReady={onCloudReady}
                 onFriendsSync={onFriendsSync}
                 onRemoveLocal={removeFriend}
+              />
+            </section>
+          )}
+
+          {tab === 'ranked' && (
+            <section className="block block--flush">
+              <RankedPanel
+                entries={data.entries}
+                highlightId={data.profile.cloudUserId || data.profile.id}
+                userId={data.profile.cloudUserId}
               />
             </section>
           )}
