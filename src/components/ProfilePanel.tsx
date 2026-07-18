@@ -26,6 +26,7 @@ type ProfilePanelProps = {
   onNameChange: (name: string) => void
   onAvatarChange: (url: string) => void
   onLogout: () => void
+  onDeleteAccount: () => Promise<void>
   onRemoveEntry: (id: string) => void
   onBack?: () => void
   freshAchievementKeys?: Set<string>
@@ -48,6 +49,7 @@ export function ProfilePanel({
   onNameChange,
   onAvatarChange,
   onLogout,
+  onDeleteAccount,
   onRemoveEntry,
   onBack,
   freshAchievementKeys,
@@ -59,6 +61,8 @@ export function ProfilePanel({
   const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [confirmDelete, setConfirmDelete] = useState(false)
+  const [deleting, setDeleting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
 
   const recent = useMemo(() => {
@@ -80,6 +84,18 @@ export function ProfilePanel({
       return
     }
     onAvatarChange(result.url)
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true)
+    setError(null)
+    try {
+      await onDeleteAccount()
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Löschen fehlgeschlagen.')
+      setDeleting(false)
+      setConfirmDelete(false)
+    }
   }
 
   return (
@@ -221,6 +237,53 @@ export function ProfilePanel({
           )}
         </section>
       )}
+
+      <section className="block block--danger">
+        <div className="block__head">
+          <h2>Konto</h2>
+        </div>
+        <p className="profile__stat">
+          Logout oder Konto unwiderruflich löschen (inkl. Cloud-Daten).
+        </p>
+        <div className="profile__account-actions">
+          <button type="button" className="btn" onClick={onLogout}>
+            Logout
+          </button>
+          {!confirmDelete ? (
+            <button
+              type="button"
+              className="btn btn--danger"
+              disabled={!userId || deleting}
+              onClick={() => setConfirmDelete(true)}
+            >
+              Konto löschen
+            </button>
+          ) : (
+            <div className="profile__delete-confirm">
+              <p className="friends__error">Wirklich alles löschen? Das geht nicht zurück.</p>
+              <div className="session__actions">
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={deleting}
+                  onClick={() => setConfirmDelete(false)}
+                >
+                  Abbrechen
+                </button>
+                <button
+                  type="button"
+                  className="btn btn--danger"
+                  disabled={deleting || !userId}
+                  onClick={() => void handleDeleteAccount()}
+                >
+                  {deleting ? 'Löschen…' : 'Endgültig löschen'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        {error && <p className="friends__error">{error}</p>}
+      </section>
     </div>
   )
 }

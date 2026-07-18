@@ -129,6 +129,21 @@ export async function logoutUser(): Promise<void> {
   await supabase.auth.signOut()
 }
 
+/** Deletes the signed-in auth user (cascades profiles, feed, friends, …). */
+export async function deleteOwnAccount(): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { error } = await supabase.rpc('delete_own_account')
+  if (error) {
+    return {
+      error: error.message.includes('function') || error.message.includes('schema cache')
+        ? 'Funktion fehlt. SQL aus supabase/delete_account.sql im SQL Editor ausführen.'
+        : error.message,
+    }
+  }
+  await supabase.auth.signOut()
+  return {}
+}
+
 /** @deprecated prefer login/register — kept for migration */
 export async function ensureCloudUser(): Promise<{ userId: string } | { error: string }> {
   const user = await getSessionUser()

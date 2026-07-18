@@ -13,6 +13,7 @@ import { StreakRing } from './components/StreakRing'
 import {
   cloudEnabled,
   deleteGoonPost,
+  deleteOwnAccount,
   ensureCloudProfile,
   getSessionUser,
   logoutUser,
@@ -30,7 +31,7 @@ import { formatMinutes } from './lib/format'
 import { levelFromXp, totalXp } from './lib/level'
 import { rankFromMinutes } from './lib/ranks'
 import { buildSnapshot } from './lib/snapshot'
-import { loadData, saveData } from './lib/storage'
+import { clearLocalTrackerData, loadData, saveData } from './lib/storage'
 import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
 import './App.css'
@@ -303,6 +304,17 @@ export default function App() {
     setShowProfile(false)
   }
 
+  async function handleDeleteAccount() {
+    const result = await deleteOwnAccount()
+    if (result.error) throw new Error(result.error)
+    clearLocalTrackerData()
+    setData(loadData())
+    setUnlockQueue([])
+    setFreshKeys(new Set())
+    setShowProfile(false)
+    setAuthed(false)
+  }
+
   if (authed === null) {
     return (
       <div className="shell">
@@ -383,6 +395,7 @@ export default function App() {
                 }))
               }
               onLogout={() => void handleLogout()}
+              onDeleteAccount={handleDeleteAccount}
               onRemoveEntry={removeEntry}
               onBack={() => setShowProfile(false)}
               freshAchievementKeys={freshKeys}

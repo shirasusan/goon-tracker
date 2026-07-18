@@ -91,3 +91,10 @@ export function loadData(): TrackerData {
 export function saveData(data: TrackerData): void {
   localStorage.setItem(KEY, JSON.stringify(data))
 }
+
+/** Clears tracker + achievement local keys (e.g. after account delete). */
+export function clearLocalTrackerData(): void {
+  localStorage.removeItem(KEY)
+  localStorage.removeItem('goon-tracker-achievements-seen')
+  localStorage.removeItem('goon-tracker-achievement-flags')
+}

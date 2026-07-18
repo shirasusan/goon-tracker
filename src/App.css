@@ -738,8 +738,35 @@
   transform: none;
 }
 
-.btn--wide {
-  width: 100%;
+.btn--danger {
+  background: color-mix(in srgb, var(--danger) 18%, var(--bg-elevated));
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--line));
+  color: #ffb3c0;
+}
+
+.btn--danger:hover {
+  background: color-mix(in srgb, var(--danger) 28%, var(--bg-elevated));
+  border-color: var(--danger);
+  color: #fff;
+}
+
+.btn--danger:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.block--danger {
+  border-color: color-mix(in srgb, var(--danger) 28%, var(--line-soft));
+}
+
+.profile__account-actions {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile__delete-confirm {
+  display: grid;
+  gap: 0.55rem;
 }
 
 .btn--lg {
