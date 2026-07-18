@@ -8,7 +8,7 @@ import { formatMinutes } from '../lib/format'
 import { rankProgressFromMinutes } from '../lib/ranks'
 import { formatCountdown, getSeasonInfo, type SeasonInfo } from '../lib/season'
 import type { Entry, FriendSnapshot } from '../types'
-import { Leaderboard } from './Leaderboard'
+import { Leaderboard, type LeaderboardMode } from './Leaderboard'
 import { PublicProfileView } from './PublicProfileView'
 import { RankBadge } from './RankBadge'
 
@@ -23,6 +23,7 @@ export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) 
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
   const [syncError, setSyncError] = useState<string | null>(null)
   const [boardKey, setBoardKey] = useState(0)
+  const [boardMode, setBoardMode] = useState<LeaderboardMode>('season')
 
   useEffect(() => {
     const tick = () => setSeasonInfo(getSeasonInfo())
@@ -110,11 +111,28 @@ export function RankedPanel({ entries, highlightId, userId }: RankedPanelProps) 
 
       <section className="ranked__board block">
         <div className="block__head">
-          <h2>Season Leaderboard</h2>
+          <h2>Leaderboard</h2>
           <span>alle Spieler</span>
         </div>
+        <div className="friends__tabs ranked__mode">
+          <button
+            type="button"
+            className={`chip${boardMode === 'season' ? ' is-active' : ''}`}
+            onClick={() => setBoardMode('season')}
+          >
+            Season
+          </button>
+          <button
+            type="button"
+            className={`chip${boardMode === 'alltime' ? ' is-active' : ''}`}
+            onClick={() => setBoardMode('alltime')}
+          >
+            All Time
+          </button>
+        </div>
         <Leaderboard
-          key={boardKey}
+          key={`${boardMode}-${boardKey}`}
+          mode={boardMode}
           season={seasonInfo.season}
           highlightId={highlightId}
           onSelectUser={(id) => void openProfile(id)}

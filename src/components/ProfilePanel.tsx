@@ -24,6 +24,7 @@ type ProfilePanelProps = {
   onAvatarChange: (url: string) => void
   onLogout: () => void
   onRemoveEntry: (id: string) => void
+  onBack?: () => void
 }
 
 export function ProfilePanel({
@@ -41,6 +42,7 @@ export function ProfilePanel({
   onAvatarChange,
   onLogout,
   onRemoveEntry,
+  onBack,
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
@@ -72,9 +74,14 @@ export function ProfilePanel({
 
   return (
     <div className="profile">
+      {onBack && (
+        <button type="button" className="btn" onClick={onBack}>
+          ← Zurück
+        </button>
+      )}
       <section className="block">
         <div className="block__head">
-          <h2>Account</h2>
+          <h2>Profil</h2>
           <button type="button" className="section__close" onClick={onLogout}>
             Logout
           </button>
@@ -129,7 +136,12 @@ export function ProfilePanel({
           <h2>Rank</h2>
         </div>
         <RankBadge totalMinutes={totalMinutes} rank={rank} />
-        <p className="profile__stat">Level {level}</p>
+        <p className="profile__stat">
+          Level {level} · {formatMinutes(totalMinutes)}
+        </p>
+        <p className="profile__stat">
+          Goon {goonStreak}d · Dry {dryStreak}d
+        </p>
       </section>
 
       <section className="block">

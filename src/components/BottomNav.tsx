@@ -1,14 +1,13 @@
-export type TabId = 'home' | 'friends' | 'ranked' | 'profile'
+export type TabId = 'home' | 'friends' | 'ranked'
 
 const TABS: { id: TabId; label: string; icon: string }[] = [
   { id: 'home', label: 'Home', icon: '◉' },
   { id: 'friends', label: 'Freunde', icon: '☰' },
   { id: 'ranked', label: 'Ranked', icon: '◆' },
-  { id: 'profile', label: 'Profil', icon: '◎' },
 ]
 
 type BottomNavProps = {
-  active: TabId
+  active: TabId | null
   onChange: (tab: TabId) => void
 }
 

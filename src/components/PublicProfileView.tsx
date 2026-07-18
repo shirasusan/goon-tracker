@@ -1,6 +1,6 @@
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
-import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
+import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
@@ -14,12 +14,15 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
   const maxCat = Math.max(1, ...CATEGORIES.map((c) => profile.categories[c] || 0))
 
   return (
-    <div className="public-profile">
+    <div className="profile public-profile">
       <button type="button" className="btn" onClick={onBack}>
         ← Zurück
       </button>
 
       <section className="block">
+        <div className="block__head">
+          <h2>Profil</h2>
+        </div>
         <div className="profile__hero">
           <Avatar
             src={profile.avatarUrl}
@@ -29,11 +32,15 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
             size="lg"
           />
           <div>
-            <p className="profile__user">
-              @{profile.username || profile.name}
-            </p>
+            <p className="profile__user">@{profile.username || profile.name}</p>
             <p className="profile__stat">{profile.name}</p>
           </div>
+        </div>
+      </section>
+
+      <section className="block">
+        <div className="block__head">
+          <h2>Rank</h2>
         </div>
         <RankBadge totalMinutes={profile.totalMinutes} rank={rank} />
         <p className="profile__stat">
@@ -46,10 +53,11 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
 
       <section className="block">
         <div className="block__head">
-          <h2>Kategorien</h2>
+          <h2>Stats</h2>
+          <span>Kategorien</span>
         </div>
         <ul className="cat-stats">
-          {CATEGORIES.map((cat) => {
+          {CATEGORIES.map((cat: Category) => {
             const meta = CATEGORY_META[cat]
             const mins = profile.categories[cat] || 0
             const pct = Math.round((mins / maxCat) * 100)

@@ -14,11 +14,9 @@ import {
   pushCloudProfile,
   removeFriendship,
 } from '../lib/cloud'
-import { rankFromMinutes } from '../lib/ranks'
-import type { FriendSnapshot, Recommendation } from '../types'
+import { CATEGORIES, CATEGORY_META, type FriendSnapshot, type Recommendation } from '../types'
 import { Avatar } from './Avatar'
 import { PublicProfileView } from './PublicProfileView'
-import { RankBadge } from './RankBadge'
 
 type FriendsPanelProps = {
   me: FriendSnapshot
@@ -27,13 +25,12 @@ type FriendsPanelProps = {
   username?: string
   avatarUrl?: string
   cloudCode?: string
-  onNameChange: (name: string) => void
   onCloudReady: (info: { cloudUserId: string; cloudCode: string; avatarUrl?: string | null }) => void
   onFriendsSync: (friends: FriendSnapshot[]) => void
   onRemoveLocal: (id: string) => void
 }
 
-type SortKey = 'xp' | 'level' | 'goon' | 'dry' | 'time'
+type SortKey = 'level' | 'time'
 type FriendsView = 'compare' | 'recs'
 
 export function FriendsPanel({
@@ -43,7 +40,6 @@ export function FriendsPanel({
   username,
   avatarUrl,
   cloudCode,
-  onNameChange,
   onCloudReady,
   onFriendsSync,
   onRemoveLocal,
@@ -54,7 +50,7 @@ export function FriendsPanel({
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [sort, setSort] = useState<SortKey>('xp')
+  const [sort, setSort] = useState<SortKey>('time')
   const [recs, setRecs] = useState<Recommendation[]>([])
   const [recName, setRecName] = useState('')
   const [recLink, setRecLink] = useState('')
@@ -63,7 +59,6 @@ export function FriendsPanel({
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
 
   const myCode = cloudCode ?? '…'
-  const myRank = rankFromMinutes(me.totalMinutes)
 
   const board = useMemo(() => {
     const rows = [
@@ -71,11 +66,8 @@ export function FriendsPanel({
       ...friends.map((f) => ({ ...f, _you: false as const })),
     ]
     return rows.sort((a, b) => {
-      if (sort === 'level') return b.level - a.level || b.xp - a.xp
-      if (sort === 'goon') return b.goonStreak - a.goonStreak
-      if (sort === 'dry') return b.dryStreak - a.dryStreak
-      if (sort === 'time') return b.totalMinutes - a.totalMinutes
-      return b.xp - a.xp
+      if (sort === 'level') return b.level - a.level || b.totalMinutes - a.totalMinutes
+      return b.totalMinutes - a.totalMinutes || b.level - a.level
     })
   }, [me, friends, displayName, sort])
 
@@ -266,17 +258,6 @@ export function FriendsPanel({
 
       {view === 'compare' && (
         <>
-          <div className="friends__profile">
-            <label htmlFor="display-name">Anzeigename</label>
-            <input
-              id="display-name"
-              value={displayName}
-              maxLength={24}
-              onChange={(e) => onNameChange(e.target.value)}
-            />
-            <RankBadge totalMinutes={me.totalMinutes} rank={myRank} compact />
-          </div>
-
           <div className="friends__share">
             <p>Dein Code — einmal teilen reicht (Freundschaft ist gegenseitig):</p>
             <input className="friends__code" readOnly value={myCode} />
@@ -316,16 +297,16 @@ export function FriendsPanel({
                 onChange={(e) => setSort(e.target.value as SortKey)}
                 aria-label="Sortierung"
               >
-                <option value="xp">XP</option>
                 <option value="level">Level</option>
-                <option value="goon">Goon Streak</option>
-                <option value="dry">Dry Streak</option>
                 <option value="time">Zeit</option>
               </select>
             </div>
-            <ol className="leaderboard">
+            <ol className="leaderboard compare-list">
               {board.map((row, i) => (
-                <li key={row.id} className={`leaderboard__row${row._you ? ' is-you' : ''}`}>
+                <li
+                  key={row.id}
+                  className={`leaderboard__row compare-row${row._you ? ' is-you' : ''}`}
+                >
                   <span className="leaderboard__rank">{i + 1}</span>
                   <Avatar
                     src={row.avatarUrl}
@@ -335,7 +316,7 @@ export function FriendsPanel({
                     size="sm"
                     onClick={row._you ? undefined : () => void openProfile(row.id)}
                   />
-                  <div className="leaderboard__main">
+                  <div className="leaderboard__main compare-row__main">
                     <button
                       type="button"
                       className="leaderboard__name-btn"
@@ -346,14 +327,19 @@ export function FriendsPanel({
                         {row._you ? ' · du' : ''}
                       </strong>
                     </button>
-                    <RankBadge
-                      totalMinutes={row.totalMinutes}
-                      rank={rankFromMinutes(row.totalMinutes)}
-                      compact
-                    />
                     <span>
                       Lv {row.level} · {formatMinutes(row.totalMinutes)}
                     </span>
+                    <ul className="compare-cats">
+                      {CATEGORIES.map((cat) => (
+                        <li key={cat}>
+                          <span style={{ color: CATEGORY_META[cat].color }}>
+                            {CATEGORY_META[cat].label}
+                          </span>
+                          <span>{formatMinutes(row.categories[cat] || 0)}</span>
+                        </li>
+                      ))}
+                    </ul>
                   </div>
                   {!row._you && (
                     <button

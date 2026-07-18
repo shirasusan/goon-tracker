@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AuthScreen } from './components/AuthScreen'
+import { Avatar } from './components/Avatar'
 import { BottomNav, type TabId } from './components/BottomNav'
 import { CategoryPicker } from './components/CategoryPicker'
 import { FriendsPanel } from './components/FriendsPanel'
@@ -30,7 +31,6 @@ const PAGE_META: Record<TabId, { title: string; sub: string }> = {
   home: { title: 'Home', sub: 'Level, Rank, Streaks & Eintragen' },
   friends: { title: 'Freunde', sub: 'Vergleich & Recs' },
   ranked: { title: 'Ranked', sub: 'Season Progress & Leaderboard' },
-  profile: { title: 'Profil', sub: 'Account, Stats, Avatar & Rank' },
 }
 
 function newId() {
@@ -40,6 +40,7 @@ function newId() {
 export default function App() {
   const [data, setData] = useState<TrackerData>(() => loadData())
   const [tab, setTab] = useState<TabId>('home')
+  const [showProfile, setShowProfile] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
   const [authed, setAuthed] = useState<boolean | null>(null)
 
@@ -218,6 +219,11 @@ export default function App() {
     }))
   }
 
+  function openTab(next: TabId) {
+    setShowProfile(false)
+    setTab(next)
+  }
+
   async function handleAuthed(info: { userId: string; username: string }) {
     const profile = await ensureCloudProfile(info.userId, info.username, info.username)
     setData((prev) => ({
@@ -240,6 +246,7 @@ export default function App() {
   async function handleLogout() {
     await logoutUser()
     setAuthed(false)
+    setShowProfile(false)
   }
 
   if (authed === null) {
@@ -260,102 +267,42 @@ export default function App() {
     )
   }
 
-  const page = PAGE_META[tab]
+  const page = showProfile
+    ? { title: 'Profil', sub: 'Account, Stats, Avatar & Rank' }
+    : PAGE_META[tab]
+  const displayLabel =
+    data.profile.name.trim() || data.profile.username || 'Profil'
 
   return (
     <div className="shell">
       <div className="app">
         <header className="top">
-          <p className="top__brand">Goon Tracker</p>
-          <div className="top__page">
-            <h1>{page.title}</h1>
-            <p>{page.sub}</p>
+          <div className="top__left">
+            <p className="top__brand">Goon Tracker</p>
+            <div className="top__page">
+              <h1>{page.title}</h1>
+              <p>{page.sub}</p>
+            </div>
           </div>
+          <button
+            type="button"
+            className={`top__me${showProfile ? ' is-active' : ''}`}
+            onClick={() => setShowProfile(true)}
+            aria-label="Profil öffnen"
+          >
+            <Avatar
+              src={data.profile.avatarUrl}
+              name={displayLabel}
+              goonStreak={goonStreak}
+              dryStreak={dryStreak}
+              size="sm"
+            />
+            <span className="top__me-name">{displayLabel}</span>
+          </button>
         </header>
 
-        <main className="page" key={tab}>
-          {tab === 'home' && (
-            <>
-              <section className="block">
-                <div className="block__head">
-                  <h2>Rank</h2>
-                </div>
-                <RankBadge totalMinutes={totalMinutes} rank={rank} />
-              </section>
-
-              <section className="block">
-                <LevelBar
-                  level={level.level}
-                  intoLevel={level.intoLevel}
-                  toNext={level.toNext}
-                  progress={level.progress}
-                  totalXp={level.xp}
-                />
-              </section>
-
-              <section className="block" aria-label="Streaks">
-                <div className="block__head">
-                  <h2>Streaks</h2>
-                </div>
-                <div className="streaks">
-                  <StreakRing
-                    label="Goon"
-                    sublabel="täglich aktiv"
-                    value={goonStreak}
-                    color="#e8ecf2"
-                  />
-                  <StreakRing
-                    label="Dry"
-                    sublabel="ohne Session"
-                    value={dryStreak}
-                    color="#3dceb8"
-                  />
-                </div>
-              </section>
-
-              <section className="block">
-                <div className="block__head">
-                  <h2>Eintragen</h2>
-                  <span>
-                    {todayEntries.length === 0
-                      ? 'heute leer'
-                      : `${todayEntries.length} · ${formatMinutes(todayMinutes)}`}
-                  </span>
-                </div>
-                <CategoryPicker onLog={logCategory} />
-                {flash && <p className="flash">{flash}</p>}
-              </section>
-            </>
-          )}
-
-          {tab === 'friends' && (
-            <section className="block">
-              <FriendsPanel
-                me={mySnapshot}
-                friends={data.friends}
-                displayName={data.profile.name}
-                username={data.profile.username}
-                avatarUrl={data.profile.avatarUrl}
-                cloudCode={data.profile.cloudCode}
-                onNameChange={setName}
-                onCloudReady={onCloudReady}
-                onFriendsSync={onFriendsSync}
-                onRemoveLocal={removeFriend}
-              />
-            </section>
-          )}
-
-          {tab === 'ranked' && (
-            <section className="block block--flush">
-              <RankedPanel
-                entries={data.entries}
-                highlightId={data.profile.cloudUserId || data.profile.id}
-                userId={data.profile.cloudUserId}
-              />
-            </section>
-          )}
-
-          {tab === 'profile' && (
+        <main className="page" key={showProfile ? 'profile' : tab}>
+          {showProfile ? (
             <ProfilePanel
               userId={data.profile.cloudUserId}
               username={data.profile.username}
@@ -376,12 +323,95 @@ export default function App() {
               }
               onLogout={() => void handleLogout()}
               onRemoveEntry={removeEntry}
+              onBack={() => setShowProfile(false)}
             />
+          ) : (
+            <>
+              {tab === 'home' && (
+                <>
+                  <section className="block">
+                    <div className="block__head">
+                      <h2>Rank</h2>
+                    </div>
+                    <RankBadge totalMinutes={totalMinutes} rank={rank} />
+                  </section>
+
+                  <section className="block">
+                    <LevelBar
+                      level={level.level}
+                      intoLevel={level.intoLevel}
+                      toNext={level.toNext}
+                      progress={level.progress}
+                      totalXp={level.xp}
+                    />
+                  </section>
+
+                  <section className="block" aria-label="Streaks">
+                    <div className="block__head">
+                      <h2>Streaks</h2>
+                    </div>
+                    <div className="streaks">
+                      <StreakRing
+                        label="Goon"
+                        sublabel="täglich aktiv"
+                        value={goonStreak}
+                        color="#e8ecf2"
+                      />
+                      <StreakRing
+                        label="Dry"
+                        sublabel="ohne Session"
+                        value={dryStreak}
+                        color="#3dceb8"
+                      />
+                    </div>
+                  </section>
+
+                  <section className="block">
+                    <div className="block__head">
+                      <h2>Eintragen</h2>
+                      <span>
+                        {todayEntries.length === 0
+                          ? 'heute leer'
+                          : `${todayEntries.length} · ${formatMinutes(todayMinutes)}`}
+                      </span>
+                    </div>
+                    <CategoryPicker onLog={logCategory} />
+                    {flash && <p className="flash">{flash}</p>}
+                  </section>
+                </>
+              )}
+
+              {tab === 'friends' && (
+                <section className="block">
+                  <FriendsPanel
+                    me={mySnapshot}
+                    friends={data.friends}
+                    displayName={data.profile.name}
+                    username={data.profile.username}
+                    avatarUrl={data.profile.avatarUrl}
+                    cloudCode={data.profile.cloudCode}
+                    onCloudReady={onCloudReady}
+                    onFriendsSync={onFriendsSync}
+                    onRemoveLocal={removeFriend}
+                  />
+                </section>
+              )}
+
+              {tab === 'ranked' && (
+                <section className="block block--flush">
+                  <RankedPanel
+                    entries={data.entries}
+                    highlightId={data.profile.cloudUserId || data.profile.id}
+                    userId={data.profile.cloudUserId}
+                  />
+                </section>
+              )}
+            </>
           )}
         </main>
       </div>
 
-      <BottomNav active={tab} onChange={setTab} />
+      <BottomNav active={showProfile ? null : tab} onChange={openTab} />
     </div>
   )
 }

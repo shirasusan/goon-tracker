@@ -405,6 +405,31 @@ export async function fetchSeasonLeaderboard(options?: {
   return { rows: rows.slice(0, limit), season }
 }
 
+export async function fetchAllTimeLeaderboard(options?: {
+  category?: Category
+  limit?: number
+}): Promise<{ rows: FriendSnapshot[] } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const limit = options?.limit ?? 50
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .order('total_minutes', { ascending: false })
+    .limit(200)
+
+  if (error) return { error: error.message }
+
+  let rows = (data as CloudProfileRow[]).map(rowToSnapshot)
+  if (options?.category) {
+    const cat = options.category
+    rows = rows
+      .map((r) => ({ ...r, totalMinutes: r.categories[cat] || 0 }))
+      .sort((a, b) => b.totalMinutes - a.totalMinutes)
+  }
+  return { rows: rows.slice(0, limit) }
+}
+
 export async function fetchProfileById(
   id: string,
 ): Promise<{ profile: FriendSnapshot & { code?: string } } | { error: string }> {

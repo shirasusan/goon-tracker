@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { fetchSeasonLeaderboard } from '../lib/cloud'
+import { fetchAllTimeLeaderboard, fetchSeasonLeaderboard } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import { getSeasonInfo } from '../lib/season'
@@ -7,13 +7,21 @@ import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '.
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
+export type LeaderboardMode = 'season' | 'alltime'
+
 type LeaderboardProps = {
+  mode?: LeaderboardMode
   season?: number
   highlightId?: string
   onSelectUser?: (id: string) => void
 }
 
-export function Leaderboard({ season, highlightId, onSelectUser }: LeaderboardProps) {
+export function Leaderboard({
+  mode = 'season',
+  season,
+  highlightId,
+  onSelectUser,
+}: LeaderboardProps) {
   const activeSeason = season ?? getSeasonInfo().season
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [rows, setRows] = useState<FriendSnapshot[]>([])
@@ -24,11 +32,17 @@ export function Leaderboard({ season, highlightId, onSelectUser }: LeaderboardPr
     let cancelled = false
     async function load() {
       setBusy(true)
-      const result = await fetchSeasonLeaderboard({
-        season: activeSeason,
-        category: category === 'all' ? undefined : category,
-        limit: 50,
-      })
+      const result =
+        mode === 'alltime'
+          ? await fetchAllTimeLeaderboard({
+              category: category === 'all' ? undefined : category,
+              limit: 50,
+            })
+          : await fetchSeasonLeaderboard({
+              season: activeSeason,
+              category: category === 'all' ? undefined : category,
+              limit: 50,
+            })
       if (cancelled) return
       if ('error' in result) setError(result.error)
       else {
@@ -41,12 +55,12 @@ export function Leaderboard({ season, highlightId, onSelectUser }: LeaderboardPr
     return () => {
       cancelled = true
     }
-  }, [category, activeSeason])
+  }, [category, activeSeason, mode])
 
   return (
     <div className="leaderboard-wrap">
       <div className="friends__board-head">
-        <h3>Season {activeSeason}</h3>
+        <h3>{mode === 'alltime' ? 'All Time' : `Season ${activeSeason}`}</h3>
         <select
           value={category}
           onChange={(e) => setCategory(e.target.value as Category | 'all')}
@@ -104,7 +118,11 @@ export function Leaderboard({ season, highlightId, onSelectUser }: LeaderboardPr
         })}
       </ol>
       {!busy && rows.length === 0 && (
-        <p className="empty">Noch keine Season-Einträge. Logge Zeit, um aufzutauchen.</p>
+        <p className="empty">
+          {mode === 'alltime'
+            ? 'Noch keine Einträge.'
+            : 'Noch keine Season-Einträge. Logge Zeit, um aufzutauchen.'}
+        </p>
       )}
     </div>
   )
