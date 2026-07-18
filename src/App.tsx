@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { AuthScreen } from './components/AuthScreen'
 import { BottomNav, type TabId } from './components/BottomNav'
 import { CategoryPicker } from './components/CategoryPicker'
-import { CategoryStats } from './components/CategoryStats'
-import { EntryList } from './components/EntryList'
 import { FriendsPanel } from './components/FriendsPanel'
 import { LevelBar } from './components/LevelBar'
 import { ProfilePanel } from './components/ProfilePanel'
@@ -23,20 +21,13 @@ import { rankFromMinutes } from './lib/ranks'
 import { buildSnapshot } from './lib/snapshot'
 import { loadData, saveData } from './lib/storage'
 import { calcDryStreak, calcGoonStreak } from './lib/streaks'
-import {
-  CATEGORY_META,
-  type Category,
-  type Entry,
-  type FriendSnapshot,
-  type TrackerData,
-} from './types'
+import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
 const PAGE_META: Record<TabId, { title: string; sub: string }> = {
   home: { title: 'Home', sub: 'Level, Rank, Streaks & Eintragen' },
-  stats: { title: 'Stats', sub: 'Kategorien & Verlauf' },
   friends: { title: 'Freunde', sub: 'Vergleich, Recs & Leaderboard' },
-  profile: { title: 'Profil', sub: 'Account, Rank & Goonometer' },
+  profile: { title: 'Profil', sub: 'Account, Stats, Avatar & Rank' },
 }
 
 function newId() {
@@ -47,7 +38,6 @@ export default function App() {
   const [data, setData] = useState<TrackerData>(() => loadData())
   const [tab, setTab] = useState<TabId>('home')
   const [flash, setFlash] = useState<string | null>(null)
-  const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
   const [authed, setAuthed] = useState<boolean | null>(null)
 
   useEffect(() => {
@@ -82,6 +72,7 @@ export default function App() {
               cloudCode: profile.code,
               username: username,
               name: prev.profile.name || username || '',
+              avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
             },
           }))
         }
@@ -108,22 +99,28 @@ export default function App() {
   const rank = useMemo(() => rankFromMinutes(totalMinutes), [totalMinutes])
 
   const mySnapshot = useMemo(
-    () =>
-      buildSnapshot({
+    () => ({
+      ...buildSnapshot({
         id: data.profile.cloudUserId || data.profile.id,
         name: data.profile.name || data.profile.username || 'Du',
         entries: data.entries,
         goonStreak,
         dryStreak,
       }),
+      username: data.profile.username,
+      avatarUrl: data.profile.avatarUrl,
+      rankId: rank.id,
+    }),
     [
       data.profile.cloudUserId,
       data.profile.id,
       data.profile.name,
       data.profile.username,
+      data.profile.avatarUrl,
       data.entries,
       goonStreak,
       dryStreak,
+      rank.id,
     ],
   )
 
@@ -138,7 +135,8 @@ export default function App() {
         code: data.profile.cloudCode!,
         name: data.profile.name,
         username: data.profile.username,
-        snapshot: { ...mySnapshot, rankId: rank.id },
+        avatarUrl: data.profile.avatarUrl,
+        snapshot: mySnapshot,
       })
     }, 400)
 
@@ -147,33 +145,16 @@ export default function App() {
     data.entries,
     data.profile.name,
     data.profile.username,
+    data.profile.avatarUrl,
     data.profile.cloudUserId,
     data.profile.cloudCode,
     mySnapshot,
-    rank.id,
     authed,
   ])
 
   const today = toDateKey()
   const todayEntries = data.entries.filter((e) => e.date === today)
   const todayMinutes = todayEntries.reduce((sum, e) => sum + e.minutes, 0)
-
-  const recent = useMemo(() => {
-    if (!historyCategory) return []
-    return [...data.entries]
-      .filter((e) => e.category === historyCategory)
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-      .slice(0, 30)
-  }, [data.entries, historyCategory])
-
-  function changeTab(next: TabId) {
-    setTab(next)
-    if (next !== 'stats') setHistoryCategory(null)
-  }
-
-  function toggleHistory(category: Category) {
-    setHistoryCategory((prev) => (prev === category ? null : category))
-  }
 
   function logCategory(category: Category, minutes: number, goonometer: number) {
     const entry: Entry = {
@@ -203,13 +184,18 @@ export default function App() {
     }))
   }
 
-  function onCloudReady(info: { cloudUserId: string; cloudCode: string }) {
+  function onCloudReady(info: {
+    cloudUserId: string
+    cloudCode: string
+    avatarUrl?: string | null
+  }) {
     setData((prev) => ({
       ...prev,
       profile: {
         ...prev.profile,
         cloudUserId: info.cloudUserId,
         cloudCode: info.cloudCode,
+        avatarUrl: info.avatarUrl || prev.profile.avatarUrl,
       },
     }))
   }
@@ -235,6 +221,10 @@ export default function App() {
         cloudCode: 'code' in profile ? profile.code : prev.profile.cloudCode,
         username: info.username,
         name: prev.profile.name || info.username,
+        avatarUrl:
+          'avatarUrl' in profile && profile.avatarUrl
+            ? profile.avatarUrl
+            : prev.profile.avatarUrl,
       },
     }))
     setAuthed(true)
@@ -331,45 +321,14 @@ export default function App() {
             </>
           )}
 
-          {tab === 'stats' && (
-            <>
-              <section className="block">
-                <div className="block__head">
-                  <h2>Kategorien</h2>
-                  <span>tippen für Verlauf</span>
-                </div>
-                <CategoryStats
-                  entries={data.entries}
-                  selected={historyCategory}
-                  onSelect={toggleHistory}
-                />
-              </section>
-
-              {historyCategory && (
-                <section className="block">
-                  <div className="block__head">
-                    <h2>Verlauf · {CATEGORY_META[historyCategory].label}</h2>
-                    <button
-                      type="button"
-                      className="section__close"
-                      onClick={() => setHistoryCategory(null)}
-                    >
-                      schließen
-                    </button>
-                  </div>
-                  <EntryList entries={recent} onRemove={removeEntry} />
-                </section>
-              )}
-            </>
-          )}
-
           {tab === 'friends' && (
             <section className="block">
               <FriendsPanel
-                me={{ ...mySnapshot, username: data.profile.username, rankId: rank.id }}
+                me={mySnapshot}
                 friends={data.friends}
                 displayName={data.profile.name}
                 username={data.profile.username}
+                avatarUrl={data.profile.avatarUrl}
                 cloudCode={data.profile.cloudCode}
                 onNameChange={setName}
                 onCloudReady={onCloudReady}
@@ -381,20 +340,31 @@ export default function App() {
 
           {tab === 'profile' && (
             <ProfilePanel
+              userId={data.profile.cloudUserId}
               username={data.profile.username}
               displayName={data.profile.name}
+              avatarUrl={data.profile.avatarUrl}
               cloudCode={data.profile.cloudCode}
               entries={data.entries}
               totalMinutes={totalMinutes}
               level={level.level}
+              goonStreak={goonStreak}
+              dryStreak={dryStreak}
               onNameChange={setName}
+              onAvatarChange={(url) =>
+                setData((prev) => ({
+                  ...prev,
+                  profile: { ...prev.profile, avatarUrl: url },
+                }))
+              }
               onLogout={() => void handleLogout()}
+              onRemoveEntry={removeEntry}
             />
           )}
         </main>
       </div>
 
-      <BottomNav active={tab} onChange={changeTab} />
+      <BottomNav active={tab} onChange={setTab} />
     </div>
   )
 }

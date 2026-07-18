@@ -8,6 +8,7 @@ import {
   ensureCloudProfile,
   ensureCloudUser,
   fetchProfileByCode,
+  fetchProfileById,
   loadFriendProfiles,
   loadRecommendations,
   pushCloudProfile,
@@ -15,7 +16,9 @@ import {
 } from '../lib/cloud'
 import { rankFromMinutes } from '../lib/ranks'
 import type { FriendSnapshot, Recommendation } from '../types'
+import { Avatar } from './Avatar'
 import { Leaderboard } from './Leaderboard'
+import { PublicProfileView } from './PublicProfileView'
 import { RankBadge } from './RankBadge'
 
 type FriendsPanelProps = {
@@ -23,9 +26,10 @@ type FriendsPanelProps = {
   friends: FriendSnapshot[]
   displayName: string
   username?: string
+  avatarUrl?: string
   cloudCode?: string
   onNameChange: (name: string) => void
-  onCloudReady: (info: { cloudUserId: string; cloudCode: string }) => void
+  onCloudReady: (info: { cloudUserId: string; cloudCode: string; avatarUrl?: string | null }) => void
   onFriendsSync: (friends: FriendSnapshot[]) => void
   onRemoveLocal: (id: string) => void
 }
@@ -38,6 +42,7 @@ export function FriendsPanel({
   friends,
   displayName,
   username,
+  avatarUrl,
   cloudCode,
   onNameChange,
   onCloudReady,
@@ -54,6 +59,9 @@ export function FriendsPanel({
   const [recs, setRecs] = useState<Recommendation[]>([])
   const [recName, setRecName] = useState('')
   const [recLink, setRecLink] = useState('')
+  const [recImage, setRecImage] = useState<File | null>(null)
+  const [recFile, setRecFile] = useState<File | null>(null)
+  const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
 
   const myCode = cloudCode ?? '…'
   const myRank = rankFromMinutes(me.totalMinutes)
@@ -95,13 +103,18 @@ export function FriendsPanel({
         return
       }
 
-      onCloudReady({ cloudUserId: user.userId, cloudCode: profile.code })
+      onCloudReady({
+        cloudUserId: user.userId,
+        cloudCode: profile.code,
+        avatarUrl: profile.avatarUrl,
+      })
 
       await pushCloudProfile({
         userId: user.userId,
         code: profile.code,
         name: displayName,
         username,
+        avatarUrl: avatarUrl || profile.avatarUrl || undefined,
         snapshot: me,
       })
 
@@ -110,7 +123,7 @@ export function FriendsPanel({
       if ('error' in loaded) setError(loaded.error)
       else {
         onFriendsSync(loaded.friends)
-        setStatus('Online')
+        setStatus('Online · 1 Code reicht (gegenseitig)')
       }
 
       const r = await loadRecommendations(user.userId)
@@ -125,6 +138,15 @@ export function FriendsPanel({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cloudCode])
+
+  async function openProfile(id: string) {
+    const result = await fetchProfileById(id)
+    if ('error' in result) {
+      setError(result.error)
+      return
+    }
+    setViewing(result.profile)
+  }
 
   async function copyCode() {
     if (!cloudCode) return
@@ -163,7 +185,7 @@ export function FriendsPanel({
     else {
       onFriendsSync(loaded.friends)
       setPaste('')
-      setStatus(`${found.profile.name} hinzugefügt`)
+      setStatus(`${found.profile.name} hinzugefügt (beide Seiten)`)
     }
     const r = await loadRecommendations(user.userId)
     if (!('error' in r)) setRecs(r.items)
@@ -193,6 +215,8 @@ export function FriendsPanel({
       authorName: displayName,
       name: recName,
       link: recLink,
+      imageFile: recImage,
+      attachFile: recFile,
     })
     if (result.error) {
       setError(result.error)
@@ -200,6 +224,8 @@ export function FriendsPanel({
     }
     setRecName('')
     setRecLink('')
+    setRecImage(null)
+    setRecFile(null)
     const r = await loadRecommendations(user.userId)
     if (!('error' in r)) setRecs(r.items)
   }
@@ -214,6 +240,10 @@ export function FriendsPanel({
 
   if (!cloudEnabled) {
     return <p className="empty">Cloud nicht konfiguriert.</p>
+  }
+
+  if (viewing) {
+    return <PublicProfileView profile={viewing} onBack={() => setViewing(null)} />
   }
 
   return (
@@ -256,7 +286,7 @@ export function FriendsPanel({
           </div>
 
           <div className="friends__share">
-            <p>Dein Live-Code:</p>
+            <p>Dein Code — einmal teilen reicht (Freundschaft ist gegenseitig):</p>
             <input className="friends__code" readOnly value={myCode} />
             <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
               {copied ? 'Kopiert' : 'Code kopieren'}
@@ -305,11 +335,25 @@ export function FriendsPanel({
               {board.map((row, i) => (
                 <li key={row.id} className={`leaderboard__row${row._you ? ' is-you' : ''}`}>
                   <span className="leaderboard__rank">{i + 1}</span>
+                  <Avatar
+                    src={row.avatarUrl}
+                    name={row.name}
+                    goonStreak={row.goonStreak}
+                    dryStreak={row.dryStreak}
+                    size="sm"
+                    onClick={row._you ? undefined : () => void openProfile(row.id)}
+                  />
                   <div className="leaderboard__main">
-                    <strong>
-                      {row.name}
-                      {row._you ? ' · du' : ''}
-                    </strong>
+                    <button
+                      type="button"
+                      className="leaderboard__name-btn"
+                      onClick={row._you ? undefined : () => void openProfile(row.id)}
+                    >
+                      <strong>
+                        {row.name}
+                        {row._you ? ' · du' : ''}
+                      </strong>
+                    </button>
                     <RankBadge
                       totalMinutes={row.totalMinutes}
                       rank={rankFromMinutes(row.totalMinutes)}
@@ -345,12 +389,25 @@ export function FriendsPanel({
               placeholder="Titel"
               onChange={(e) => setRecName(e.target.value)}
             />
-            <label htmlFor="rec-link">Link</label>
+            <label htmlFor="rec-link">Link (optional)</label>
             <input
               id="rec-link"
               value={recLink}
               placeholder="https://…"
               onChange={(e) => setRecLink(e.target.value)}
+            />
+            <label htmlFor="rec-image">Foto</label>
+            <input
+              id="rec-image"
+              type="file"
+              accept="image/*"
+              onChange={(e) => setRecImage(e.target.files?.[0] ?? null)}
+            />
+            <label htmlFor="rec-file">Datei</label>
+            <input
+              id="rec-file"
+              type="file"
+              onChange={(e) => setRecFile(e.target.files?.[0] ?? null)}
             />
             <button type="button" className="btn btn--solid" onClick={() => void addRec()}>
               Teilen
@@ -363,9 +420,19 @@ export function FriendsPanel({
                 <div>
                   <strong>{r.name}</strong>
                   <span className="rec-row__meta">von @{r.authorName}</span>
-                  <a href={r.link} target="_blank" rel="noreferrer">
-                    {r.link}
-                  </a>
+                  {r.link && (
+                    <a href={r.link} target="_blank" rel="noreferrer">
+                      {r.link}
+                    </a>
+                  )}
+                  {r.imageUrl && (
+                    <img className="rec-row__img" src={r.imageUrl} alt="" />
+                  )}
+                  {r.fileUrl && (
+                    <a href={r.fileUrl} target="_blank" rel="noreferrer">
+                      📎 {r.fileName || 'Datei'}
+                    </a>
+                  )}
                 </div>
                 {r.userId === me.id && (
                   <button
@@ -383,7 +450,12 @@ export function FriendsPanel({
         </div>
       )}
 
-      {view === 'board' && <Leaderboard highlightId={me.id} />}
+      {view === 'board' && (
+        <Leaderboard
+          highlightId={me.id}
+          onSelectUser={(id) => void openProfile(id)}
+        />
+      )}
     </div>
   )
 }

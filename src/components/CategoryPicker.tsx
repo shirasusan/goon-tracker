@@ -121,18 +121,6 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
             value={goonometer}
             onChange={(e) => setGoonometer(Number(e.target.value))}
           />
-          <div className="goon-scale">
-            {Array.from({ length: 10 }, (_, i) => i + 1).map((n) => (
-              <button
-                key={n}
-                type="button"
-                className={`chip${goonometer === n ? ' is-active' : ''}`}
-                onClick={() => setGoonometer(n)}
-              >
-                {n}
-              </button>
-            ))}
-          </div>
           <div className="session__actions">
             <button type="button" className="btn" onClick={() => setStep(2)}>
               Zurück

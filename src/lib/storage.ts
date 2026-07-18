@@ -69,6 +69,7 @@ export function loadData(): TrackerData {
         username: parsed.profile?.username,
         cloudCode: parsed.profile?.cloudCode,
         cloudUserId: parsed.profile?.cloudUserId,
+        avatarUrl: parsed.profile?.avatarUrl,
       },
       friends: Array.isArray(parsed.friends)
         ? parsed.friends

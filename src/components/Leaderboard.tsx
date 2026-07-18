@@ -3,13 +3,15 @@ import { fetchLeaderboard } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
+import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
 type LeaderboardProps = {
   highlightId?: string
+  onSelectUser?: (id: string) => void
 }
 
-export function Leaderboard({ highlightId }: LeaderboardProps) {
+export function Leaderboard({ highlightId, onSelectUser }: LeaderboardProps) {
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [rows, setRows] = useState<FriendSnapshot[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -62,17 +64,37 @@ export function Leaderboard({ highlightId }: LeaderboardProps) {
           return (
             <li
               key={row.id}
-              className={`leaderboard__row${row.id === highlightId ? ' is-you' : ''}`}
+              className={`leaderboard__row leaderboard__row--click${row.id === highlightId ? ' is-you' : ''}`}
             >
               <span className="leaderboard__rank">{i + 1}</span>
-              <div className="leaderboard__main">
+              <Avatar
+                src={row.avatarUrl}
+                name={row.name}
+                goonStreak={row.goonStreak}
+                dryStreak={row.dryStreak}
+                size="sm"
+                onClick={
+                  row.id === highlightId || !onSelectUser
+                    ? undefined
+                    : () => onSelectUser(row.id)
+                }
+              />
+              <button
+                type="button"
+                className="leaderboard__main leaderboard__name-btn"
+                onClick={
+                  row.id === highlightId || !onSelectUser
+                    ? undefined
+                    : () => onSelectUser(row.id)
+                }
+              >
                 <strong>
                   {row.username ? `@${row.username}` : row.name}
                   {row.id === highlightId ? ' · du' : ''}
                 </strong>
                 <RankBadge totalMinutes={row.totalMinutes} rank={rank} compact />
                 <span>{formatMinutes(row.totalMinutes)}</span>
-              </div>
+              </button>
             </li>
           )
         })}

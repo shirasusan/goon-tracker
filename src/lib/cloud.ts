@@ -23,6 +23,7 @@ export type CloudProfileRow = {
   code: string
   name: string
   username: string | null
+  avatar_url: string | null
   level: number
   xp: number
   goon_streak: number
@@ -50,6 +51,7 @@ export function rowToSnapshot(row: CloudProfileRow): FriendSnapshot {
     id: row.id,
     name: row.name || row.username || 'Anon',
     username: row.username ?? undefined,
+    avatarUrl: row.avatar_url ?? undefined,
     level: row.level,
     xp: row.xp,
     goonStreak: row.goon_streak,
@@ -84,7 +86,16 @@ export async function registerUser(
     password,
     options: { data: { username: clean } },
   })
-  if (error) return { error: error.message }
+  if (error) {
+    const msg = error.message.toLowerCase()
+    if (msg.includes('rate limit') || msg.includes('email rate')) {
+      return {
+        error:
+          'E-Mail-Limit von Supabase erreicht. In Supabase: Authentication → Providers → Email → „Confirm email“ AUS. Dann ~30–60 Min warten und nochmal versuchen.',
+      }
+    }
+    return { error: error.message }
+  }
   if (!data.user) return { error: 'Registrierung fehlgeschlagen.' }
 
   const profile = await ensureCloudProfile(data.user.id, clean, clean)
@@ -120,12 +131,12 @@ export async function ensureCloudProfile(
   userId: string,
   displayName: string,
   username?: string,
-): Promise<{ code: string } | { error: string }> {
+): Promise<{ code: string; avatarUrl?: string | null } | { error: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
   const { data: existing, error: readError } = await supabase
     .from('profiles')
-    .select('code')
+    .select('code, avatar_url')
     .eq('id', userId)
     .maybeSingle()
 
@@ -144,7 +155,7 @@ export async function ensureCloudProfile(
         .update({ username, name: displayName.trim() || username })
         .eq('id', userId)
     }
-    return { code: existing.code }
+    return { code: existing.code, avatarUrl: existing.avatar_url as string | null }
   }
 
   for (let attempt = 0; attempt < 5; attempt++) {
@@ -157,7 +168,7 @@ export async function ensureCloudProfile(
       categories: emptyCategories(),
       rank_id: 'unranked',
     })
-    if (!error) return { code }
+    if (!error) return { code, avatarUrl: null }
     if (error.code !== '23505') return { error: error.message }
   }
 
@@ -169,6 +180,7 @@ export async function pushCloudProfile(input: {
   code: string
   name: string
   username?: string
+  avatarUrl?: string
   snapshot: FriendSnapshot
 }): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
@@ -179,6 +191,7 @@ export async function pushCloudProfile(input: {
     code: input.code,
     name: input.name.trim() || 'Anon',
     username: input.username ?? null,
+    avatar_url: input.avatarUrl ?? input.snapshot.avatarUrl ?? null,
     level: input.snapshot.level,
     xp: input.snapshot.xp,
     goon_streak: input.snapshot.goonStreak,
@@ -256,13 +269,20 @@ export async function removeFriendship(
 ): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
-  const { error } = await supabase
+  const { error: e1 } = await supabase
     .from('friendships')
     .delete()
     .eq('user_id', userId)
     .eq('friend_id', friendId)
+  if (e1) return { error: e1.message }
 
-  return error ? { error: error.message } : {}
+  await supabase
+    .from('friendships')
+    .delete()
+    .eq('user_id', friendId)
+    .eq('friend_id', userId)
+
+  return {}
 }
 
 export async function fetchLeaderboard(options?: {
@@ -290,28 +310,100 @@ export async function fetchLeaderboard(options?: {
   return { rows: rows.slice(0, limit) }
 }
 
+export async function fetchProfileById(
+  id: string,
+): Promise<{ profile: FriendSnapshot & { code?: string } } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { data, error } = await supabase.from('profiles').select('*').eq('id', id).maybeSingle()
+  if (error) return { error: error.message }
+  if (!data) return { error: 'Profil nicht gefunden.' }
+  const row = data as CloudProfileRow
+  return { profile: { ...rowToSnapshot(row), code: row.code } }
+}
+
+export async function uploadAvatar(
+  userId: string,
+  file: File,
+): Promise<{ url: string } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const ext = file.name.split('.').pop() || 'jpg'
+  const path = `${userId}/avatar.${ext}`
+  const { error } = await supabase.storage.from('avatars').upload(path, file, {
+    upsert: true,
+    contentType: file.type,
+  })
+  if (error) return { error: error.message }
+  const { data } = supabase.storage.from('avatars').getPublicUrl(path)
+  const url = `${data.publicUrl}?t=${Date.now()}`
+  await supabase.from('profiles').update({ avatar_url: url }).eq('id', userId)
+  return { url }
+}
+
+async function uploadRecFile(
+  userId: string,
+  file: File,
+  kind: 'image' | 'file',
+): Promise<{ url: string; name: string } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const safe = file.name.replace(/[^\w.\-]+/g, '_')
+  const path = `${userId}/${kind}-${Date.now()}-${safe}`
+  const { error } = await supabase.storage.from('rec-media').upload(path, file, {
+    contentType: file.type,
+  })
+  if (error) return { error: error.message }
+  const { data } = supabase.storage.from('rec-media').getPublicUrl(path)
+  return { url: data.publicUrl, name: file.name }
+}
+
 export async function createRecommendation(input: {
   userId: string
   authorName: string
   name: string
   link: string
+  imageFile?: File | null
+  attachFile?: File | null
 }): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
   const name = input.name.trim()
-  const link = input.link.trim()
-  if (!name || !link) return { error: 'Name und Link nötig.' }
-  try {
-    // basic URL check
-    // eslint-disable-next-line no-new
-    new URL(link.startsWith('http') ? link : `https://${link}`)
-  } catch {
-    return { error: 'Ungültiger Link.' }
+  let link = input.link.trim()
+  if (!name) return { error: 'Name nötig.' }
+  if (!link && !input.imageFile && !input.attachFile) {
+    return { error: 'Link, Foto oder Datei nötig.' }
+  }
+
+  if (link) {
+    try {
+      // eslint-disable-next-line no-new
+      new URL(link.startsWith('http') ? link : `https://${link}`)
+      link = link.startsWith('http') ? link : `https://${link}`
+    } catch {
+      return { error: 'Ungültiger Link.' }
+    }
+  }
+
+  let imageUrl: string | undefined
+  let fileUrl: string | undefined
+  let fileName: string | undefined
+
+  if (input.imageFile) {
+    const up = await uploadRecFile(input.userId, input.imageFile, 'image')
+    if ('error' in up) return { error: up.error }
+    imageUrl = up.url
+  }
+  if (input.attachFile) {
+    const up = await uploadRecFile(input.userId, input.attachFile, 'file')
+    if ('error' in up) return { error: up.error }
+    fileUrl = up.url
+    fileName = up.name
   }
 
   const { error } = await supabase.from('recommendations').insert({
     user_id: input.userId,
     name,
-    link: link.startsWith('http') ? link : `https://${link}`,
+    link: link || '',
+    image_url: imageUrl ?? null,
+    file_url: fileUrl ?? null,
+    file_name: fileName ?? null,
   })
   return error ? { error: error.message } : {}
 }
@@ -331,7 +423,7 @@ export async function loadRecommendations(
 
   const { data, error } = await supabase
     .from('recommendations')
-    .select('id, user_id, name, link, created_at')
+    .select('id, user_id, name, link, image_url, file_url, file_name, created_at')
     .in('user_id', ids)
     .order('created_at', { ascending: false })
     .limit(50)
@@ -353,7 +445,10 @@ export async function loadRecommendations(
       userId: r.user_id as string,
       authorName: nameById.get(r.user_id as string) || 'Anon',
       name: r.name as string,
-      link: r.link as string,
+      link: (r.link as string) || '',
+      imageUrl: (r.image_url as string) || undefined,
+      fileUrl: (r.file_url as string) || undefined,
+      fileName: (r.file_name as string) || undefined,
       createdAt: r.created_at as string,
     })),
   }

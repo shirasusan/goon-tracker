@@ -24,6 +24,9 @@ export type Recommendation = {
   authorName: string
   name: string
   link: string
+  imageUrl?: string
+  fileUrl?: string
+  fileName?: string
   createdAt: string
 }
 
@@ -31,6 +34,7 @@ export type FriendSnapshot = {
   id: string
   name: string
   username?: string
+  avatarUrl?: string
   level: number
   xp: number
   goonStreak: number
@@ -48,6 +52,7 @@ export type TrackerData = {
     id: string
     name: string
     username?: string
+    avatarUrl?: string
     cloudCode?: string
     cloudUserId?: string
   }
