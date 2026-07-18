@@ -51,8 +51,13 @@ export function PublicProfileView({ profile, onBack }: PublicProfileViewProps) {
       </section>
 
       <ProfileStreaks
-        goonStreak={profile.goonStreak}
-        dryStreak={profile.dryStreak}
+        streak={
+          profile.goonStreak > 0
+            ? profile.goonStreak
+            : profile.dryStreak > 0
+              ? -profile.dryStreak
+              : 0
+        }
         compact
       />
 

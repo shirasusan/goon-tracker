@@ -47,3 +47,26 @@ export function calcDryStreak(entries: Entry[], startedOn: string): number {
 
   return streak
 }
+
+/**
+ * One signed streak:
+ * +N = goon / Korruption
+ * -N = dry / Gut
+ *  0 = neutral
+ */
+export function calcSignedStreak(entries: Entry[], startedOn: string): number {
+  const goon = calcGoonStreak(entries)
+  if (goon > 0) return goon
+  const dry = calcDryStreak(entries, startedOn)
+  if (dry > 0) return -dry
+  return 0
+}
+
+export function signedToGoonDry(signed: number): {
+  goonStreak: number
+  dryStreak: number
+} {
+  if (signed > 0) return { goonStreak: signed, dryStreak: 0 }
+  if (signed < 0) return { goonStreak: 0, dryStreak: Math.abs(signed) }
+  return { goonStreak: 0, dryStreak: 0 }
+}

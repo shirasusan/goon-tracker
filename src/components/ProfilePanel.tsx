@@ -22,6 +22,7 @@ type ProfilePanelProps = {
   level: number
   goonStreak: number
   dryStreak: number
+  streak: number
   onNameChange: (name: string) => void
   onAvatarChange: (url: string) => void
   onLogout: () => void
@@ -40,6 +41,7 @@ export function ProfilePanel({
   level,
   goonStreak,
   dryStreak,
+  streak,
   onNameChange,
   onAvatarChange,
   onLogout,
@@ -140,7 +142,7 @@ export function ProfilePanel({
         </p>
       </section>
 
-      <ProfileStreaks goonStreak={goonStreak} dryStreak={dryStreak} compact />
+      <ProfileStreaks streak={streak} compact />
 
       <section className="block">
         <div className="block__head">

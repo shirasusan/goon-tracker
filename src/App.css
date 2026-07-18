@@ -225,6 +225,11 @@
   gap: 0.65rem;
 }
 
+.streaks--single {
+  grid-template-columns: 1fr;
+  justify-items: center;
+}
+
 .streak-ring {
   display: grid;
   justify-items: center;
@@ -234,6 +239,8 @@
   border: 1px solid var(--line);
   position: relative;
   overflow: hidden;
+  width: 100%;
+  max-width: 280px;
 }
 
 .streak-ring__tag {
@@ -286,9 +293,12 @@
   filter: drop-shadow(0 0 6px rgba(125, 255, 179, 0.65));
 }
 
-.streak-ring--compact .streak-ring__visual {
-  width: 118px;
-  height: 118px;
+.streak-ring--neutral {
+  background: linear-gradient(165deg, #151a22 0%, #0d1117 100%);
+}
+
+.streak-ring--neutral .streak-ring__tag {
+  color: #8b95a3;
 }
 
 .streak-ring--compact .streak-ring__value {

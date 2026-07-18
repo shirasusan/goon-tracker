@@ -28,7 +28,7 @@ import { levelFromXp, totalXp } from './lib/level'
 import { rankFromMinutes } from './lib/ranks'
 import { buildSnapshot, categoryTotals } from './lib/snapshot'
 import { loadData, saveData } from './lib/storage'
-import { calcDryStreak, calcGoonStreak } from './lib/streaks'
+import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
@@ -114,11 +114,11 @@ export default function App() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const goonStreak = useMemo(() => calcGoonStreak(data.entries), [data.entries])
-  const dryStreak = useMemo(
-    () => calcDryStreak(data.entries, data.startedOn),
+  const streak = useMemo(
+    () => calcSignedStreak(data.entries, data.startedOn),
     [data.entries, data.startedOn],
   )
+  const { goonStreak, dryStreak } = useMemo(() => signedToGoonDry(streak), [streak])
   const xp = useMemo(() => totalXp(data.entries), [data.entries])
   const level = useMemo(() => levelFromXp(xp), [xp])
   const totalMinutes = xp
@@ -342,6 +342,7 @@ export default function App() {
               level={level.level}
               goonStreak={goonStreak}
               dryStreak={dryStreak}
+              streak={streak}
               onNameChange={setName}
               onAvatarChange={(url) =>
                 setData((prev) => ({
@@ -375,23 +376,13 @@ export default function App() {
                     />
                   </section>
 
-                  <section className="block" aria-label="Streaks">
+                  <section className="block" aria-label="Streak">
                     <div className="block__head">
-                      <h2>Streaks</h2>
+                      <h2>Streak</h2>
+                      <span>+ Korruption · − Gut</span>
                     </div>
-                    <div className="streaks streaks--dual">
-                      <StreakRing
-                        label="Goon"
-                        sublabel="täglich aktiv · Korruption"
-                        value={goonStreak}
-                        variant="evil"
-                      />
-                      <StreakRing
-                        label="Dry"
-                        sublabel="ohne Session · Reinheit"
-                        value={dryStreak}
-                        variant="good"
-                      />
+                    <div className="streaks streaks--single">
+                      <StreakRing value={streak} />
                     </div>
                   </section>
 
