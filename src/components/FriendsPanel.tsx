@@ -15,7 +15,6 @@ import {
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
-  pushCloudProfile,
   removeFriendship,
   sendFriendRequest,
   type FriendRequestRow,
@@ -60,7 +59,6 @@ export function FriendsPanel({
   friends,
   displayName,
   username,
-  avatarUrl,
   cloudCode,
   hideRecs,
   onCloudReady,
@@ -176,15 +174,6 @@ export function FriendsPanel({
         cloudUserId: user.userId,
         cloudCode: profile.code,
         avatarUrl: profile.avatarUrl,
-      })
-
-      await pushCloudProfile({
-        userId: user.userId,
-        code: profile.code,
-        name: displayName,
-        username,
-        avatarUrl: avatarUrl || profile.avatarUrl || undefined,
-        snapshot: me,
       })
 
       const loaded = await loadFriendProfiles(user.userId)

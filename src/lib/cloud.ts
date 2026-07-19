@@ -11,6 +11,11 @@ import { CATEGORIES } from '../types'
 import { rankFromMinutes } from './ranks'
 import { getSeasonInfo } from './season'
 import { categoryTotals } from './snapshot'
+import {
+  entriesMissingFromCloud,
+  mergeEntries,
+  mergeStartedOn,
+} from './entrySync'
 
 const url = import.meta.env.VITE_SUPABASE_URL as string | undefined
 const key = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
@@ -41,6 +46,7 @@ export type CloudProfileRow = {
   categories: Record<string, number>
   rank_id: string | null
   ranked_anonymous?: boolean | null
+  started_on?: string | null
   updated_at: string
 }
 
@@ -157,14 +163,21 @@ export async function ensureCloudProfile(
   userId: string,
   displayName: string,
   username?: string,
+  startedOn?: string,
 ): Promise<
-  { code: string; avatarUrl?: string | null; rankedAnonymous?: boolean } | { error: string }
+  | {
+      code: string
+      avatarUrl?: string | null
+      rankedAnonymous?: boolean
+      startedOn?: string | null
+    }
+  | { error: string }
 > {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
   const { data: existing, error: readError } = await supabase
     .from('profiles')
-    .select('code, avatar_url, ranked_anonymous')
+    .select('code, avatar_url, ranked_anonymous, started_on')
     .eq('id', userId)
     .maybeSingle()
 
@@ -187,6 +200,7 @@ export async function ensureCloudProfile(
       code: existing.code,
       avatarUrl: existing.avatar_url as string | null,
       rankedAnonymous: Boolean(existing.ranked_anonymous),
+      startedOn: (existing.started_on as string | null) ?? null,
     }
   }
 
@@ -199,8 +213,16 @@ export async function ensureCloudProfile(
       username: username ?? null,
       categories: emptyCategories(),
       rank_id: 'unranked',
+      started_on: startedOn ?? null,
     })
-    if (!error) return { code, avatarUrl: null, rankedAnonymous: false }
+    if (!error) {
+      return {
+        code,
+        avatarUrl: null,
+        rankedAnonymous: false,
+        startedOn: startedOn ?? null,
+      }
+    }
     if (error.code !== '23505') return { error: error.message }
   }
 
@@ -214,6 +236,7 @@ export async function pushCloudProfile(input: {
   username?: string
   avatarUrl?: string
   rankedAnonymous?: boolean
+  startedOn?: string
   snapshot: FriendSnapshot
 }): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
@@ -233,6 +256,7 @@ export async function pushCloudProfile(input: {
     categories: input.snapshot.categories,
     rank_id: rank.id,
     ranked_anonymous: Boolean(input.rankedAnonymous),
+    started_on: input.startedOn ?? null,
     updated_at: new Date().toISOString(),
   })
 
@@ -848,6 +872,180 @@ export async function pushGoonPost(input: {
     }
   }
   return {}
+}
+
+type TrackerEntryRow = {
+  id: string
+  user_id: string
+  category: string
+  minutes: number
+  goonometer: number
+  comment: string | null
+  date: string
+  created_at: string
+}
+
+function trackerRowToEntry(row: TrackerEntryRow): Entry | null {
+  if (!CATEGORIES.includes(row.category as Category)) return null
+  const comment =
+    typeof row.comment === 'string' && row.comment.trim()
+      ? row.comment.trim().slice(0, 280)
+      : undefined
+  return {
+    id: row.id,
+    category: row.category as Category,
+    minutes: Number(row.minutes) || 0,
+    goonometer: Math.max(0, Math.min(10, Math.round(Number(row.goonometer) || 0))),
+    date: row.date,
+    createdAt: row.created_at,
+    ...(comment ? { comment } : {}),
+  }
+}
+
+function entryToTrackerRow(userId: string, entry: Entry) {
+  return {
+    id: entry.id,
+    user_id: userId,
+    category: entry.category,
+    minutes: entry.minutes,
+    goonometer: entry.goonometer,
+    comment: (entry.comment || '').slice(0, 280),
+    date: entry.date,
+    created_at: entry.createdAt,
+  }
+}
+
+function entriesTableMissing(message: string): string {
+  return message.includes('relation') || message.includes('tracker_entries')
+    ? 'Tabelle fehlt. SQL aus supabase/entries_sync.sql im SQL Editor ausführen.'
+    : message
+}
+
+export async function pullTrackerEntries(
+  userId: string,
+): Promise<{ entries: Entry[] } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+
+  const { data, error } = await supabase
+    .from('tracker_entries')
+    .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+
+  if (error) return { error: entriesTableMissing(error.message) }
+
+  const entries = (data as TrackerEntryRow[] | null ?? [])
+    .map(trackerRowToEntry)
+    .filter((e): e is Entry => e !== null)
+  return { entries }
+}
+
+export async function pushTrackerEntries(
+  userId: string,
+  entries: Entry[],
+): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  if (entries.length === 0) return {}
+
+  const rows = entries.map((e) => entryToTrackerRow(userId, e))
+  const chunkSize = 200
+  for (let i = 0; i < rows.length; i += chunkSize) {
+    const chunk = rows.slice(i, i + chunkSize)
+    const { error } = await supabase
+      .from('tracker_entries')
+      .upsert(chunk, { onConflict: 'id' })
+    if (error) return { error: entriesTableMissing(error.message) }
+  }
+  return {}
+}
+
+export async function deleteTrackerEntry(
+  userId: string,
+  entryId: string,
+): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+  const { error } = await supabase
+    .from('tracker_entries')
+    .delete()
+    .eq('id', entryId)
+    .eq('user_id', userId)
+  return error ? { error: entriesTableMissing(error.message) } : {}
+}
+
+async function pullOwnGoonPostsAsEntries(
+  userId: string,
+): Promise<{ entries: Entry[] } | { error: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+
+  const { data, error } = await supabase
+    .from('goon_posts')
+    .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: true })
+
+  if (error) {
+    return {
+      error: error.message.includes('relation')
+        ? 'Tabelle fehlt. SQL aus supabase/goon_feed.sql im SQL Editor ausführen.'
+        : error.message,
+    }
+  }
+
+  const entries = (data as TrackerEntryRow[] | null ?? [])
+    .map(trackerRowToEntry)
+    .filter((e): e is Entry => e !== null)
+  return { entries }
+}
+
+/**
+ * Pull cloud entries, backfill from goon_posts if needed, merge with local,
+ * push local-only rows, sync started_on. Does not push profile aggregates.
+ */
+export async function syncEntriesWithCloud(input: {
+  userId: string
+  localEntries: Entry[]
+  localStartedOn: string
+  cloudStartedOn?: string | null
+}): Promise<{ entries: Entry[]; startedOn: string } | { error: string }> {
+  const pulled = await pullTrackerEntries(input.userId)
+  if ('error' in pulled) return pulled
+
+  let cloudEntries = pulled.entries
+
+  if (cloudEntries.length === 0) {
+    const fromPosts = await pullOwnGoonPostsAsEntries(input.userId)
+    if ('error' in fromPosts) {
+      // Feed table optional for sync — ignore if missing
+      if (!fromPosts.error.includes('Tabelle fehlt')) return fromPosts
+    } else if (fromPosts.entries.length > 0) {
+      const backfill = await pushTrackerEntries(input.userId, fromPosts.entries)
+      if (backfill.error) return { error: backfill.error }
+      cloudEntries = fromPosts.entries
+    }
+  }
+
+  const merged = mergeEntries(input.localEntries, cloudEntries)
+  const missing = entriesMissingFromCloud(merged, cloudEntries)
+  if (missing.length > 0) {
+    const push = await pushTrackerEntries(input.userId, missing)
+    if (push.error) return { error: push.error }
+  }
+
+  const startedOn = mergeStartedOn(input.localStartedOn, input.cloudStartedOn)
+  if (supabase) {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ started_on: startedOn })
+      .eq('id', input.userId)
+    if (error && !error.message.includes('started_on')) {
+      // Column may be missing until entries_sync.sql is run — non-fatal for entries
+      if (!error.message.includes('column')) {
+        return { error: error.message }
+      }
+    }
+  }
+
+  return { entries: merged, startedOn }
 }
 
 export async function deleteGoonPost(

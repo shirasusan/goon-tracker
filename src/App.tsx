@@ -14,6 +14,7 @@ import {
   cloudEnabled,
   deleteGoonPost,
   deleteOwnAccount,
+  deleteTrackerEntry,
   ensureCloudProfile,
   fetchMySeasonHistory,
   getSessionUser,
@@ -21,6 +22,8 @@ import {
   pushCloudProfile,
   pushGoonPost,
   pushSeasonStats,
+  pushTrackerEntries,
+  syncEntriesWithCloud,
 } from './lib/cloud'
 import {
   claimCuckAchievement,
@@ -54,6 +57,8 @@ export default function App() {
   const [showProfile, setShowProfile] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
   const [authed, setAuthed] = useState<boolean | null>(null)
+  /** False until cloud entry sync finishes — blocks empty profile overwrite. */
+  const [entriesSynced, setEntriesSynced] = useState(!cloudEnabled)
   const [unlockQueue, setUnlockQueue] = useState<UnlockedAchievement[]>([])
   const [freshKeys, setFreshKeys] = useState<Set<string>>(() => new Set())
 
@@ -85,6 +90,7 @@ export default function App() {
   useEffect(() => {
     if (!cloudEnabled) {
       setAuthed(true)
+      setEntriesSynced(true)
       return
     }
     let cancelled = false
@@ -92,46 +98,84 @@ export default function App() {
       const user = await getSessionUser()
       if (cancelled) return
       if (user) {
+        setEntriesSynced(false)
+        const local = loadData()
         const username =
           (user.user_metadata?.username as string | undefined) ||
-          data.profile.username ||
+          local.profile.username ||
           user.email?.split('@')[0]
         const profile = await ensureCloudProfile(
           user.id,
-          data.profile.name || username || 'User',
+          local.profile.name || username || 'User',
           username,
+          local.startedOn,
         )
-        if (!cancelled && !('error' in profile)) {
-          setData((prev) => ({
-            ...prev,
-            profile: {
-              ...prev.profile,
-              cloudUserId: user.id,
-              cloudCode: profile.code,
-              username: username,
-              name: prev.profile.name || username || '',
-              avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
-              rankedAnonymous:
-                typeof profile.rankedAnonymous === 'boolean'
-                  ? profile.rankedAnonymous
-                  : prev.profile.rankedAnonymous,
-            },
-          }))
-          const hist = await fetchMySeasonHistory(user.id)
-          if (!cancelled && !('error' in hist)) {
-            const local = loadData()
-            enqueueUnlocks(
-              claimSeasonAchievementsFromCloud(
-                hist.seasons.map((s) => ({ season: s.season, rankId: s.rankId })),
-                local.entries,
-                local.startedOn,
-              ),
-            )
+        if (cancelled) return
+        if (!('error' in profile)) {
+          const synced = await syncEntriesWithCloud({
+            userId: user.id,
+            localEntries: local.entries,
+            localStartedOn: local.startedOn,
+            cloudStartedOn: profile.startedOn,
+          })
+          if (cancelled) return
+
+          if (!('error' in synced)) {
+            setData((prev) => ({
+              ...prev,
+              entries: synced.entries,
+              startedOn: synced.startedOn,
+              profile: {
+                ...prev.profile,
+                cloudUserId: user.id,
+                cloudCode: profile.code,
+                username: username,
+                name: prev.profile.name || username || '',
+                avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
+                rankedAnonymous:
+                  typeof profile.rankedAnonymous === 'boolean'
+                    ? profile.rankedAnonymous
+                    : prev.profile.rankedAnonymous,
+              },
+            }))
+            setEntriesSynced(true)
+
+            const hist = await fetchMySeasonHistory(user.id)
+            if (!cancelled && !('error' in hist)) {
+              enqueueUnlocks(
+                claimSeasonAchievementsFromCloud(
+                  hist.seasons.map((s) => ({ season: s.season, rankId: s.rankId })),
+                  synced.entries,
+                  synced.startedOn,
+                ),
+              )
+            }
+          } else {
+            // Sync failed — still attach profile, but keep blocking aggregate push
+            // when local is empty so we don't wipe cloud streaks.
+            setData((prev) => ({
+              ...prev,
+              profile: {
+                ...prev.profile,
+                cloudUserId: user.id,
+                cloudCode: profile.code,
+                username: username,
+                name: prev.profile.name || username || '',
+                avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
+                rankedAnonymous:
+                  typeof profile.rankedAnonymous === 'boolean'
+                    ? profile.rankedAnonymous
+                    : prev.profile.rankedAnonymous,
+              },
+            }))
+            console.warn('Entry sync failed:', synced.error)
+            setEntriesSynced(local.entries.length > 0)
           }
         }
         setAuthed(true)
       } else {
         setAuthed(false)
+        setEntriesSynced(true)
       }
     }
     void check()
@@ -180,7 +224,7 @@ export default function App() {
   useEffect(() => {
     if (!cloudEnabled) return
     if (!data.profile.cloudUserId || !data.profile.cloudCode) return
-    if (!authed) return
+    if (!authed || !entriesSynced) return
 
     const handle = window.setTimeout(() => {
       void pushCloudProfile({
@@ -190,6 +234,7 @@ export default function App() {
         username: data.profile.username,
         avatarUrl: data.profile.avatarUrl,
         rankedAnonymous: data.profile.rankedAnonymous,
+        startedOn: data.startedOn,
         snapshot: mySnapshot,
       })
       void pushSeasonStats({
@@ -201,6 +246,7 @@ export default function App() {
     return () => window.clearTimeout(handle)
   }, [
     data.entries,
+    data.startedOn,
     data.profile.name,
     data.profile.username,
     data.profile.avatarUrl,
@@ -209,6 +255,7 @@ export default function App() {
     data.profile.rankedAnonymous,
     mySnapshot,
     authed,
+    entriesSynced,
   ])
 
   const today = toDateKey()
@@ -236,6 +283,7 @@ export default function App() {
 
     const userId = data.profile.cloudUserId
     if (userId && cloudEnabled) {
+      void pushTrackerEntries(userId, [entry])
       void pushGoonPost({ userId, entry })
     }
   }
@@ -247,6 +295,7 @@ export default function App() {
     }))
     const userId = data.profile.cloudUserId
     if (userId && cloudEnabled) {
+      void deleteTrackerEntry(userId, id)
       void deleteGoonPost(userId, id)
     }
   }
@@ -306,21 +355,57 @@ export default function App() {
   }
 
   async function handleAuthed(info: { userId: string; username: string }) {
-    const profile = await ensureCloudProfile(info.userId, info.username, info.username)
-    setData((prev) => ({
-      ...prev,
-      profile: {
-        ...prev.profile,
-        cloudUserId: info.userId,
-        cloudCode: 'code' in profile ? profile.code : prev.profile.cloudCode,
-        username: info.username,
-        name: prev.profile.name || info.username,
-        avatarUrl:
-          'avatarUrl' in profile && profile.avatarUrl
-            ? profile.avatarUrl
-            : prev.profile.avatarUrl,
-      },
-    }))
+    setEntriesSynced(false)
+    const local = loadData()
+    const profile = await ensureCloudProfile(
+      info.userId,
+      info.username,
+      info.username,
+      local.startedOn,
+    )
+    if ('error' in profile) {
+      setEntriesSynced(true)
+      setAuthed(true)
+      return
+    }
+
+    const synced = await syncEntriesWithCloud({
+      userId: info.userId,
+      localEntries: local.entries,
+      localStartedOn: local.startedOn,
+      cloudStartedOn: profile.startedOn,
+    })
+
+    if (!('error' in synced)) {
+      setData((prev) => ({
+        ...prev,
+        entries: synced.entries,
+        startedOn: synced.startedOn,
+        profile: {
+          ...prev.profile,
+          cloudUserId: info.userId,
+          cloudCode: profile.code,
+          username: info.username,
+          name: prev.profile.name || info.username,
+          avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
+        },
+      }))
+      setEntriesSynced(true)
+    } else {
+      setData((prev) => ({
+        ...prev,
+        profile: {
+          ...prev.profile,
+          cloudUserId: info.userId,
+          cloudCode: profile.code,
+          username: info.username,
+          name: prev.profile.name || info.username,
+          avatarUrl: profile.avatarUrl || prev.profile.avatarUrl,
+        },
+      }))
+      console.warn('Entry sync failed:', synced.error)
+      setEntriesSynced(local.entries.length > 0)
+    }
     setAuthed(true)
   }
 

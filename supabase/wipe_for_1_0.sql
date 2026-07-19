@@ -6,6 +6,7 @@
 truncate table
   public.goon_comments,
   public.goon_posts,
+  public.tracker_entries,
   public.recommendations,
   public.friend_requests,
   public.friendships,
