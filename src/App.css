@@ -225,9 +225,14 @@
 }
 
 .bottom-nav__label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+  line-height: 1.15;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .bottom-nav__overview {
@@ -3255,7 +3260,7 @@ button.avatar {
 /* —— Desktop / adaptive layout —— */
 @media (min-width: 900px) {
   :root {
-    --nav-side: 13rem;
+    --nav-side: 13.5rem;
     --chrome-h: 3.75rem;
   }
 
@@ -3347,13 +3352,32 @@ button.avatar {
   }
 
   .bottom-nav__btn {
-    justify-items: start;
-    place-items: start;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.75rem;
     padding: 0.75rem 0.85rem;
     min-height: auto;
     border-bottom: none;
     border-left: 2px solid transparent;
     width: 100%;
+  }
+
+  .bottom-nav__icon {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
+  }
+
+  .bottom-nav__avatar {
+    flex-shrink: 0;
+    width: 2.25rem;
+    height: 2.25rem;
+    display: grid;
+    place-items: center;
   }
 
   .bottom-nav__btn.is-active {
@@ -3364,6 +3388,9 @@ button.avatar {
 
   .bottom-nav__label {
     font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
   }
 
   .shell > .app {
@@ -3612,7 +3639,7 @@ button.avatar {
 
 @media (min-width: 1200px) {
   :root {
-    --nav-side: 14.5rem;
+    --nav-side: 15rem;
   }
 
   .shell > .app {
