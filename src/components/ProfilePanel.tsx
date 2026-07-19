@@ -9,6 +9,8 @@ import { Avatar } from './Avatar'
 import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
 import { RankBadge } from './RankBadge'
+import { useLocale } from '../lib/LocaleContext'
+import { LOCALES, type Locale } from '../lib/i18n'
 
 type ProfileSeg = 'overview' | 'stats' | 'settings'
 
@@ -36,6 +38,8 @@ type ProfilePanelProps = {
   onMonkModeChange?: (on: boolean) => void
   rankedAnonymous?: boolean
   onRankedAnonymousChange?: (on: boolean) => void
+  locale: Locale
+  onLocaleChange: (locale: Locale) => void
 }
 
 export function ProfilePanel({
@@ -62,7 +66,10 @@ export function ProfilePanel({
   onMonkModeChange,
   rankedAnonymous,
   onRankedAnonymousChange,
+  locale,
+  onLocaleChange,
 }: ProfilePanelProps) {
+  const { t } = useLocale()
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
   const [seg, setSeg] = useState<ProfileSeg>('overview')
@@ -123,7 +130,7 @@ export function ProfilePanel({
     <div className="profile page-stack">
       {onBack && (
         <button type="button" className="btn profile__back" onClick={onBack}>
-          ← Zurück
+          ← {t('back')}
         </button>
       )}
 
@@ -143,16 +150,16 @@ export function ProfilePanel({
         </div>
       </header>
 
-      <div className="metric-strip" role="group" aria-label="Übersicht">
+      <div className="metric-strip" role="group" aria-label={t('overview')}>
         {!monkMode && (
           <div className="metric-strip__item">
-            <span className="metric-strip__label">Rank</span>
+            <span className="metric-strip__label">{t('rank')}</span>
             <RankBadge totalMinutes={totalMinutes} rank={rank} compact />
           </div>
         )}
         {!monkMode && (
           <div className="metric-strip__item metric-strip__item--wide">
-            <span className="metric-strip__label">Level</span>
+            <span className="metric-strip__label">{t('level')}</span>
             <strong className="metric-strip__value">
               {level}
               <span className="metric-strip__sub">{totalMinutes} XP</span>
@@ -165,7 +172,7 @@ export function ProfilePanel({
         </div>
         {!monkMode && (
           <div className="metric-strip__item">
-            <span className="metric-strip__label">Intensität</span>
+            <span className="metric-strip__label">Goonometer</span>
             <strong className="metric-strip__value">
               {weekAvg == null ? '—' : weekAvg}
               {weekAvg != null && <span className="metric-strip__sub">/ 10</span>}
@@ -174,7 +181,7 @@ export function ProfilePanel({
         )}
       </div>
 
-      <div className="seg-tabs friends__tabs" role="tablist" aria-label="Profilbereiche">
+      <div className="seg-tabs friends__tabs" role="tablist" aria-label={t('settings')}>
         <button
           type="button"
           role="tab"
@@ -182,7 +189,7 @@ export function ProfilePanel({
           className={`chip${activeSeg === 'overview' ? ' is-active' : ''}`}
           onClick={() => setSeg('overview')}
         >
-          Übersicht
+          {t('overview')}
         </button>
         {!monkMode && (
           <button
@@ -192,7 +199,7 @@ export function ProfilePanel({
             className={`chip${activeSeg === 'stats' ? ' is-active' : ''}`}
             onClick={() => setSeg('stats')}
           >
-            Statistiken
+            {t('stats')}
           </button>
         )}
         <button
@@ -203,7 +210,7 @@ export function ProfilePanel({
           data-tour="profile-settings"
           onClick={() => setSeg('settings')}
         >
-          Einstellungen
+          {t('settings')}
         </button>
       </div>
 
@@ -219,8 +226,7 @@ export function ProfilePanel({
       {activeSeg === 'stats' && !monkMode && (
         <section className="profile-panel">
           <div className="block__head">
-            <h2>Statistiken</h2>
-            <span>tippen für Verlauf</span>
+            <h2>{t('stats')}</h2>
           </div>
           <CategoryStats
             entries={entries}
@@ -232,13 +238,13 @@ export function ProfilePanel({
           {historyCategory && (
             <>
               <div className="block__head">
-                <h2>Verlauf</h2>
+                <h2>{t('stats')}</h2>
                 <button
                   type="button"
                   className="section__close"
                   onClick={() => setHistoryCategory(null)}
                 >
-                  schließen
+                  {t('close')}
                 </button>
               </div>
               <EntryList
@@ -254,11 +260,11 @@ export function ProfilePanel({
       {activeSeg === 'settings' && (
         <section className="profile-panel profile-panel--settings">
           <div className="block__head">
-            <h2>Einstellungen</h2>
+            <h2>{t('settings')}</h2>
           </div>
 
           <div className="settings-group">
-            <label htmlFor="display-name">Anzeigename</label>
+            <label htmlFor="display-name">{t('display_name')}</label>
             <input
               id="display-name"
               value={displayName}
@@ -278,18 +284,32 @@ export function ProfilePanel({
               disabled={uploading || !userId}
               onClick={() => fileRef.current?.click()}
             >
-              {uploading ? 'Upload…' : 'Bild ändern'}
+              {uploading ? t('uploading') : t('change_photo')}
             </button>
+          </div>
+
+          <div className="settings-group">
+            <label htmlFor="ui-locale">{t('language')}</label>
+            <p className="profile__switch-hint">{t('language_hint')}</p>
+            <select
+              id="ui-locale"
+              value={locale}
+              onChange={(e) => onLocaleChange(e.target.value as Locale)}
+            >
+              {LOCALES.map((opt) => (
+                <option key={opt.id} value={opt.id}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="settings-group settings-group--switches">
             {onMonkModeChange && (
               <label className="profile__switch" htmlFor="monk-mode">
                 <span>
-                  <strong>Mönchsmodus</strong>
-                  <span className="profile__switch-hint">
-                    Blendet Eintragen, Rang, Rangliste, Empfehlungen, Statistiken und Intensität aus
-                  </span>
+                  <strong>{t('monk_mode')}</strong>
+                  <span className="profile__switch-hint">{t('monk_hint')}</span>
                 </span>
                 <input
                   id="monk-mode"
@@ -303,9 +323,9 @@ export function ProfilePanel({
             {onRankedAnonymousChange && (
               <label className="profile__switch" htmlFor="ranked-anon">
                 <span>
-                  <strong>Rangliste anonym</strong>
+                  <strong>{t('ranked_anon')}</strong>
                   <span className="profile__switch-hint">
-                    In der Rangliste als Anonym erscheinen
+                    {t('ranked_anon_hint')}
                   </span>
                 </span>
                 <input
@@ -319,12 +339,10 @@ export function ProfilePanel({
           </div>
 
           <div className="settings-group settings-group--danger">
-            <p className="profile__stat">
-              Logout oder Konto unwiderruflich löschen (inkl. Cloud-Daten).
-            </p>
+            <p className="profile__stat">{t('delete_warn')}</p>
             <div className="profile__account-actions">
               <button type="button" className="btn" onClick={onLogout}>
-                Logout
+                {t('logout')}
               </button>
               {!confirmDelete ? (
                 <button
@@ -333,13 +351,11 @@ export function ProfilePanel({
                   disabled={!userId || deleting}
                   onClick={() => setConfirmDelete(true)}
                 >
-                  Konto löschen
+                  {t('delete_account')}
                 </button>
               ) : (
                 <div className="profile__delete-confirm">
-                  <p className="friends__error">
-                    Wirklich alles löschen? Das geht nicht zurück.
-                  </p>
+                  <p className="friends__error">{t('delete_confirm')}</p>
                   <div className="session__actions">
                     <button
                       type="button"
@@ -347,7 +363,7 @@ export function ProfilePanel({
                       disabled={deleting}
                       onClick={() => setConfirmDelete(false)}
                     >
-                      Abbrechen
+                      {t('cancel')}
                     </button>
                     <button
                       type="button"
@@ -355,7 +371,7 @@ export function ProfilePanel({
                       disabled={deleting || !userId}
                       onClick={() => void handleDeleteAccount()}
                     >
-                      {deleting ? 'Löschen…' : 'Endgültig löschen'}
+                      {deleting ? t('deleting') : t('delete_final')}
                     </button>
                   </div>
                 </div>

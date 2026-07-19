@@ -4,6 +4,7 @@ import {
   fetchProfileByCode,
   sendFriendRequest,
 } from '../lib/cloud'
+import { useLocale } from '../lib/LocaleContext'
 
 type AddFriendControlProps = {
   userId?: string
@@ -19,6 +20,7 @@ export function AddFriendControl({
   className,
   collapsible = true,
 }: AddFriendControlProps) {
+  const { t } = useLocale()
   const [open, setOpen] = useState(!collapsible)
   const [paste, setPaste] = useState('')
   const [copied, setCopied] = useState(false)
@@ -33,13 +35,13 @@ export function AddFriendControl({
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1400)
     } catch {
-      setError('Kopieren fehlgeschlagen.')
+      setError('Copy failed.')
     }
   }
 
   async function sendFriendInvite() {
     if (!userId || !cloudEnabled) {
-      setError('Cloud nicht konfiguriert.')
+      setError('Cloud not configured.')
       return
     }
     setError(null)
@@ -53,7 +55,7 @@ export function AddFriendControl({
     }
     if (found.profile.id === userId) {
       setBusy(false)
-      setError('Das ist dein eigener Code.')
+      setError('That is your own code.')
       return
     }
     const sent = await sendFriendRequest(userId, found.profile.id)
@@ -63,7 +65,7 @@ export function AddFriendControl({
       return
     }
     setPaste('')
-    setStatus('Anfrage gesendet')
+    setStatus('OK')
     if (collapsible) setOpen(false)
   }
 
@@ -74,19 +76,19 @@ export function AddFriendControl({
       {open ? (
         <div className="friends__add-panel">
           <div className="block__head">
-            <h3>Freund hinzufügen</h3>
+            <h3>{t('add_friend_title')}</h3>
             {collapsible && (
               <button
                 type="button"
                 className="section__close"
                 onClick={() => setOpen(false)}
               >
-                schließen
+                {t('close')}
               </button>
             )}
           </div>
           <div className="friends__share">
-            <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren.</p>
+            <p>{t('your_code')}</p>
             <input className="friends__code" readOnly value={cloudCode || '…'} />
             <button
               type="button"
@@ -94,11 +96,11 @@ export function AddFriendControl({
               onClick={() => void copyFriendCode()}
               disabled={!cloudCode}
             >
-              {copied ? 'Kopiert' : 'Code kopieren'}
+              {copied ? t('copied') : t('copy_code')}
             </button>
           </div>
           <div className="friends__add">
-            <label htmlFor="add-friend-code">Freund-Code</label>
+            <label htmlFor="add-friend-code">{t('friend_code')}</label>
             <input
               id="add-friend-code"
               placeholder="AB12CD"
@@ -115,7 +117,7 @@ export function AddFriendControl({
               onClick={() => void sendFriendInvite()}
               disabled={busy || !userId}
             >
-              Anfrage senden
+              {t('send_request')}
             </button>
             {status && <p className="friends__status">{status}</p>}
             {error && <p className="friends__error">{error}</p>}
@@ -127,7 +129,7 @@ export function AddFriendControl({
           className="friends__add-fab"
           onClick={() => setOpen(true)}
         >
-          + Freund
+          {t('add_friend')}
         </button>
       )}
     </div>

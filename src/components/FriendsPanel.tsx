@@ -28,6 +28,7 @@ import { Avatar } from './Avatar'
 import { AddFriendControl } from './AddFriendControl'
 import { GoonFeed } from './GoonFeed'
 import { PublicProfileView } from './PublicProfileView'
+import { useLocale } from '../lib/LocaleContext'
 
 type FriendsPanelProps = {
   me: FriendSnapshot
@@ -65,6 +66,7 @@ export function FriendsPanel({
   onRemoveLocal,
   onViewedOtherProfile,
 }: FriendsPanelProps) {
+  const { t } = useLocale()
   const [view, setView] = useState<FriendsView>('compare')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
@@ -396,7 +398,7 @@ export function FriendsPanel({
           className={`chip${view === 'compare' ? ' is-active' : ''}`}
           onClick={() => setView('compare')}
         >
-          Vergleich
+          {t('compare')}
         </button>
         <button
           type="button"
@@ -404,7 +406,7 @@ export function FriendsPanel({
           data-tour="friends-feed"
           onClick={() => setView('feed')}
         >
-          Feed
+          {t('feed')}
         </button>
         {!hideRecs && (
           <button
@@ -412,17 +414,17 @@ export function FriendsPanel({
             className={`chip${view === 'recs' ? ' is-active' : ''}`}
             onClick={() => setView('recs')}
           >
-            <span className="friends__tab-short">Tipps</span>
-            <span className="friends__tab-full">Empfehlungen</span>
+            <span className="friends__tab-short">{t('tips_short')}</span>
+            <span className="friends__tab-full">{t('tips_full')}</span>
           </button>
         )}
         <div className="friends__filters friends__filters--tabs">
           <select
             value={categoryFilter}
             onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-            aria-label="Kategorie"
+            aria-label={t('category')}
           >
-            <option value="all">Alle Kategorien</option>
+            <option value="all">{t('all_categories')}</option>
             {CATEGORIES.map((c) => (
               <option key={c} value={c}>
                 {CATEGORY_META[c].label}
@@ -459,11 +461,8 @@ export function FriendsPanel({
         <div className="friends__board">
           {friends.length === 0 && (
             <div className="friends__empty-invite">
-              <h3>Lade deinen ersten Freund ein</h3>
-              <p>
-                Noch niemand hier außer dir. Teile deinen Code oder füge einen
-                Freund-Code ein — danach könnt ihr vergleichen.
-              </p>
+              <h3>{t('first_friend_title')}</h3>
+              <p>{t('first_friend_body')}</p>
               <AddFriendControl
                 cloudCode={myCode || cloudCode}
                 userId={meId}

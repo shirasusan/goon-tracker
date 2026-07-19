@@ -2,15 +2,17 @@ import { useState } from 'react'
 import { Avatar } from './Avatar'
 import { AddFriendControl } from './AddFriendControl'
 import { IconFriends, IconHome, IconRanked } from './NavIcons'
+import { useLocale } from '../lib/LocaleContext'
+import type { MsgId } from '../lib/i18n'
 
 export type TabId = 'home' | 'friends' | 'ranked' | 'profile'
 
-const ALL_TABS: { id: TabId; label: string }[] = [
-  { id: 'home', label: 'Start' },
-  { id: 'friends', label: 'Freunde' },
-  { id: 'ranked', label: 'Rangliste' },
-  { id: 'profile', label: 'Profil' },
-]
+const TAB_MSG: Record<TabId, MsgId> = {
+  home: 'nav_home',
+  friends: 'nav_friends',
+  ranked: 'nav_ranked',
+  profile: 'nav_profile',
+}
 
 type BottomNavProps = {
   active: TabId | null
@@ -35,7 +37,12 @@ export function BottomNav({
   goonStreak,
   dryStreak,
 }: BottomNavProps) {
-  const tabs = hideRanked ? ALL_TABS.filter((t) => t.id !== 'ranked') : ALL_TABS
+  const { t } = useLocale()
+  const tabIds = (
+    hideRanked
+      ? (['home', 'friends', 'profile'] as TabId[])
+      : (['home', 'friends', 'ranked', 'profile'] as TabId[])
+  )
   const [bounceId, setBounceId] = useState<TabId | null>(null)
 
   function select(id: TabId) {
@@ -44,13 +51,13 @@ export function BottomNav({
     window.setTimeout(() => setBounceId((cur) => (cur === id ? null : cur)), 280)
   }
 
-  function renderIcon(tab: { id: TabId; label: string }) {
-    if (tab.id === 'profile') {
+  function renderIcon(tabId: TabId) {
+    if (tabId === 'profile') {
       return (
         <span className="bottom-nav__avatar">
           <Avatar
             src={avatarUrl}
-            name={displayName || 'Profil'}
+            name={displayName || t('nav_profile')}
             size="sm"
             goonStreak={goonStreak}
             dryStreak={dryStreak}
@@ -60,7 +67,7 @@ export function BottomNav({
     }
 
     const iconClass = 'bottom-nav__icon'
-    switch (tab.id) {
+    switch (tabId) {
       case 'home':
         return (
           <span className={iconClass}>
@@ -87,21 +94,21 @@ export function BottomNav({
   return (
     <nav
       className="bottom-nav"
-      aria-label="Hauptnavigation"
-      style={{ ['--nav-cols' as string]: String(tabs.length) }}
+      aria-label={t('nav_menu')}
+      style={{ ['--nav-cols' as string]: String(tabIds.length) }}
     >
-      <p className="bottom-nav__overview">Menü</p>
-      {tabs.map((tab) => (
+      <p className="bottom-nav__overview">{t('nav_menu')}</p>
+      {tabIds.map((tabId) => (
         <button
-          key={tab.id}
+          key={tabId}
           type="button"
-          data-tour={`nav-${tab.id}`}
-          className={`bottom-nav__btn${active === tab.id ? ' is-active' : ''}${bounceId === tab.id ? ' is-bounce' : ''}`}
-          onClick={() => select(tab.id)}
-          aria-current={active === tab.id ? 'page' : undefined}
+          data-tour={`nav-${tabId}`}
+          className={`bottom-nav__btn${active === tabId ? ' is-active' : ''}${bounceId === tabId ? ' is-bounce' : ''}`}
+          onClick={() => select(tabId)}
+          aria-current={active === tabId ? 'page' : undefined}
         >
-          {renderIcon(tab)}
-          <span className="bottom-nav__label">{tab.label}</span>
+          {renderIcon(tabId)}
+          <span className="bottom-nav__label">{t(TAB_MSG[tabId])}</span>
         </button>
       ))}
       <AddFriendControl

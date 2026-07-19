@@ -12,7 +12,7 @@ export type RankInfo = {
 export const RANKS: RankInfo[] = [
   {
     id: 'unranked',
-    title: 'Ohne Rang',
+    title: 'Unranked',
     flavor: 'Unranked',
     minHours: 0,
     maxHours: 2,
@@ -20,7 +20,7 @@ export const RANKS: RankInfo[] = [
   },
   {
     id: 'bronze',
-    title: 'Bronze',
+    title: 'Bronze Beater',
     flavor: 'Bronze Beater',
     minHours: 2,
     maxHours: 5,
@@ -28,7 +28,7 @@ export const RANKS: RankInfo[] = [
   },
   {
     id: 'silver',
-    title: 'Silber',
+    title: 'Silver Stroker',
     flavor: 'Silver Stroker',
     minHours: 5,
     maxHours: 10,
@@ -36,7 +36,7 @@ export const RANKS: RankInfo[] = [
   },
   {
     id: 'golden',
-    title: 'Gold',
+    title: 'Golden Gooner',
     flavor: 'Golden Gooner',
     minHours: 10,
     maxHours: 20,
@@ -44,7 +44,7 @@ export const RANKS: RankInfo[] = [
   },
   {
     id: 'emerald',
-    title: 'Smaragd',
+    title: 'Emerald Edger',
     flavor: 'Emerald Edger',
     minHours: 20,
     maxHours: 30,
@@ -52,7 +52,7 @@ export const RANKS: RankInfo[] = [
   },
   {
     id: 'platinum',
-    title: 'Platin',
+    title: 'Platinum Puller',
     flavor: 'Platinum Puller',
     minHours: 30,
     maxHours: 40,
@@ -60,7 +60,7 @@ export const RANKS: RankInfo[] = [
   },
   {
     id: 'grandmaster',
-    title: 'Großmeister',
+    title: 'Grandmaster Gripgod',
     flavor: 'Grandmaster Gripgod',
     minHours: 40,
     maxHours: 10_000_000,

@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { CATEGORIES, CATEGORY_META, type Category } from '../types'
+import { useLocale } from '../lib/LocaleContext'
 
 type CategoryPickerProps = {
   onLog: (
@@ -18,6 +19,7 @@ function clampMinutes(n: number) {
 }
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
+  const { t } = useLocale()
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<1 | 2 | 3>(1)
   const [drafts, setDrafts] = useState<Drafts>({})
@@ -93,7 +95,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
         <span className="new-entry__plus" aria-hidden>
           +
         </span>
-        <span className="new-entry__label">Neuer Eintrag</span>
+        <span className="new-entry__label">{t('new_entry')}</span>
       </button>
     )
   }
@@ -108,9 +110,9 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
       {step === 1 && (
         <>
           <div className="session__head">
-            <p className="session__label">Kategorie</p>
+            <p className="session__label">{t('category')}</p>
             <button type="button" className="section__close" onClick={close}>
-              schließen
+              {t('close')}
             </button>
           </div>
           <div className="cat-grid">
@@ -159,8 +161,8 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
                           min={1}
                           max={MAX_MINUTES}
                           step={1}
-                          placeholder="Minuten"
-                          aria-label={`Minuten für ${meta.label}`}
+                          placeholder={t('minutes_placeholder')}
+                          aria-label={`${t('minutes')} ${meta.label}`}
                           autoFocus
                           value={
                             activeMinutes != null && activeMinutes >= 1
@@ -192,7 +194,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
               className="btn btn--solid"
               onClick={() => setStep(2)}
             >
-              Weiter · {totalMinutes}m
+              {t('next')} · {totalMinutes}m
             </button>
           )}
         </>
@@ -203,11 +205,11 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
           <div className="session__head">
             <p className="session__label">Goonometer</p>
             <button type="button" className="section__close" onClick={close}>
-              schließen
+              {t('close')}
             </button>
           </div>
           {summaryLabel && <p className="session__sub">{summaryLabel}</p>}
-          <p className="session__sub">Wie intensiv war die Session? (0–10)</p>
+          <p className="session__sub">{t('goonometer_hint')}</p>
           <div className="duration__value">
             <strong>{goonometer}</strong>
             <span>/ 10</span>
@@ -222,10 +224,10 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
           />
           <div className="session__actions">
             <button type="button" className="btn" onClick={() => setStep(1)}>
-              Zurück
+              {t('back')}
             </button>
             <button type="button" className="btn btn--solid" onClick={() => setStep(3)}>
-              Weiter
+              {t('next')}
             </button>
           </div>
         </>
@@ -234,28 +236,28 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
       {step === 3 && selected.length > 0 && (
         <>
           <div className="session__head">
-            <p className="session__label">Kommentar</p>
+            <p className="session__label">{t('comment')}</p>
             <button type="button" className="section__close" onClick={close}>
-              schließen
+              {t('close')}
             </button>
           </div>
-          <p className="session__sub">Optional — erscheint im Freunde-Feed</p>
+          <p className="session__sub">{t('comment_optional')}</p>
           {summaryLabel && <p className="session__sub">{summaryLabel}</p>}
           <textarea
             className="session__comment"
             value={comment}
             maxLength={280}
             rows={3}
-            placeholder="Was ging ab…"
+            placeholder={t('comment_placeholder')}
             onChange={(e) => setComment(e.target.value)}
           />
           <p className="session__sub">{comment.length}/280</p>
           <div className="session__actions">
             <button type="button" className="btn" onClick={() => setStep(2)}>
-              Zurück
+              {t('back')}
             </button>
             <button type="button" className="btn btn--solid" onClick={submit}>
-              Speichern · {totalMinutes}m · G{goonometer}
+              {t('save')} · {totalMinutes}m · G{goonometer}
             </button>
           </div>
         </>

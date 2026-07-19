@@ -1,11 +1,13 @@
 import { useState, type FormEvent } from 'react'
 import { cloudEnabled, loginUser, registerUser } from '../lib/cloud'
+import { useLocale } from '../lib/LocaleContext'
 
 type AuthScreenProps = {
   onAuthed: (info: { userId: string; username: string }) => void
 }
 
 export function AuthScreen({ onAuthed }: AuthScreenProps) {
+  const { t } = useLocale()
   const [mode, setMode] = useState<'login' | 'register'>('login')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -40,9 +42,7 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
   return (
     <div className="auth">
       <h1 className="auth__hero-brand">Goon Tracker</h1>
-      <p className="auth__value">
-        Tracke Sessions, baue Streaks und vergleiche dich mit Freunden.
-      </p>
+      <p className="auth__value">{t('auth_value')}</p>
 
       <p className="auth__mode">{mode === 'login' ? 'Anmelden' : 'Registrieren'}</p>
 

@@ -1,5 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react'
 import { TOUR_STEPS } from '../lib/tour'
+import { useLocale } from '../lib/LocaleContext'
 
 type CoachTourProps = {
   stepIndex: number
@@ -86,6 +87,7 @@ function clamp(n: number, min: number, max: number) {
 }
 
 export function CoachTour({ stepIndex, onNext, onSkip }: CoachTourProps) {
+  const { t } = useLocale()
   const step = TOUR_STEPS[Math.min(stepIndex, TOUR_STEPS.length - 1)]
   const [spot, setSpot] = useState<Spot | null>(null)
   const [card, setCard] = useState<CardPos>(() => placeCard(null))
@@ -161,7 +163,7 @@ export function CoachTour({ stepIndex, onNext, onSkip }: CoachTourProps) {
         <p>{step.body}</p>
         <div className="coach-tour__actions">
           <button type="button" className="btn" onClick={onSkip}>
-            Überspringen
+            {t('skip')}
           </button>
           <button type="button" className="btn btn--solid" onClick={onNext}>
             {step.cta}

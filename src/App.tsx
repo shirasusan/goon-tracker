@@ -47,13 +47,15 @@ import {
 import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import { loadTour, saveTour, shouldShowTour, TOUR_STEPS, type TourState } from './lib/tour'
 import type { Category, FriendSnapshot, TrackerData } from './types'
+import { useLocale } from './lib/LocaleContext'
+import type { MsgId } from './lib/i18n'
 import './App.css'
 
-const PAGE_META: Record<TabId, { title: string }> = {
-  home: { title: 'Start' },
-  friends: { title: 'Freunde' },
-  ranked: { title: 'Rangliste' },
-  profile: { title: 'Profil' },
+const PAGE_MSG: Record<TabId, MsgId> = {
+  home: 'nav_home',
+  friends: 'nav_friends',
+  ranked: 'nav_ranked',
+  profile: 'nav_profile',
 }
 
 /** Auto-refresh cloud account data */
@@ -64,6 +66,7 @@ function newId() {
 }
 
 export default function App() {
+  const { t, locale, setLocale } = useLocale()
   const [data, setData] = useState<TrackerData>(() =>
     cloudEnabled ? emptyData() : loadData(),
   )
@@ -453,7 +456,7 @@ export default function App() {
     return (
       <div className="shell shell--auth">
         <p className="empty" style={{ padding: '2rem', textAlign: 'center' }}>
-          Laden…
+          {t('loading')}
         </p>
       </div>
     )
@@ -467,9 +470,9 @@ export default function App() {
     )
   }
 
-  const page = PAGE_META[tab]
+  const page = { title: t(PAGE_MSG[tab]) }
   const displayLabel =
-    data.profile.name.trim() || data.profile.username || 'Profil'
+    data.profile.name.trim() || data.profile.username || t('nav_profile')
   const activeUnlock = unlockQueue[0] ?? null
   const monkMode = Boolean(data.profile.monkMode)
   const rankedAnonymous = Boolean(data.profile.rankedAnonymous)
@@ -552,6 +555,8 @@ export default function App() {
               onMonkModeChange={setMonkMode}
               rankedAnonymous={rankedAnonymous}
               onRankedAnonymousChange={setRankedAnonymous}
+              locale={locale}
+              onLocaleChange={setLocale}
             />
           ) : (
             <>
@@ -597,7 +602,7 @@ export default function App() {
                   {!monkMode && (
                     <section className="home-compose__primary">
                       <div className="block__head">
-                        <h2>Heute</h2>
+                        <h2>{t('today')}</h2>
                         {todayEntries.length > 0 && (
                           <span>{formatMinutes(todayMinutes)}</span>
                         )}
