@@ -490,40 +490,16 @@ export function FriendsPanel({
                   onClick={row._you ? undefined : () => void openProfile(row.id)}
                 />
                 <div className="leaderboard__main compare-row__main">
-                  <div className="compare-row__top">
-                    <button
-                      type="button"
-                      className="leaderboard__name-btn"
-                      onClick={row._you ? undefined : () => void openProfile(row.id)}
-                    >
-                      <strong>
-                        {row.name}
-                        {row._you ? ' · du' : ''}
-                      </strong>
-                    </button>
-                    <span
-                      className={`compare-streak${
-                        row.goonStreak > 0
-                          ? ' compare-streak--goon'
-                          : row.dryStreak > 0
-                            ? ' compare-streak--focus'
-                            : ''
-                      }`}
-                      title={
-                        row.goonStreak > 0
-                          ? `Goon Streak ${row.goonStreak}`
-                          : row.dryStreak > 0
-                            ? `Focus Streak ${row.dryStreak}`
-                            : 'Keine Streak'
-                      }
-                    >
-                      {row.goonStreak > 0
-                        ? row.goonStreak
-                        : row.dryStreak > 0
-                          ? row.dryStreak
-                          : 0}
-                    </span>
-                  </div>
+                  <button
+                    type="button"
+                    className="leaderboard__name-btn"
+                    onClick={row._you ? undefined : () => void openProfile(row.id)}
+                  >
+                    <strong>
+                      {row.name}
+                      {row._you ? ' · du' : ''}
+                    </strong>
+                  </button>
                   <span>
                     Lv {row.level} · {formatMinutes(row._metric)}
                     {categoryFilter !== 'all' ? (
@@ -537,6 +513,28 @@ export function FriendsPanel({
                     ) : null}
                   </span>
                 </div>
+                <span
+                  className={`compare-streak${
+                    row.goonStreak > 0
+                      ? ' compare-streak--goon'
+                      : row.dryStreak > 0
+                        ? ' compare-streak--focus'
+                        : ''
+                  }`}
+                  title={
+                    row.goonStreak > 0
+                      ? `Goon-Streak ${row.goonStreak}`
+                      : row.dryStreak > 0
+                        ? `Focus-Streak ${row.dryStreak}`
+                        : 'Keine Streak'
+                  }
+                >
+                  {row.goonStreak > 0
+                    ? row.goonStreak
+                    : row.dryStreak > 0
+                      ? row.dryStreak
+                      : 0}
+                </span>
                 {!row._you && (
                   <button
                     type="button"

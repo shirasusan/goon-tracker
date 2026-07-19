@@ -548,36 +548,9 @@ export default function App() {
             <>
               {tab === 'home' && (
                 <div className="home-compose">
-                  {!monkMode && (
-                    <section className="home-compose__primary">
-                      <div className="block__head">
-                        <h2>Heute</h2>
-                        {todayEntries.length > 0 && (
-                          <span>{formatMinutes(todayMinutes)}</span>
-                        )}
-                      </div>
-                      <p className="home-compose__legend">
-                        Heute zählt für Streak · Season für Rangliste · Allzeit für Level
-                      </p>
-                      <CategoryPicker onLog={logCategory} />
-                      {flash && <p className="flash flash--pop">{flash}</p>}
-                    </section>
-                  )}
-
-                  <OnboardingChecklist
-                    hasProfileName={Boolean(data.profile.name.trim())}
-                    hasEntry={data.entries.length > 0}
-                    hasFriends={data.friends.length > 0}
-                    onGoProfile={() => setShowProfile(true)}
-                    onGoFriends={() => {
-                      setShowProfile(false)
-                      setTab('friends')
-                    }}
-                  />
-
                   <aside className="home-compose__overview">
                     {!monkMode ? (
-                      <div className="home-compose__metrics">
+                      <>
                         <div className="home-hero__rank">
                           <p className="eyebrow">Rang</p>
                           <RankBadge totalMinutes={totalMinutes} rank={rank} />
@@ -589,7 +562,6 @@ export default function App() {
                               key={streak}
                               value={streak}
                               embedded
-                              compact
                             />
                           </div>
                         </div>
@@ -602,7 +574,7 @@ export default function App() {
                             totalXp={level.xp}
                           />
                         </div>
-                      </div>
+                      </>
                     ) : (
                       <div className="home-compose__streak" aria-label="Streak">
                         <p className="eyebrow">Streak</p>
@@ -612,6 +584,34 @@ export default function App() {
                       </div>
                     )}
                   </aside>
+
+                  <OnboardingChecklist
+                    hasProfileName={Boolean(data.profile.name.trim())}
+                    hasEntry={data.entries.length > 0}
+                    hasFriends={data.friends.length > 0}
+                    onGoProfile={() => setShowProfile(true)}
+                    onGoFriends={() => {
+                      setShowProfile(false)
+                      setTab('friends')
+                    }}
+                  />
+
+                  {!monkMode && (
+                    <section className="home-compose__primary">
+                      <div className="block__head">
+                        <h2>Heute</h2>
+                        {todayEntries.length > 0 && (
+                          <span>{formatMinutes(todayMinutes)}</span>
+                        )}
+                      </div>
+                      <p className="home-compose__legend">
+                        Heute zählt für Streak · Saison für Rangliste · Allzeit für
+                        Level
+                      </p>
+                      <CategoryPicker onLog={logCategory} />
+                      {flash && <p className="flash flash--pop">{flash}</p>}
+                    </section>
+                  )}
                 </div>
               )}
 

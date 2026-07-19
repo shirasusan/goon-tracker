@@ -1659,27 +1659,17 @@ button.avatar {
   line-height: 1.35;
 }
 
-.home-compose__primary {
-  order: 0;
-}
-
 .home-compose__overview {
-  order: 1;
-  display: grid;
-  gap: 0.75rem;
-  padding: 1rem 0 0;
-  border-top: 1px solid var(--line-soft);
-  border-bottom: none;
-}
-
-.home-compose__metrics {
+  order: 2;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.75rem 1rem;
   align-items: start;
+  padding: 1rem 0 0;
+  border-top: 1px solid var(--line-soft);
 }
 
-.home-compose__metrics .home-hero__level {
+.home-compose__overview .home-hero__level {
   grid-column: 1 / -1;
 }
 
@@ -1688,6 +1678,14 @@ button.avatar {
   text-align: center;
   border-top: none;
   padding-top: 0;
+}
+
+.home-compose__primary {
+  order: 0;
+}
+
+.onboarding {
+  order: 1;
 }
 
 .onboarding {
@@ -2884,23 +2882,15 @@ button.avatar {
 }
 
 .compare-row.leaderboard__row {
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
   align-items: center;
 }
 
 .compare-row.leaderboard__row.is-you {
-  grid-template-columns: auto auto 1fr;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
 }
 
-.compare-row__top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.5rem;
-  min-width: 0;
-}
-
-.compare-row__top .leaderboard__name-btn {
+.compare-row__main {
   min-width: 0;
 }
 
@@ -2908,6 +2898,7 @@ button.avatar {
   display: inline-grid;
   place-items: center;
   flex-shrink: 0;
+  align-self: center;
   min-width: 1.85rem;
   padding: 0.2rem 0.35rem;
   font-family: 'Bricolage Grotesque', sans-serif;
@@ -2917,6 +2908,7 @@ button.avatar {
   font-variant-numeric: tabular-nums;
   color: var(--muted);
   line-height: 1;
+  white-space: nowrap;
 }
 
 .compare-streak--goon {
@@ -3317,27 +3309,32 @@ button.avatar {
 
   .home-compose {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+    grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
     gap: 2rem 2.5rem;
     align-items: start;
   }
 
-  .home-compose__primary {
-    order: 0;
-  }
-
   .home-compose__overview {
-    order: 1;
+    order: 0;
     display: grid;
     grid-template-columns: 1fr;
     gap: 1.35rem;
     padding: 0;
     border-top: none;
     border-bottom: none;
-    border-left: 1px solid var(--line-soft);
-    padding-left: 1.75rem;
+    border-right: 1px solid var(--line-soft);
+    padding-right: 1.75rem;
     position: sticky;
     top: 0.5rem;
+  }
+
+  .home-compose__primary {
+    order: 1;
+  }
+
+  .onboarding {
+    order: 2;
+    grid-column: 1 / -1;
   }
 
   .home-compose__overview .home-hero__level {
@@ -3386,18 +3383,18 @@ button.avatar {
 
   .ranked__body {
     display: grid;
-    grid-template-columns: minmax(16rem, 20rem) minmax(0, 1fr);
-    gap: 1.75rem 2.25rem;
+    grid-template-columns: 1fr;
+    gap: 1.25rem;
     align-items: start;
   }
 
   .ranked__progress {
-    position: sticky;
-    top: 0.5rem;
+    position: static;
     display: grid;
     gap: 0.85rem;
-    padding: 0 1.5rem 0 0;
-    border-right: 1px solid var(--line-soft);
+    padding: 0 0 1rem;
+    border-right: none;
+    border-bottom: 1px solid var(--line-soft);
   }
 
   .ranked__board {
