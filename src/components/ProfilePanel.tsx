@@ -76,13 +76,19 @@ export function ProfilePanel({
   const [error, setError] = useState<string | null>(null)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
+  const [editingName, setEditingName] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const nameRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (settingsNonce != null && settingsNonce > 0) {
       setSeg('settings')
     }
   }, [settingsNonce])
+
+  useEffect(() => {
+    if (editingName) nameRef.current?.select()
+  }, [editingName])
 
   const recent = useMemo(() => {
     if (!historyCategory) return []
@@ -128,18 +134,90 @@ export function ProfilePanel({
     <div className="profile page-stack">
       <header className="panel-hero">
         <div className="panel-hero__identity">
-          <Avatar
-            src={avatarUrl}
-            name={displayName}
-            goonStreak={goonStreak}
-            dryStreak={dryStreak}
-            size="lg"
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={(e) => {
+              void onPickAvatar(e.target.files?.[0])
+              e.target.value = ''
+            }}
           />
+          <button
+            type="button"
+            className={`panel-hero__avatar${uploading ? ' is-busy' : ''}`}
+            disabled={uploading || !userId}
+            onClick={() => fileRef.current?.click()}
+            aria-label={uploading ? t('uploading') : t('change_photo')}
+          >
+            <Avatar
+              src={avatarUrl}
+              name={displayName}
+              goonStreak={goonStreak}
+              dryStreak={dryStreak}
+              size="lg"
+            />
+            <span className="panel-hero__avatar-edit" aria-hidden>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+                <path
+                  d="M12 20h9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
+                <path
+                  d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </span>
+          </button>
           <div className="panel-hero__text">
-            <h1 className="panel-hero__name">{displayName.trim() || 'Anon'}</h1>
+            {editingName ? (
+              <input
+                ref={nameRef}
+                className="panel-hero__name-input"
+                value={displayName}
+                maxLength={24}
+                aria-label={t('display_name')}
+                onChange={(e) => onNameChange(e.target.value)}
+                onBlur={() => setEditingName(false)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === 'Escape') {
+                    e.preventDefault()
+                    setEditingName(false)
+                  }
+                }}
+              />
+            ) : (
+              <div className="panel-hero__name-row">
+                <h1 className="panel-hero__name">{displayName.trim() || 'Anon'}</h1>
+                <button
+                  type="button"
+                  className="panel-hero__name-edit"
+                  aria-label={t('display_name')}
+                  onClick={() => setEditingName(true)}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden>
+                    <path
+                      d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                </button>
+              </div>
+            )}
             <p className="profile__user">@{username || '—'}</p>
           </div>
         </div>
+        {error && activeSeg !== 'settings' && (
+          <p className="friends__error">{error}</p>
+        )}
       </header>
 
       <div className="metric-strip" role="group" aria-label={t('overview')}>
@@ -253,46 +331,6 @@ export function ProfilePanel({
         <section className="profile-panel profile-panel--settings">
           <div className="block__head">
             <h2>{t('settings')}</h2>
-          </div>
-
-          <div className="settings-group">
-            <h3 className="settings-group__title">{t('nav_profile')}</h3>
-            <div className="settings-profile">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                hidden
-                onChange={(e) => void onPickAvatar(e.target.files?.[0])}
-              />
-              <button
-                type="button"
-                className="settings-profile__avatar"
-                disabled={uploading || !userId}
-                onClick={() => fileRef.current?.click()}
-                aria-label={uploading ? t('uploading') : t('change_photo')}
-              >
-                <Avatar
-                  src={avatarUrl}
-                  name={displayName}
-                  goonStreak={goonStreak}
-                  dryStreak={dryStreak}
-                  size="lg"
-                />
-              </button>
-              <div className="settings-profile__fields">
-                <label htmlFor="display-name">{t('display_name')}</label>
-                <input
-                  id="display-name"
-                  value={displayName}
-                  maxLength={24}
-                  onChange={(e) => onNameChange(e.target.value)}
-                />
-                <p className="profile__switch-hint">
-                  {uploading ? t('uploading') : t('change_photo_hint')}
-                </p>
-              </div>
-            </div>
           </div>
 
           <div className="settings-group">

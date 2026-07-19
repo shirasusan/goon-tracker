@@ -1277,77 +1277,6 @@
   border-top-color: color-mix(in srgb, var(--danger) 35%, var(--line-soft));
 }
 
-.settings-profile {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 0.85rem 1rem;
-  align-items: start;
-}
-
-.settings-profile__avatar {
-  appearance: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  cursor: pointer;
-  border-radius: 50%;
-  transition:
-    transform 0.15s ease,
-    opacity 0.15s ease,
-    box-shadow 0.15s ease;
-}
-
-.settings-profile__avatar:hover:not(:disabled) {
-  transform: scale(1.03);
-}
-
-.settings-profile__avatar:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--goon) 65%, transparent);
-}
-
-.settings-profile__avatar:disabled {
-  opacity: 0.65;
-  cursor: wait;
-}
-
-.settings-profile__fields {
-  display: grid;
-  gap: 0.35rem;
-  min-width: 0;
-  align-content: start;
-  padding-top: 0.15rem;
-}
-
-.settings-profile__fields label {
-  margin: 0;
-  color: var(--muted);
-  font-size: 0.78rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
-}
-
-.profile-panel--settings .settings-profile__fields input {
-  width: 100%;
-  border: none;
-  border-bottom: 1px solid var(--line);
-  background: transparent;
-  border-radius: 0;
-  padding: 0.55rem 0.1rem;
-  color: var(--ink);
-  font: inherit;
-  font-size: 1.05rem;
-  font-weight: 600;
-  min-height: var(--touch, 2.75rem);
-  transition: border-color 0.15s ease;
-}
-
-.profile-panel--settings .settings-profile__fields input:focus {
-  outline: none;
-  border-bottom-color: color-mix(in srgb, var(--goon) 55%, var(--line));
-}
-
 .settings-lang {
   width: 100%;
   margin-top: 0.15rem;
@@ -1756,10 +1685,77 @@ button.avatar {
   min-width: 0;
 }
 
+.panel-hero__avatar {
+  position: relative;
+  appearance: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: opacity 0.15s ease;
+}
+
+.panel-hero__avatar:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.panel-hero__avatar:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--bg), 0 0 0 4px color-mix(in srgb, var(--goon) 65%, transparent);
+}
+
+.panel-hero__avatar-edit {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, #000 55%, transparent);
+  color: #fff;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  pointer-events: none;
+}
+
+.panel-hero__avatar:hover .panel-hero__avatar-edit,
+.panel-hero__avatar:focus-visible .panel-hero__avatar-edit,
+.panel-hero__avatar.is-busy .panel-hero__avatar-edit {
+  opacity: 1;
+}
+
+@media (hover: none) {
+  .panel-hero__avatar-edit {
+    opacity: 1;
+    inset: auto 0 0 auto;
+    width: 1.65rem;
+    height: 1.65rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--line);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .panel-hero__avatar-edit svg {
+    width: 12px;
+    height: 12px;
+  }
+}
+
 .panel-hero__text {
   min-width: 0;
   display: grid;
   gap: 0.15rem;
+}
+
+.panel-hero__name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
 }
 
 .panel-hero__name {
@@ -1772,6 +1768,57 @@ button.avatar {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.panel-hero__name-edit {
+  appearance: none;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 1.65rem;
+  height: 1.65rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease;
+}
+
+.panel-hero__name-edit:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.panel-hero__name-edit:focus-visible {
+  outline: none;
+  color: var(--ink);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--goon) 55%, transparent);
+}
+
+.panel-hero__name-input {
+  width: 100%;
+  max-width: 16rem;
+  margin: 0;
+  border: none;
+  border-bottom: 1px solid var(--line);
+  border-radius: 0;
+  background: transparent;
+  padding: 0.15rem 0.1rem 0.35rem;
+  color: var(--ink);
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+}
+
+.panel-hero__name-input:focus {
+  outline: none;
+  border-bottom-color: color-mix(in srgb, var(--goon) 55%, var(--line));
 }
 
 .metric-strip {
