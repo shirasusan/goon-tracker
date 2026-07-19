@@ -258,7 +258,8 @@ export function FriendsPanel({
       return
     }
     setPaste('')
-    setStatus(`Anfrage an ${found.profile.name} gesendet — wartet auf Bestätigung`)
+    setStatus(null)
+    setShowAddFriend(false)
     const loaded = await loadFriendProfiles(user.userId)
     if (!('error' in loaded)) onFriendsSync(loaded.friends)
     await refreshIncoming(user.userId)
@@ -395,6 +396,69 @@ export function FriendsPanel({
 
   return (
     <div className="friends page-stack">
+      <header className="friends__header">
+        <div className="friends__header-text">
+          <p className="eyebrow">Social</p>
+          <h2 className="friends__title">Freunde</h2>
+        </div>
+        <button
+          type="button"
+          className="recs__add-btn"
+          aria-label="Freund hinzufügen"
+          onClick={() => setShowAddFriend(true)}
+        >
+          +
+        </button>
+      </header>
+
+      {incoming.length > 0 && (
+        <div className="friends__requests">
+          <h3>Anfragen</h3>
+          <ul className="friends__request-list">
+            {incoming.map((req) => (
+              <li key={req.id} className="friends__request-row">
+                <Avatar
+                  src={req.fromProfile?.avatarUrl}
+                  name={req.fromProfile?.name || 'User'}
+                  goonStreak={req.fromProfile?.goonStreak || 0}
+                  dryStreak={req.fromProfile?.dryStreak || 0}
+                  size="sm"
+                  onClick={
+                    req.fromProfile
+                      ? () => void openProfile(req.fromProfile!.id)
+                      : undefined
+                  }
+                />
+                <div className="friends__request-meta">
+                  <strong>
+                    {req.fromProfile?.username
+                      ? `@${req.fromProfile.username}`
+                      : req.fromProfile?.name || 'User'}
+                  </strong>
+                  <span>möchte befreundet sein</span>
+                </div>
+                <div className="friends__request-actions">
+                  <button
+                    type="button"
+                    className="btn btn--solid"
+                    onClick={() => void acceptRequest(req.id)}
+                  >
+                    Annehmen
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    onClick={() => void declineRequest(req.id)}
+                  >
+                    Ablehnen
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="friends__tabs">
         <button
           type="button"
@@ -433,179 +497,76 @@ export function FriendsPanel({
       )}
 
       {view === 'compare' && (
-        <>
-          {!showAddFriend ? (
-            <button
-              type="button"
-              className="btn btn--solid"
-              onClick={() => setShowAddFriend(true)}
-            >
-              Freunde hinzufügen
-            </button>
-          ) : (
-            <div className="friends__add-panel">
-              <div className="block__head">
-                <h3>Freunde hinzufügen</h3>
-                <button
-                  type="button"
-                  className="section__close"
-                  onClick={() => setShowAddFriend(false)}
-                >
-                  schließen
-                </button>
-              </div>
-              <div className="friends__share">
-                <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren:</p>
-                <input className="friends__code" readOnly value={myCode} />
-                <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
-                  {copied ? 'Kopiert' : 'Code kopieren'}
-                </button>
-                {status && <p className="friends__status">{status}</p>}
-              </div>
-
-              <div className="friends__add">
-                <label htmlFor="friend-code">Freund-Code</label>
-                <input
-                  id="friend-code"
-                  placeholder="AB12CD"
-                  value={paste}
-                  onChange={(e) => {
-                    setPaste(e.target.value.toUpperCase())
-                    setError(null)
-                  }}
-                />
-                <button
-                  type="button"
-                  className="btn btn--solid"
-                  onClick={() => void addFriend()}
-                  disabled={busy}
-                >
-                  Anfrage senden
-                </button>
-                {error && <p className="friends__error">{error}</p>}
-              </div>
-            </div>
-          )}
-
-          {incoming.length > 0 && (
-            <div className="friends__requests">
-              <h3>Anfragen</h3>
-              <ul className="friends__request-list">
-                {incoming.map((req) => (
-                  <li key={req.id} className="friends__request-row">
-                    <Avatar
-                      src={req.fromProfile?.avatarUrl}
-                      name={req.fromProfile?.name || 'User'}
-                      goonStreak={req.fromProfile?.goonStreak || 0}
-                      dryStreak={req.fromProfile?.dryStreak || 0}
-                      size="sm"
-                      onClick={
-                        req.fromProfile
-                          ? () => void openProfile(req.fromProfile!.id)
-                          : undefined
-                      }
-                    />
-                    <div className="friends__request-meta">
-                      <strong>
-                        {req.fromProfile?.username
-                          ? `@${req.fromProfile.username}`
-                          : req.fromProfile?.name || 'User'}
-                      </strong>
-                      <span>möchte befreundet sein</span>
-                    </div>
-                    <div className="friends__request-actions">
-                      <button
-                        type="button"
-                        className="btn btn--solid"
-                        onClick={() => void acceptRequest(req.id)}
-                      >
-                        Annehmen
-                      </button>
-                      <button
-                        type="button"
-                        className="btn"
-                        onClick={() => void declineRequest(req.id)}
-                      >
-                        Ablehnen
-                      </button>
-                    </div>
-                  </li>
+        <div className="friends__board">
+          <div className="friends__board-head">
+            <h3>Vergleich</h3>
+            <div className="friends__filters">
+              <select
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+                aria-label="Kategorie"
+              >
+                <option value="all">Alle Kategorien</option>
+                {CATEGORIES.map((c) => (
+                  <option key={c} value={c}>
+                    {CATEGORY_META[c].label}
+                  </option>
                 ))}
-              </ul>
+              </select>
             </div>
-          )}
-
-          <div className="friends__board">
-            <div className="friends__board-head">
-              <h3>Vergleich</h3>
-              <div className="friends__filters">
-                <select
-                  value={categoryFilter}
-                  onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-                  aria-label="Kategorie"
-                >
-                  <option value="all">Alle Kategorien</option>
-                  {CATEGORIES.map((c) => (
-                    <option key={c} value={c}>
-                      {CATEGORY_META[c].label}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <ol className="leaderboard compare-list">
-              {board.map((row, i) => (
-                <li
-                  key={row.id}
-                  className={`leaderboard__row compare-row${row._you ? ' is-you' : ''}`}
-                >
-                  <span className="leaderboard__rank">{i + 1}</span>
-                  <Avatar
-                    src={row.avatarUrl}
-                    name={row.name}
-                    goonStreak={row.goonStreak}
-                    dryStreak={row.dryStreak}
-                    size="sm"
-                    onClick={row._you ? undefined : () => void openProfile(row.id)}
-                  />
-                  <div className="leaderboard__main compare-row__main">
-                    <button
-                      type="button"
-                      className="leaderboard__name-btn"
-                      onClick={row._you ? undefined : () => void openProfile(row.id)}
-                    >
-                      <strong>
-                        {row.name}
-                        {row._you ? ' · du' : ''}
-                      </strong>
-                    </button>
-                    <span>
-                      Lv {row.level} · {formatMinutes(row._metric)}
-                      {categoryFilter !== 'all' ? (
-                        <span
-                          className="compare-cat-tag"
-                          style={{ color: CATEGORY_META[categoryFilter].color }}
-                        >
-                          {' '}
-                          · {CATEGORY_META[categoryFilter].label}
-                        </span>
-                      ) : null}
-                    </span>
-                  </div>
-                  {!row._you && (
-                    <button
-                      type="button"
-                      className="leaderboard__remove"
-                      onClick={() => void removeFriend(row.id)}
-                    >
-                      ×
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ol>
           </div>
-        </>
+          <ol className="leaderboard compare-list">
+            {board.map((row, i) => (
+              <li
+                key={row.id}
+                className={`leaderboard__row compare-row${row._you ? ' is-you' : ''}`}
+              >
+                <span className="leaderboard__rank">{i + 1}</span>
+                <Avatar
+                  src={row.avatarUrl}
+                  name={row.name}
+                  goonStreak={row.goonStreak}
+                  dryStreak={row.dryStreak}
+                  size="sm"
+                  onClick={row._you ? undefined : () => void openProfile(row.id)}
+                />
+                <div className="leaderboard__main compare-row__main">
+                  <button
+                    type="button"
+                    className="leaderboard__name-btn"
+                    onClick={row._you ? undefined : () => void openProfile(row.id)}
+                  >
+                    <strong>
+                      {row.name}
+                      {row._you ? ' · du' : ''}
+                    </strong>
+                  </button>
+                  <span>
+                    Lv {row.level} · {formatMinutes(row._metric)}
+                    {categoryFilter !== 'all' ? (
+                      <span
+                        className="compare-cat-tag"
+                        style={{ color: CATEGORY_META[categoryFilter].color }}
+                      >
+                        {' '}
+                        · {CATEGORY_META[categoryFilter].label}
+                      </span>
+                    ) : null}
+                  </span>
+                </div>
+                {!row._you && (
+                  <button
+                    type="button"
+                    className="leaderboard__remove"
+                    onClick={() => void removeFriend(row.id)}
+                  >
+                    ×
+                  </button>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
       )}
 
       {view === 'recs' && !hideRecs && (
@@ -730,6 +691,52 @@ export function FriendsPanel({
               {recs.length === 0 ? 'Noch keine Recommendations.' : 'Keine Treffer.'}
             </p>
           )}
+        </div>
+      )}
+
+      {showAddFriend && (
+        <div className="recs__modal" role="dialog" aria-modal="true">
+          <div className="recs__modal-card friends__add-modal">
+            <div className="block__head">
+              <h3>Freund hinzufügen</h3>
+              <button
+                type="button"
+                className="section__close"
+                onClick={() => setShowAddFriend(false)}
+              >
+                schließen
+              </button>
+            </div>
+            <div className="friends__share">
+              <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren:</p>
+              <input className="friends__code" readOnly value={myCode} />
+              <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
+                {copied ? 'Kopiert' : 'Code kopieren'}
+              </button>
+              {status && <p className="friends__status">{status}</p>}
+            </div>
+            <div className="friends__add">
+              <label htmlFor="friend-code">Freund-Code</label>
+              <input
+                id="friend-code"
+                placeholder="AB12CD"
+                value={paste}
+                onChange={(e) => {
+                  setPaste(e.target.value.toUpperCase())
+                  setError(null)
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--solid"
+                onClick={() => void addFriend()}
+                disabled={busy}
+              >
+                Anfrage senden
+              </button>
+              {error && <p className="friends__error">{error}</p>}
+            </div>
+          </div>
         </div>
       )}
     </div>

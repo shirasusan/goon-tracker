@@ -942,6 +942,39 @@
   gap: 1.05rem;
 }
 
+.friends__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.friends__header-text {
+  min-width: 0;
+  display: grid;
+  gap: 0.1rem;
+}
+
+.friends__title {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.35rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.friends__add-modal .friends__share {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.friends__add-modal .friends__share p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
 .friends__tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1644,7 +1677,7 @@ button.avatar {
 .friends__requests {
   display: grid;
   gap: 0.55rem;
-  margin-top: 0.35rem;
+  margin-top: 0;
 }
 
 .friends__requests h3 {

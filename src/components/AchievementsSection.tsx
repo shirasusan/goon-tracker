@@ -80,7 +80,7 @@ export function AchievementsSection({
         </div>
       </div>
 
-      {!showAll && next && (
+      {next && (
         <div className="ach-next">
           <span className="ach-next__label">Als Nächstes</span>
           <div className="ach-next__row">
