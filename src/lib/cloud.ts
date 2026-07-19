@@ -739,6 +739,7 @@ export async function createRecommendation(input: {
   authorName: string
   name: string
   link: string
+  category: Category
   imageFile?: File | null
   attachFile?: File | null
 }): Promise<{ error?: string }> {
@@ -746,6 +747,9 @@ export async function createRecommendation(input: {
   const name = input.name.trim()
   let link = input.link.trim()
   if (!name) return { error: 'Name nötig.' }
+  if (!CATEGORIES.includes(input.category)) {
+    return { error: 'Kategorie wählen.' }
+  }
   if (!link && !input.imageFile && !input.attachFile) {
     return { error: 'Link, Foto oder Datei nötig.' }
   }
@@ -780,11 +784,19 @@ export async function createRecommendation(input: {
     user_id: input.userId,
     name,
     link: link || '',
+    category: input.category,
     image_url: imageUrl ?? null,
     file_url: fileUrl ?? null,
     file_name: fileName ?? null,
   })
-  return error ? { error: error.message } : {}
+  if (error) {
+    return {
+      error: error.message.includes('category')
+        ? 'Tabelle fehlt Spalte. SQL aus supabase/rec_category.sql ausführen.'
+        : error.message,
+    }
+  }
+  return {}
 }
 
 export async function loadRecommendations(
@@ -802,12 +814,18 @@ export async function loadRecommendations(
 
   const { data, error } = await supabase
     .from('recommendations')
-    .select('id, user_id, name, link, image_url, file_url, file_name, created_at')
+    .select('id, user_id, name, link, category, image_url, file_url, file_name, created_at')
     .in('user_id', ids)
     .order('created_at', { ascending: false })
     .limit(50)
 
-  if (error) return { error: error.message }
+  if (error) {
+    return {
+      error: error.message.includes('category')
+        ? 'Tabelle fehlt Spalte. SQL aus supabase/rec_category.sql ausführen.'
+        : error.message,
+    }
+  }
 
   const { data: profiles } = await supabase
     .from('profiles')
@@ -819,17 +837,22 @@ export async function loadRecommendations(
   )
 
   return {
-    items: (data ?? []).map((r) => ({
-      id: r.id as string,
-      userId: r.user_id as string,
-      authorName: nameById.get(r.user_id as string) || 'Anon',
-      name: r.name as string,
-      link: (r.link as string) || '',
-      imageUrl: (r.image_url as string) || undefined,
-      fileUrl: (r.file_url as string) || undefined,
-      fileName: (r.file_name as string) || undefined,
-      createdAt: r.created_at as string,
-    })),
+    items: (data ?? []).map((r) => {
+      const cat = r.category as string | null
+      return {
+        id: r.id as string,
+        userId: r.user_id as string,
+        authorName: nameById.get(r.user_id as string) || 'Anon',
+        name: r.name as string,
+        link: (r.link as string) || '',
+        category:
+          cat && CATEGORIES.includes(cat as Category) ? (cat as Category) : undefined,
+        imageUrl: (r.image_url as string) || undefined,
+        fileUrl: (r.file_url as string) || undefined,
+        fileName: (r.file_name as string) || undefined,
+        createdAt: r.created_at as string,
+      }
+    }),
   }
 }
 

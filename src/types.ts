@@ -50,6 +50,7 @@ export type Recommendation = {
   authorName: string
   name: string
   link: string
+  category?: Category
   imageUrl?: string
   fileUrl?: string
   fileName?: string

@@ -9,19 +9,18 @@ import {
   deleteRecommendation,
   ensureCloudProfile,
   ensureCloudUser,
-  fetchProfileByCode,
   fetchProfileById,
   listIncomingFriendRequests,
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
   removeFriendship,
-  sendFriendRequest,
   type FriendRequestRow,
 } from '../lib/cloud'
 import {
   CATEGORIES,
   CATEGORY_META,
+  type Category,
   type FriendSnapshot,
   type GoonPost,
   type Recommendation,
@@ -36,7 +35,6 @@ type FriendsPanelProps = {
   displayName: string
   username?: string
   avatarUrl?: string
-  cloudCode?: string
   hideRecs?: boolean
   onCloudReady: (info: {
     cloudUserId: string
@@ -59,7 +57,6 @@ export function FriendsPanel({
   friends,
   displayName,
   username,
-  cloudCode,
   hideRecs,
   onCloudReady,
   onFriendsSync,
@@ -67,19 +64,17 @@ export function FriendsPanel({
   onViewedOtherProfile,
 }: FriendsPanelProps) {
   const [view, setView] = useState<FriendsView>('compare')
-  const [paste, setPaste] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [status, setStatus] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
-  const [showAddFriend, setShowAddFriend] = useState(false)
   const [incoming, setIncoming] = useState<FriendRequestRow[]>([])
   const [recs, setRecs] = useState<Recommendation[]>([])
   const [recQuery, setRecQuery] = useState('')
   const [showRecCreate, setShowRecCreate] = useState(false)
   const [recName, setRecName] = useState('')
   const [recLink, setRecLink] = useState('')
+  const [recCategory, setRecCategory] = useState<Category>('hentai')
   const [recImage, setRecImage] = useState<File | null>(null)
   const [recImagePreview, setRecImagePreview] = useState<string | null>(null)
   const [recFile, setRecFile] = useState<File | null>(null)
@@ -90,18 +85,23 @@ export function FriendsPanel({
   const [feedError, setFeedError] = useState<string | null>(null)
   const [feedBusy, setFeedBusy] = useState(false)
 
-  const myCode = cloudCode ?? '…'
-
   const filteredRecs = useMemo(() => {
     const q = recQuery.trim().toLowerCase()
-    if (!q) return recs
-    return recs.filter(
-      (r) =>
+    return recs.filter((r) => {
+      if (categoryFilter !== 'all' && r.category !== categoryFilter) return false
+      if (!q) return true
+      return (
         r.name.toLowerCase().includes(q) ||
         r.authorName.toLowerCase().includes(q) ||
-        r.link.toLowerCase().includes(q),
-    )
-  }, [recs, recQuery])
+        r.link.toLowerCase().includes(q)
+      )
+    })
+  }, [recs, recQuery, categoryFilter])
+
+  const filteredFeed = useMemo(() => {
+    if (categoryFilter === 'all') return feed
+    return feed.filter((p) => p.category === categoryFilter)
+  }, [feed, categoryFilter])
 
   useEffect(() => {
     if (hideRecs && view === 'recs') setView('compare')
@@ -197,7 +197,7 @@ export function FriendsPanel({
       cancelled = true
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [cloudCode])
+  }, [])
 
   async function openProfile(id: string) {
     const result = await fetchProfileById(id)
@@ -208,51 +208,9 @@ export function FriendsPanel({
     setViewing(result.profile)
   }
 
-  async function copyCode() {
-    if (!cloudCode) return
-    try {
-      await navigator.clipboard.writeText(cloudCode)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1400)
-    } catch {
-      setError('Kopieren fehlgeschlagen.')
-    }
-  }
-
   async function refreshIncoming(userId: string) {
     const reqs = await listIncomingFriendRequests(userId)
     if (!('error' in reqs)) setIncoming(reqs.requests)
-  }
-
-  async function addFriend() {
-    setError(null)
-    setStatus(null)
-    const user = await ensureCloudUser()
-    if ('error' in user) {
-      setError(user.error)
-      return
-    }
-    const found = await fetchProfileByCode(paste)
-    if ('error' in found) {
-      setError(found.error)
-      return
-    }
-    if (found.profile.id === user.userId) {
-      setError('Das ist dein eigener Code.')
-      return
-    }
-    const sent = await sendFriendRequest(user.userId, found.profile.id)
-    if (sent.error) {
-      setError(sent.error)
-      return
-    }
-    setPaste('')
-    setStatus(null)
-    setShowAddFriend(false)
-    const loaded = await loadFriendProfiles(user.userId)
-    if (!('error' in loaded)) onFriendsSync(loaded.friends)
-    await refreshIncoming(user.userId)
-    await refreshFeed(user.userId)
   }
 
   async function acceptRequest(id: string) {
@@ -308,6 +266,7 @@ export function FriendsPanel({
       authorName: displayName,
       name: recName,
       link: recLink,
+      category: recCategory,
       imageFile: recImage,
       attachFile: recFile,
     })
@@ -317,6 +276,7 @@ export function FriendsPanel({
     }
     setRecName('')
     setRecLink('')
+    setRecCategory('hentai')
     setRecImage(null)
     setRecFile(null)
     setShowRecCreate(false)
@@ -458,19 +418,28 @@ export function FriendsPanel({
             <span className="friends__tab-full">Recommendations</span>
           </button>
         )}
-        <button
-          type="button"
-          className="friends__invite-btn"
-          onClick={() => setShowAddFriend(true)}
-        >
-          <span className="friends__invite-short">+ Freund</span>
-          <span className="friends__invite-full">Freund hinzufügen</span>
-        </button>
+        <div className="friends__filters friends__filters--tabs">
+          <select
+            value={categoryFilter}
+            onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
+            aria-label="Kategorie"
+          >
+            <option value="all">Alle Kategorien</option>
+            {CATEGORIES.map((c) => (
+              <option key={c} value={c}>
+                {CATEGORY_META[c].label}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
+
+      {status && <p className="friends__status">{status}</p>}
+      {error && view !== 'recs' && <p className="friends__error">{error}</p>}
 
       {view === 'feed' && (
         <GoonFeed
-          posts={feed}
+          posts={filteredFeed}
           expanded={feedExpanded}
           busy={feedBusy || busy}
           error={feedError}
@@ -481,22 +450,6 @@ export function FriendsPanel({
 
       {view === 'compare' && (
         <div className="friends__board">
-          <div className="friends__board-head">
-            <div className="friends__filters">
-              <select
-                value={categoryFilter}
-                onChange={(e) => setCategoryFilter(e.target.value as CategoryFilter)}
-                aria-label="Kategorie"
-              >
-                <option value="all">Alle Kategorien</option>
-                {CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {CATEGORY_META[c].label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
           <ol className="leaderboard compare-list">
             {board.map((row, i) => (
               <li
@@ -536,6 +489,28 @@ export function FriendsPanel({
                     ) : null}
                   </span>
                 </div>
+                <span
+                  className={`compare-streak${
+                    row.goonStreak > 0
+                      ? ' compare-streak--goon'
+                      : row.dryStreak > 0
+                        ? ' compare-streak--focus'
+                        : ''
+                  }`}
+                  title={
+                    row.goonStreak > 0
+                      ? `Goon Streak ${row.goonStreak}`
+                      : row.dryStreak > 0
+                        ? `Focus Streak ${row.dryStreak}`
+                        : 'Keine Streak'
+                  }
+                >
+                  {row.goonStreak > 0
+                    ? row.goonStreak
+                    : row.dryStreak > 0
+                      ? row.dryStreak
+                      : 0}
+                </span>
                 {!row._you && (
                   <button
                     type="button"
@@ -593,6 +568,18 @@ export function FriendsPanel({
                     placeholder="Titel"
                     onChange={(e) => setRecName(e.target.value)}
                   />
+                  <label htmlFor="rec-category">Kategorie</label>
+                  <select
+                    id="rec-category"
+                    value={recCategory}
+                    onChange={(e) => setRecCategory(e.target.value as Category)}
+                  >
+                    {CATEGORIES.map((c) => (
+                      <option key={c} value={c}>
+                        {CATEGORY_META[c].label}
+                      </option>
+                    ))}
+                  </select>
                   <label htmlFor="rec-link">Link (optional)</label>
                   <input
                     id="rec-link"
@@ -643,7 +630,18 @@ export function FriendsPanel({
               <li key={r.id} className="rec-row">
                 <div>
                   <strong>{r.name}</strong>
-                  <span className="rec-row__meta">von @{r.authorName}</span>
+                  <span className="rec-row__meta">
+                    von @{r.authorName}
+                    {r.category ? (
+                      <span
+                        className="compare-cat-tag"
+                        style={{ color: CATEGORY_META[r.category].color }}
+                      >
+                        {' '}
+                        · {CATEGORY_META[r.category].label}
+                      </span>
+                    ) : null}
+                  </span>
                   {r.link && (
                     <a href={r.link} target="_blank" rel="noreferrer">
                       {r.link}
@@ -673,52 +671,6 @@ export function FriendsPanel({
               {recs.length === 0 ? 'Noch keine Recommendations.' : 'Keine Treffer.'}
             </p>
           )}
-        </div>
-      )}
-
-      {showAddFriend && (
-        <div className="recs__modal" role="dialog" aria-modal="true">
-          <div className="recs__modal-card friends__add-modal">
-            <div className="block__head">
-              <h3>Freund hinzufügen</h3>
-              <button
-                type="button"
-                className="section__close"
-                onClick={() => setShowAddFriend(false)}
-              >
-                schließen
-              </button>
-            </div>
-            <div className="friends__share">
-              <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren:</p>
-              <input className="friends__code" readOnly value={myCode} />
-              <button type="button" className="btn" onClick={copyCode} disabled={!cloudCode}>
-                {copied ? 'Kopiert' : 'Code kopieren'}
-              </button>
-              {status && <p className="friends__status">{status}</p>}
-            </div>
-            <div className="friends__add">
-              <label htmlFor="friend-code">Freund-Code</label>
-              <input
-                id="friend-code"
-                placeholder="AB12CD"
-                value={paste}
-                onChange={(e) => {
-                  setPaste(e.target.value.toUpperCase())
-                  setError(null)
-                }}
-              />
-              <button
-                type="button"
-                className="btn btn--solid"
-                onClick={() => void addFriend()}
-                disabled={busy}
-              >
-                Anfrage senden
-              </button>
-              {error && <p className="friends__error">{error}</p>}
-            </div>
-          </div>
         </div>
       )}
     </div>

@@ -484,12 +484,33 @@
 
 .session {
   display: grid;
-  gap: 0.9rem;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 11rem;
+  padding: 1rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  align-content: start;
 }
 
 .session__toolbar {
+  display: none;
+}
+
+.session__head {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.session__label {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .new-entry {
@@ -554,17 +575,12 @@
   font-size: 0.92rem;
 }
 
-.session__label {
+.session__sub-label {
   margin: 0;
   font-size: 0.72rem;
   text-transform: uppercase;
   letter-spacing: 0.12em;
   color: var(--muted);
-}
-
-.session__head {
-  display: grid;
-  gap: 0.2rem;
 }
 
 .session--live {
@@ -643,6 +659,50 @@
   font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 1.15rem;
   font-weight: 700;
+}
+
+.cat-block {
+  display: grid;
+  gap: 0;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.cat-block.is-open {
+  border: 1px solid color-mix(in srgb, var(--cat-color) 45%, var(--line));
+  background: color-mix(in srgb, var(--cat-bg) 70%, var(--bg-elevated));
+}
+
+.cat-block.is-open .cat-tile {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.cat-block__panel {
+  display: grid;
+  gap: 0.65rem;
+  padding: 0 0.85rem 0.85rem;
+  animation: cat-panel-in 0.2s ease;
+}
+
+.cat-block__panel .duration__value strong {
+  font-size: 1.85rem;
+}
+
+.cat-block__panel .btn {
+  width: 100%;
+}
+
+@keyframes cat-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.35rem);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 .duration {
@@ -1006,39 +1066,23 @@
   width: 100%;
 }
 
-.friends__invite-btn {
-  appearance: none;
+.friends__filters--tabs {
   margin-left: auto;
   margin-bottom: -1px;
-  border: none;
-  border-bottom: 2px solid transparent;
-  background: transparent;
-  color: var(--link);
-  border-radius: 0;
-  padding: 0.55rem 0.35rem 0.5rem 0.85rem;
-  font-size: 0.84rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition:
-    color 0.15s ease,
-    transform 0.15s ease,
-    opacity 0.15s ease;
-}
-
-.friends__invite-full {
-  display: none;
+  display: flex;
+  align-items: center;
+  padding-bottom: 0.35rem;
 }
 
 .friends__tab-full {
   display: none;
 }
 
-.friends__invite-btn:hover {
-  color: var(--ink);
-}
-
-.friends__invite-btn:active {
-  transform: scale(0.97);
+.settings-group__title {
+  margin: 0 0 0.35rem;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 0.98rem;
+  font-weight: 700;
 }
 
 .chip {
@@ -1498,6 +1542,7 @@ button.avatar {
   background: transparent;
   display: grid;
   gap: 0.85rem;
+  align-content: start;
 }
 
 .home-compose__primary .block__head h2 {
@@ -1825,7 +1870,8 @@ button.avatar {
   margin-top: 0.15rem;
 }
 
-.recs__modal-card .friends__add input {
+.recs__modal-card .friends__add input,
+.recs__modal-card .friends__add select {
   padding: 0.4rem 0.55rem;
   font-size: 0.85rem;
 }
@@ -2535,6 +2581,37 @@ button.avatar {
   font-weight: 600;
 }
 
+.compare-row.leaderboard__row {
+  grid-template-columns: auto auto 1fr auto auto;
+  align-items: center;
+}
+
+.compare-row.leaderboard__row.is-you {
+  grid-template-columns: auto auto 1fr auto;
+}
+
+.compare-streak {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.85rem;
+  padding: 0.2rem 0.35rem;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  line-height: 1;
+}
+
+.compare-streak--goon {
+  color: var(--goon);
+}
+
+.compare-streak--focus {
+  color: var(--dry);
+}
+
 .session__comment {
   width: 100%;
   resize: vertical;
@@ -2934,8 +3011,12 @@ button.avatar {
     font-size: 1.25rem;
   }
 
-  .home-compose__primary .new-entry {
+  .home-compose__primary .new-entry,
+  .home-compose__primary .session {
     min-height: 12rem;
+  }
+
+  .home-compose__primary .new-entry {
     padding: 2.25rem 1.25rem;
   }
 
@@ -3021,25 +3102,16 @@ button.avatar {
     font-size: 1.05rem;
   }
 
-  .friends__invite-btn {
-    padding: 0.85rem 0.5rem 0.75rem 1.15rem;
-    font-size: 1rem;
-  }
-
-  .friends__invite-short {
-    display: none;
-  }
-
-  .friends__invite-full {
-    display: inline;
-  }
-
   .friends__tab-short {
     display: none;
   }
 
   .friends__tab-full {
     display: inline;
+  }
+
+  .friends__filters--tabs {
+    padding-bottom: 0.55rem;
   }
 
   .friends__board-head {

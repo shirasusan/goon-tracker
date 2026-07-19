@@ -16,13 +16,13 @@ function clampMinutes(n: number) {
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
   const [open, setOpen] = useState(false)
-  const [step, setStep] = useState<1 | 2 | 3 | 4>(1)
+  const [step, setStep] = useState<1 | 2 | 3>(1)
   const [category, setCategory] = useState<Category | null>(null)
   const [minutes, setMinutes] = useState(30)
   const [goonometer, setGoonometer] = useState(5)
   const [comment, setComment] = useState('')
 
-  function resetFlow() {
+  function resetEntry() {
     setCategory(null)
     setGoonometer(5)
     setMinutes(30)
@@ -31,19 +31,24 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
   }
 
   function close() {
-    resetFlow()
+    resetEntry()
     setOpen(false)
   }
 
-  function pickCategory(cat: Category) {
+  function toggleCategory(cat: Category) {
+    if (category === cat) {
+      setCategory(null)
+      return
+    }
     setCategory(cat)
-    setStep(2)
+    setMinutes(30)
   }
 
   function submit() {
     if (!category) return
     onLog(category, minutes, goonometer, comment.trim() || undefined)
-    close()
+    // Stay open so another category can be logged right away
+    resetEntry()
   }
 
   if (!open) {
@@ -59,34 +64,61 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
 
   return (
     <div className="session">
-      <div className="session__toolbar">
-        <button type="button" className="section__close" onClick={close}>
-          schließen
-        </button>
-      </div>
-
       {step === 1 && (
         <>
           <div className="session__head">
-            <p className="session__label">1 · Kategorie</p>
+            <p className="session__label">Kategorie</p>
+            <button type="button" className="section__close" onClick={close}>
+              schließen
+            </button>
           </div>
           <div className="cat-grid">
             {CATEGORIES.map((cat) => {
               const meta = CATEGORY_META[cat]
+              const selected = category === cat
               return (
-                <button
+                <div
                   key={cat}
-                  type="button"
-                  className="cat-tile"
+                  className={`cat-block${selected ? ' is-open' : ''}`}
                   style={{
                     ['--cat-color' as string]: meta.color,
                     ['--cat-bg' as string]: meta.bg,
                   }}
-                  onClick={() => pickCategory(cat)}
                 >
-                  <span className="cat-tile__swatch" />
-                  <span className="cat-tile__label">{meta.label}</span>
-                </button>
+                  <button
+                    type="button"
+                    className={`cat-tile${selected ? ' is-active' : ''}`}
+                    onClick={() => toggleCategory(cat)}
+                  >
+                    <span className="cat-tile__swatch" />
+                    <span className="cat-tile__label">{meta.label}</span>
+                  </button>
+                  {selected && (
+                    <div className="cat-block__panel">
+                      <div className="duration__value">
+                        <strong>{minutes}</strong>
+                        <span>min</span>
+                      </div>
+                      <input
+                        className="duration__slider"
+                        type="range"
+                        min={1}
+                        max={180}
+                        value={Math.min(180, minutes)}
+                        onChange={(e) =>
+                          setMinutes(clampMinutes(Number(e.target.value)))
+                        }
+                      />
+                      <button
+                        type="button"
+                        className="btn btn--solid"
+                        onClick={() => setStep(2)}
+                      >
+                        Weiter
+                      </button>
+                    </div>
+                  )}
+                </div>
               )
             })}
           </div>
@@ -96,35 +128,25 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
       {step === 2 && category && (
         <>
           <div className="session__head">
-            <p className="session__label">2 · Zeit · {CATEGORY_META[category].label}</p>
+            <p className="session__label">
+              Goonometer · {CATEGORY_META[category].label}
+            </p>
+            <button type="button" className="section__close" onClick={close}>
+              schließen
+            </button>
           </div>
-          <div className="duration">
-            <button
-              type="button"
-              className="duration__btn"
-              onClick={() => setMinutes((m) => clampMinutes(m - 5))}
-            >
-              −5
-            </button>
-            <div className="duration__value">
-              <strong>{minutes}</strong>
-              <span>min</span>
-            </div>
-            <button
-              type="button"
-              className="duration__btn"
-              onClick={() => setMinutes((m) => clampMinutes(m + 5))}
-            >
-              +5
-            </button>
+          <p className="session__sub">Wie intensiv war die Session? (0–10)</p>
+          <div className="duration__value">
+            <strong>{goonometer}</strong>
+            <span>/ 10</span>
           </div>
           <input
             className="duration__slider"
             type="range"
-            min={1}
-            max={180}
-            value={Math.min(180, minutes)}
-            onChange={(e) => setMinutes(clampMinutes(Number(e.target.value)))}
+            min={0}
+            max={10}
+            value={goonometer}
+            onChange={(e) => setGoonometer(Number(e.target.value))}
           />
           <div className="session__actions">
             <button type="button" className="btn" onClick={() => setStep(1)}>
@@ -140,38 +162,12 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
       {step === 3 && category && (
         <>
           <div className="session__head">
-            <p className="session__label">3 · Goonometer</p>
-            <p className="session__sub">Wie intensiv war die Session? (0–10)</p>
-          </div>
-          <div className="duration__value">
-            <strong>{goonometer}</strong>
-            <span>/ 10</span>
-          </div>
-          <input
-            className="duration__slider"
-            type="range"
-            min={0}
-            max={10}
-            value={goonometer}
-            onChange={(e) => setGoonometer(Number(e.target.value))}
-          />
-          <div className="session__actions">
-            <button type="button" className="btn" onClick={() => setStep(2)}>
-              Zurück
-            </button>
-            <button type="button" className="btn btn--solid" onClick={() => setStep(4)}>
-              Weiter
+            <p className="session__label">Kommentar</p>
+            <button type="button" className="section__close" onClick={close}>
+              schließen
             </button>
           </div>
-        </>
-      )}
-
-      {step === 4 && category && (
-        <>
-          <div className="session__head">
-            <p className="session__label">4 · Kommentar</p>
-            <p className="session__sub">Optional — erscheint im Freunde-Feed</p>
-          </div>
+          <p className="session__sub">Optional — erscheint im Freunde-Feed</p>
           <textarea
             className="session__comment"
             value={comment}
@@ -182,7 +178,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
           />
           <p className="session__sub">{comment.length}/280</p>
           <div className="session__actions">
-            <button type="button" className="btn" onClick={() => setStep(3)}>
+            <button type="button" className="btn" onClick={() => setStep(2)}>
               Zurück
             </button>
             <button type="button" className="btn btn--solid" onClick={submit}>

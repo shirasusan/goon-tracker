@@ -50,6 +50,7 @@ create table if not exists public.recommendations (
 alter table public.recommendations add column if not exists image_url text;
 alter table public.recommendations add column if not exists file_url text;
 alter table public.recommendations add column if not exists file_name text;
+alter table public.recommendations add column if not exists category text;
 alter table public.recommendations alter column link set default '';
 
 create index if not exists recommendations_user_idx on public.recommendations (user_id);

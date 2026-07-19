@@ -62,7 +62,7 @@ export function AchievementsSection({
     )
   }
 
-  const { unlocked, unlockedCount, totalCount, next, recent } = progress
+  const { unlocked, unlockedCount, totalCount, recent } = progress
   const pct = totalCount > 0 ? Math.min(100, Math.round((unlockedCount / totalCount) * 100)) : 0
 
   return (
@@ -79,21 +79,6 @@ export function AchievementsSection({
           <div className="ach-progress__fill" style={{ width: `${pct}%` }} />
         </div>
       </div>
-
-      {next && (
-        <div className="ach-next">
-          <span className="ach-next__label">Als Nächstes</span>
-          <div className="ach-next__row">
-            <AchievementBadge a={next} compact />
-            <div className="ach-next__text">
-              <strong>{next.title}</strong>
-              <span>
-                {next.subtitle} · {next.short}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
 
       {showAll ? (
         unlocked.length === 0 ? (
