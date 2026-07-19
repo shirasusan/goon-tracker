@@ -10,6 +10,8 @@ type CategoryPickerProps = {
   ) => void
 }
 
+type Drafts = Partial<Record<Category, number>>
+
 function clampMinutes(n: number) {
   return Math.max(1, Math.min(24 * 60, Math.round(n) || 1))
 }
@@ -17,15 +19,19 @@ function clampMinutes(n: number) {
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
   const [open, setOpen] = useState(false)
   const [step, setStep] = useState<1 | 2 | 3>(1)
-  const [category, setCategory] = useState<Category | null>(null)
-  const [minutes, setMinutes] = useState(30)
+  const [drafts, setDrafts] = useState<Drafts>({})
+  const [active, setActive] = useState<Category | null>(null)
   const [goonometer, setGoonometer] = useState(5)
   const [comment, setComment] = useState('')
 
+  const selected = CATEGORIES.filter((c) => drafts[c] != null)
+  const totalMinutes = selected.reduce((sum, c) => sum + (drafts[c] || 0), 0)
+  const activeMinutes = active ? (drafts[active] ?? 30) : 30
+
   function resetEntry() {
-    setCategory(null)
+    setDrafts({})
+    setActive(null)
     setGoonometer(5)
-    setMinutes(30)
     setComment('')
     setStep(1)
   }
@@ -35,19 +41,42 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
     setOpen(false)
   }
 
-  function toggleCategory(cat: Category) {
-    if (category === cat) {
-      setCategory(null)
+  function selectCategory(cat: Category) {
+    if (active === cat) {
+      // Collapse slider; keep the minutes
+      setActive(null)
       return
     }
-    setCategory(cat)
-    setMinutes(30)
+    setDrafts((prev) => ({
+      ...prev,
+      [cat]: prev[cat] ?? 30,
+    }))
+    setActive(cat)
+  }
+
+  function setActiveMinutes(n: number) {
+    if (!active) return
+    const minutes = clampMinutes(n)
+    setDrafts((prev) => ({ ...prev, [active]: minutes }))
+  }
+
+  function clearCategory(cat: Category) {
+    setDrafts((prev) => {
+      const next = { ...prev }
+      delete next[cat]
+      return next
+    })
+    if (active === cat) setActive(null)
   }
 
   function submit() {
-    if (!category) return
-    onLog(category, minutes, goonometer, comment.trim() || undefined)
-    // Stay open so another category can be logged right away
+    if (selected.length === 0) return
+    const note = comment.trim() || undefined
+    selected.forEach((cat, i) => {
+      const minutes = drafts[cat]
+      if (!minutes) return
+      onLog(cat, minutes, goonometer, i === 0 ? note : undefined)
+    })
     resetEntry()
   }
 
@@ -62,6 +91,11 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
     )
   }
 
+  const summaryLabel =
+    selected.length === 0
+      ? null
+      : selected.map((c) => `${drafts[c]}m ${CATEGORY_META[c].label}`).join(' · ')
+
   return (
     <div className="session">
       {step === 1 && (
@@ -72,14 +106,19 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
               schließen
             </button>
           </div>
+          <p className="session__sub">
+            Mehrere Kategorien möglich — Minuten bleiben gespeichert.
+          </p>
           <div className="cat-grid">
             {CATEGORIES.map((cat) => {
               const meta = CATEGORY_META[cat]
-              const selected = category === cat
+              const mins = drafts[cat]
+              const hasValue = mins != null
+              const isOpen = active === cat
               return (
                 <div
                   key={cat}
-                  className={`cat-block${selected ? ' is-open' : ''}`}
+                  className={`cat-block${hasValue ? ' is-picked' : ''}${isOpen ? ' is-open' : ''}`}
                   style={{
                     ['--cat-color' as string]: meta.color,
                     ['--cat-bg' as string]: meta.bg,
@@ -87,16 +126,29 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
                 >
                   <button
                     type="button"
-                    className={`cat-tile${selected ? ' is-active' : ''}`}
-                    onClick={() => toggleCategory(cat)}
+                    className={`cat-tile${hasValue ? ' is-active' : ''}`}
+                    onClick={() => selectCategory(cat)}
                   >
                     <span className="cat-tile__swatch" />
                     <span className="cat-tile__label">{meta.label}</span>
+                    {hasValue && !isOpen && (
+                      <span className="cat-tile__mins">{mins}m</span>
+                    )}
                   </button>
-                  {selected && (
+                  {hasValue && (
+                    <button
+                      type="button"
+                      className="cat-tile__clear"
+                      aria-label={`${meta.label} entfernen`}
+                      onClick={() => clearCategory(cat)}
+                    >
+                      ×
+                    </button>
+                  )}
+                  {isOpen && (
                     <div className="cat-block__panel">
                       <div className="duration__value">
-                        <strong>{minutes}</strong>
+                        <strong>{activeMinutes}</strong>
                         <span>min</span>
                       </div>
                       <input
@@ -104,37 +156,38 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
                         type="range"
                         min={1}
                         max={180}
-                        value={Math.min(180, minutes)}
+                        value={Math.min(180, activeMinutes)}
                         onChange={(e) =>
-                          setMinutes(clampMinutes(Number(e.target.value)))
+                          setActiveMinutes(Number(e.target.value))
                         }
                       />
-                      <button
-                        type="button"
-                        className="btn btn--solid"
-                        onClick={() => setStep(2)}
-                      >
-                        Weiter
-                      </button>
                     </div>
                   )}
                 </div>
               )
             })}
           </div>
+          {selected.length > 0 && (
+            <button
+              type="button"
+              className="btn btn--solid"
+              onClick={() => setStep(2)}
+            >
+              Weiter · {totalMinutes}m
+            </button>
+          )}
         </>
       )}
 
-      {step === 2 && category && (
+      {step === 2 && selected.length > 0 && (
         <>
           <div className="session__head">
-            <p className="session__label">
-              Goonometer · {CATEGORY_META[category].label}
-            </p>
+            <p className="session__label">Goonometer</p>
             <button type="button" className="section__close" onClick={close}>
               schließen
             </button>
           </div>
+          {summaryLabel && <p className="session__sub">{summaryLabel}</p>}
           <p className="session__sub">Wie intensiv war die Session? (0–10)</p>
           <div className="duration__value">
             <strong>{goonometer}</strong>
@@ -159,7 +212,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
         </>
       )}
 
-      {step === 3 && category && (
+      {step === 3 && selected.length > 0 && (
         <>
           <div className="session__head">
             <p className="session__label">Kommentar</p>
@@ -168,6 +221,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
             </button>
           </div>
           <p className="session__sub">Optional — erscheint im Freunde-Feed</p>
+          {summaryLabel && <p className="session__sub">{summaryLabel}</p>}
           <textarea
             className="session__comment"
             value={comment}
@@ -182,7 +236,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
               Zurück
             </button>
             <button type="button" className="btn btn--solid" onClick={submit}>
-              Speichern · {minutes}m · G{goonometer}
+              Speichern · {totalMinutes}m · G{goonometer}
             </button>
           </div>
         </>

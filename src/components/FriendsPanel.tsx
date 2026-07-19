@@ -9,12 +9,14 @@ import {
   deleteRecommendation,
   ensureCloudProfile,
   ensureCloudUser,
+  fetchProfileByCode,
   fetchProfileById,
   listIncomingFriendRequests,
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
   removeFriendship,
+  sendFriendRequest,
   type FriendRequestRow,
 } from '../lib/cloud'
 import {
@@ -35,6 +37,7 @@ type FriendsPanelProps = {
   displayName: string
   username?: string
   avatarUrl?: string
+  cloudCode?: string
   hideRecs?: boolean
   onCloudReady: (info: {
     cloudUserId: string
@@ -57,6 +60,7 @@ export function FriendsPanel({
   friends,
   displayName,
   username,
+  cloudCode,
   hideRecs,
   onCloudReady,
   onFriendsSync,
@@ -84,6 +88,13 @@ export function FriendsPanel({
   const [feedExpanded, setFeedExpanded] = useState(false)
   const [feedError, setFeedError] = useState<string | null>(null)
   const [feedBusy, setFeedBusy] = useState(false)
+  const [myCode, setMyCode] = useState(cloudCode || '')
+  const [showAddFriend, setShowAddFriend] = useState(false)
+  const [paste, setPaste] = useState('')
+  const [copied, setCopied] = useState(false)
+  const [friendBusy, setFriendBusy] = useState(false)
+
+  const shareCode = myCode || cloudCode || ''
 
   const filteredRecs = useMemo(() => {
     const q = recQuery.trim().toLowerCase()
@@ -170,6 +181,7 @@ export function FriendsPanel({
       }
 
       setMeId(user.userId)
+      setMyCode(profile.code)
       onCloudReady({
         cloudUserId: user.userId,
         cloudCode: profile.code,
@@ -252,6 +264,47 @@ export function FriendsPanel({
     const loaded = await loadFriendProfiles(user.userId)
     if (!('error' in loaded)) onFriendsSync(loaded.friends)
     await refreshFeed(user.userId)
+  }
+
+  async function copyFriendCode() {
+    if (!shareCode) return
+    try {
+      await navigator.clipboard.writeText(shareCode)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1400)
+    } catch {
+      setError('Kopieren fehlgeschlagen.')
+    }
+  }
+
+  async function sendFriendInvite() {
+    if (!meId || !cloudEnabled) {
+      setError('Cloud nicht konfiguriert.')
+      return
+    }
+    setError(null)
+    setStatus(null)
+    setFriendBusy(true)
+    const found = await fetchProfileByCode(paste)
+    if ('error' in found) {
+      setFriendBusy(false)
+      setError(found.error)
+      return
+    }
+    if (found.profile.id === meId) {
+      setFriendBusy(false)
+      setError('Das ist dein eigener Code.')
+      return
+    }
+    const sent = await sendFriendRequest(meId, found.profile.id)
+    setFriendBusy(false)
+    if (sent.error) {
+      setError(sent.error)
+      return
+    }
+    setPaste('')
+    setStatus('Anfrage gesendet')
+    setShowAddFriend(false)
   }
 
   async function addRec() {
@@ -654,11 +707,12 @@ export function FriendsPanel({
                     </a>
                   )}
                 </div>
-                {r.userId === me.id && (
+                {meId && r.userId === meId && (
                   <button
                     type="button"
                     className="leaderboard__remove"
                     onClick={() => void removeRec(r.id)}
+                    aria-label="Recommendation löschen"
                   >
                     ×
                   </button>
@@ -673,6 +727,64 @@ export function FriendsPanel({
           )}
         </div>
       )}
+
+      <div className={`friends__add-dock${showAddFriend ? ' is-open' : ''}`}>
+        {showAddFriend ? (
+          <div className="friends__add-panel">
+            <div className="block__head">
+              <h3>Freund hinzufügen</h3>
+              <button
+                type="button"
+                className="section__close"
+                onClick={() => setShowAddFriend(false)}
+              >
+                schließen
+              </button>
+            </div>
+            <div className="friends__share">
+              <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren.</p>
+              <input className="friends__code" readOnly value={shareCode || '…'} />
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void copyFriendCode()}
+                disabled={!shareCode}
+              >
+                {copied ? 'Kopiert' : 'Code kopieren'}
+              </button>
+            </div>
+            <div className="friends__add">
+              <label htmlFor="friend-code">Freund-Code</label>
+              <input
+                id="friend-code"
+                placeholder="AB12CD"
+                value={paste}
+                onChange={(e) => {
+                  setPaste(e.target.value.toUpperCase())
+                  setError(null)
+                  setStatus(null)
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--solid"
+                onClick={() => void sendFriendInvite()}
+                disabled={friendBusy || !meId || busy}
+              >
+                Anfrage senden
+              </button>
+            </div>
+          </div>
+        ) : (
+          <button
+            type="button"
+            className="friends__add-fab"
+            onClick={() => setShowAddFriend(true)}
+          >
+            + Freund
+          </button>
+        )}
+      </div>
     </div>
   )
 }

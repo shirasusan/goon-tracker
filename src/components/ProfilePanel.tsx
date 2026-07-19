@@ -1,10 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
-import {
-  cloudEnabled,
-  fetchProfileByCode,
-  sendFriendRequest,
-  uploadAvatar,
-} from '../lib/cloud'
+import { uploadAvatar } from '../lib/cloud'
 import { weeklyGoonometerAverage } from '../lib/goonometer'
 import { rankFromMinutes } from '../lib/ranks'
 import type { Category, Entry } from '../types'
@@ -21,7 +16,6 @@ type ProfilePanelProps = {
   username?: string
   displayName: string
   avatarUrl?: string
-  cloudCode?: string
   entries: Entry[]
   startedOn: string
   totalMinutes: number
@@ -47,7 +41,6 @@ export function ProfilePanel({
   username,
   displayName,
   avatarUrl,
-  cloudCode,
   entries,
   startedOn,
   totalMinutes,
@@ -73,10 +66,6 @@ export function ProfilePanel({
   const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [friendPaste, setFriendPaste] = useState('')
-  const [friendStatus, setFriendStatus] = useState<string | null>(null)
-  const [friendBusy, setFriendBusy] = useState(false)
-  const [copied, setCopied] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
@@ -105,47 +94,6 @@ export function ProfilePanel({
       return
     }
     onAvatarChange(result.url)
-  }
-
-  async function copyFriendCode() {
-    if (!cloudCode) return
-    try {
-      await navigator.clipboard.writeText(cloudCode)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1400)
-    } catch {
-      setFriendStatus(null)
-      setError('Kopieren fehlgeschlagen.')
-    }
-  }
-
-  async function sendFriendInvite() {
-    if (!userId || !cloudEnabled) {
-      setError('Cloud nicht konfiguriert.')
-      return
-    }
-    setError(null)
-    setFriendStatus(null)
-    setFriendBusy(true)
-    const found = await fetchProfileByCode(friendPaste)
-    if ('error' in found) {
-      setFriendBusy(false)
-      setError(found.error)
-      return
-    }
-    if (found.profile.id === userId) {
-      setFriendBusy(false)
-      setError('Das ist dein eigener Code.')
-      return
-    }
-    const sent = await sendFriendRequest(userId, found.profile.id)
-    setFriendBusy(false)
-    if (sent.error) {
-      setError(sent.error)
-      return
-    }
-    setFriendPaste('')
-    setFriendStatus('Anfrage gesendet')
   }
 
   async function handleDeleteAccount() {
@@ -319,42 +267,6 @@ export function ProfilePanel({
             >
               {uploading ? 'Upload…' : 'Bild ändern'}
             </button>
-          </div>
-
-          <div className="settings-group">
-            <h3 className="settings-group__title">Freund hinzufügen</h3>
-            <p className="profile__stat">
-              Dein Code — Anfrage senden; der andere muss noch akzeptieren.
-            </p>
-            <input className="friends__code" readOnly value={cloudCode || '…'} />
-            <button
-              type="button"
-              className="btn"
-              onClick={() => void copyFriendCode()}
-              disabled={!cloudCode}
-            >
-              {copied ? 'Kopiert' : 'Code kopieren'}
-            </button>
-            <label htmlFor="profile-friend-code">Freund-Code</label>
-            <input
-              id="profile-friend-code"
-              placeholder="AB12CD"
-              value={friendPaste}
-              onChange={(e) => {
-                setFriendPaste(e.target.value.toUpperCase())
-                setError(null)
-                setFriendStatus(null)
-              }}
-            />
-            <button
-              type="button"
-              className="btn btn--solid"
-              onClick={() => void sendFriendInvite()}
-              disabled={friendBusy || !userId}
-            >
-              Anfrage senden
-            </button>
-            {friendStatus && <p className="friends__status">{friendStatus}</p>}
           </div>
 
           <div className="settings-group settings-group--switches">

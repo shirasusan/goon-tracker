@@ -516,7 +516,6 @@ export default function App() {
               username={data.profile.username}
               displayName={data.profile.name}
               avatarUrl={data.profile.avatarUrl}
-              cloudCode={data.profile.cloudCode}
               entries={data.entries}
               startedOn={data.startedOn}
               totalMinutes={totalMinutes}
@@ -602,6 +601,7 @@ export default function App() {
                   displayName={data.profile.name}
                   username={data.profile.username}
                   avatarUrl={data.profile.avatarUrl}
+                  cloudCode={data.profile.cloudCode}
                   hideRecs={monkMode}
                   onCloudReady={onCloudReady}
                   onFriendsSync={onFriendsSync}
