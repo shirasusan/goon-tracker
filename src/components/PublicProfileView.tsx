@@ -124,10 +124,6 @@ export function PublicProfileView({
 
   return (
     <div className="profile public-profile page-stack">
-      <button type="button" className="btn profile__back" onClick={onBack}>
-        ← {t('back')}
-      </button>
-
       <header className="panel-hero">
         <div className="panel-hero__identity">
           <Avatar
@@ -138,11 +134,19 @@ export function PublicProfileView({
             size="lg"
           />
           <div className="panel-hero__text">
-            <p className="eyebrow">{t('nav_profile')}</p>
             <h1 className="panel-hero__name">{profile.name}</h1>
             <p className="profile__user">@{profile.username || profile.name}</p>
           </div>
         </div>
+
+        <button
+          type="button"
+          className="public-profile__close"
+          onClick={onBack}
+          aria-label={t('close')}
+        >
+          ×
+        </button>
 
         {meId && relation !== 'self' && (
           <div className="public-profile__actions">

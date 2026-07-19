@@ -51,6 +51,7 @@ export function buildEntryFromParts(input: {
   date: string
   createdAt: string
   comment?: string
+  xp?: number
 }): Entry | null {
   const parts = normalizeParts(input.parts)
   if (parts.length === 0) return null
@@ -58,6 +59,10 @@ export function buildEntryFromParts(input: {
   const comment =
     typeof input.comment === 'string' && input.comment.trim()
       ? input.comment.trim().slice(0, 280)
+      : undefined
+  const xp =
+    typeof input.xp === 'number' && Number.isFinite(input.xp)
+      ? Math.max(0, Math.round(input.xp))
       : undefined
   return {
     id: input.id,
@@ -67,6 +72,7 @@ export function buildEntryFromParts(input: {
     date: input.date,
     createdAt: input.createdAt,
     parts,
+    ...(xp != null ? { xp } : {}),
     ...(comment ? { comment } : {}),
   }
 }

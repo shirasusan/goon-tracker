@@ -5,6 +5,7 @@ import type {
   FriendSnapshot,
   GoonComment,
   GoonPost,
+  RecReaction,
   Recommendation,
 } from '../types'
 import { CATEGORIES } from '../types'
@@ -841,11 +842,36 @@ export async function loadRecommendations(
     (profiles ?? []).map((p) => [p.id as string, (p.username || p.name || 'Anon') as string]),
   )
 
+  const recIds = (data ?? []).map((r) => r.id as string)
+  const counts = new Map<string, Record<RecReaction, number>>()
+  const mine = new Map<string, RecReaction>()
+  for (const id of recIds) {
+    counts.set(id, { up: 0, mid: 0, down: 0 })
+  }
+
+  if (recIds.length > 0) {
+    const { data: reactionRows } = await supabase
+      .from('recommendation_reactions')
+      .select('recommendation_id, user_id, reaction')
+      .in('recommendation_id', recIds)
+
+    for (const row of reactionRows ?? []) {
+      const recId = row.recommendation_id as string
+      const reaction = row.reaction as RecReaction
+      if (reaction !== 'up' && reaction !== 'mid' && reaction !== 'down') continue
+      const bucket = counts.get(recId) ?? { up: 0, mid: 0, down: 0 }
+      bucket[reaction] += 1
+      counts.set(recId, bucket)
+      if ((row.user_id as string) === userId) mine.set(recId, reaction)
+    }
+  }
+
   return {
     items: (data ?? []).map((r) => {
       const cat = r.category as string | null
+      const id = r.id as string
       return {
-        id: r.id as string,
+        id,
         userId: r.user_id as string,
         authorName: nameById.get(r.user_id as string) || 'Anon',
         name: r.name as string,
@@ -856,9 +882,38 @@ export async function loadRecommendations(
         fileUrl: (r.file_url as string) || undefined,
         fileName: (r.file_name as string) || undefined,
         createdAt: r.created_at as string,
+        reactions: counts.get(id) ?? { up: 0, mid: 0, down: 0 },
+        myReaction: mine.get(id) ?? null,
       }
     }),
   }
+}
+
+export async function setRecommendationReaction(input: {
+  userId: string
+  recommendationId: string
+  reaction: RecReaction | null
+}): Promise<{ error?: string }> {
+  if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
+
+  if (input.reaction === null) {
+    const { error } = await supabase
+      .from('recommendation_reactions')
+      .delete()
+      .eq('recommendation_id', input.recommendationId)
+      .eq('user_id', input.userId)
+    return error ? { error: error.message } : {}
+  }
+
+  const { error } = await supabase.from('recommendation_reactions').upsert(
+    {
+      recommendation_id: input.recommendationId,
+      user_id: input.userId,
+      reaction: input.reaction,
+    },
+    { onConflict: 'recommendation_id,user_id' },
+  )
+  return error ? { error: error.message } : {}
 }
 
 export async function deleteRecommendation(

@@ -17,6 +17,7 @@ export function emptyData(): TrackerData {
   return {
     entries: [],
     startedOn: toDateKey(),
+    focusXpTotal: 0,
     profile: { id: newProfileId(), name: '' },
     friends: [],
   }
@@ -47,14 +48,16 @@ function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
     : []
 
   if (rawParts.length > 0) {
-    return buildEntryFromParts({
+    const built = buildEntryFromParts({
       id: raw.id,
       parts: rawParts,
       goonometer: g,
       date: raw.date,
       createdAt: raw.createdAt,
       comment,
+      xp: typeof raw.xp === 'number' ? raw.xp : undefined,
     })
+    return built
   }
 
   if (!raw.category || !CATEGORIES.includes(raw.category)) return null
@@ -65,6 +68,9 @@ function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
     createdAt: raw.createdAt,
     minutes: typeof raw.minutes === 'number' && raw.minutes >= 0 ? raw.minutes : 0,
     goonometer: Math.max(0, Math.min(10, Math.round(g) || 0)),
+    ...(typeof raw.xp === 'number' && Number.isFinite(raw.xp)
+      ? { xp: Math.max(0, Math.round(raw.xp)) }
+      : {}),
     ...(comment ? { comment } : {}),
   }
 }
@@ -102,6 +108,12 @@ function parseStored(raw: string | null): TrackerData | null {
       entries: parsed.entries
         .map((e) => normalizeEntry(e))
         .filter((e): e is Entry => e !== null),
+      focusXpTotal:
+        typeof parsed.focusXpTotal === 'number' && Number.isFinite(parsed.focusXpTotal)
+          ? Math.max(0, Math.round(parsed.focusXpTotal))
+          : 0,
+      lastFocusXpDate:
+        typeof parsed.lastFocusXpDate === 'string' ? parsed.lastFocusXpDate : undefined,
       profile: {
         id: parsed.profile?.id || newProfileId(),
         name: parsed.profile?.name ?? '',

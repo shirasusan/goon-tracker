@@ -1,6 +1,6 @@
 import { CATEGORIES, type Category, type Entry, type FriendSnapshot } from '../types'
 import { entryParts } from './entries'
-import { levelFromXp, totalXp } from './level'
+import { levelFromXp, totalMinutes, totalXp } from './level'
 
 export function categoryTotals(entries: Entry[]): Record<Category, number> {
   const totals = Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<
@@ -25,8 +25,10 @@ export function buildSnapshot(input: {
   entries: Entry[]
   goonStreak: number
   dryStreak: number
+  focusXpTotal?: number
 }): FriendSnapshot {
-  const xp = totalXp(input.entries)
+  const xp = totalXp(input.entries, input.focusXpTotal ?? 0)
+  const minutes = totalMinutes(input.entries)
   const { level } = levelFromXp(xp)
   return {
     id: input.id,
@@ -35,7 +37,7 @@ export function buildSnapshot(input: {
     xp,
     goonStreak: input.goonStreak,
     dryStreak: input.dryStreak,
-    totalMinutes: xp,
+    totalMinutes: minutes,
     categories: categoryTotals(input.entries),
     updatedAt: new Date().toISOString(),
   }

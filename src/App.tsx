@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { AchievementUnlockOverlay } from './components/AchievementUnlockOverlay'
 import { AuthScreen } from './components/AuthScreen'
 import { BottomNav, type TabId } from './components/BottomNav'
@@ -33,7 +33,7 @@ import {
 import { toDateKey } from './lib/dates'
 import { buildEntryFromParts } from './lib/entries'
 import { formatMinutes } from './lib/format'
-import { levelFromXp, totalXp } from './lib/level'
+import { levelFromXp, awardXp, FOCUS_DAILY_XP, totalMinutes as sumEntryMinutes, totalXp } from './lib/level'
 import { rankFromMinutes } from './lib/ranks'
 import { buildSnapshot } from './lib/snapshot'
 import {
@@ -44,7 +44,7 @@ import {
   loadDataForUser,
   saveData,
 } from './lib/storage'
-import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
+import { calcGoonStreak, calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import { loadTour, saveTour, shouldShowTour, TOUR_STEPS, type TourState } from './lib/tour'
 import { getSeasonInfo, seasonDisplayName } from './lib/season'
 import type { Category, FriendSnapshot, TrackerData } from './types'
@@ -79,17 +79,46 @@ export default function App() {
   const [unlockQueue, setUnlockQueue] = useState<UnlockedAchievement[]>([])
   const [freshKeys, setFreshKeys] = useState<Set<string>>(() => new Set())
   const [tour, setTour] = useState<TourState | null>(null)
+  const [viewingForeignProfile, setViewingForeignProfile] = useState(false)
 
   useEffect(() => {
     if (!data.profile.cloudUserId && cloudEnabled) return
     saveData(data)
   }, [data])
 
+  useEffect(() => {
+    setViewingForeignProfile(false)
+  }, [tab])
+
   const todayKey = toDateKey()
 
   useEffect(() => {
     enqueueUnlocks(claimNewAchievements(data.entries, data.startedOn))
   }, [data.entries, data.startedOn, todayKey])
+
+  const focusAwardDay = useRef<string | null>(null)
+
+  /** Focus streak: 25 XP/day from day 2, times streak multiplier (once per calendar day). */
+  useEffect(() => {
+    const dry = signedToGoonDry(
+      calcSignedStreak(data.entries, data.startedOn),
+    ).dryStreak
+    if (dry < 2) return
+    const today = toDateKey()
+    if (data.lastFocusXpDate === today || focusAwardDay.current === today) return
+    focusAwardDay.current = today
+    const gained = awardXp(FOCUS_DAILY_XP, dry)
+    setData((prev) => {
+      if (prev.lastFocusXpDate === today) return prev
+      return {
+        ...prev,
+        focusXpTotal: (prev.focusXpTotal ?? 0) + gained,
+        lastFocusXpDate: today,
+      }
+    })
+    setFlash(`+${gained} XP · Focus`)
+    window.setTimeout(() => setFlash(null), 1600)
+  }, [data.entries, data.startedOn, data.lastFocusXpDate, todayKey])
 
   function enqueueUnlocks(newly: UnlockedAchievement[]) {
     if (newly.length === 0) return
@@ -111,12 +140,35 @@ export default function App() {
       Awaited<ReturnType<typeof hydrateAccountFromCloud>>,
       { error: string }
     >,
-    preserveLocal?: { monkMode?: boolean },
+    preserveLocal?: {
+      monkMode?: boolean
+      focusXpTotal?: number
+      lastFocusXpDate?: string
+      entries?: TrackerData['entries']
+    },
   ) {
+    const localEntries = preserveLocal?.entries ?? []
+    const byId = new Map(hydrated.entries.map((e) => [e.id, e]))
+    for (const e of localEntries) {
+      const cloud = byId.get(e.id)
+      if (cloud && e.xp != null && cloud.xp == null) {
+        byId.set(e.id, { ...cloud, xp: e.xp })
+      } else if (!cloud) {
+        byId.set(e.id, e)
+      } else {
+        byId.set(e.id, e.xp != null ? { ...cloud, xp: e.xp } : cloud)
+      }
+    }
+    const entries = Array.from(byId.values()).sort((a, b) =>
+      a.createdAt.localeCompare(b.createdAt),
+    )
+
     setData({
-      entries: hydrated.entries,
+      entries,
       startedOn: hydrated.startedOn,
       friends: hydrated.friends,
+      focusXpTotal: preserveLocal?.focusXpTotal ?? 0,
+      lastFocusXpDate: preserveLocal?.lastFocusXpDate,
       profile: {
         id: hydrated.profile.cloudUserId,
         cloudUserId: hydrated.profile.cloudUserId,
@@ -140,7 +192,12 @@ export default function App() {
       setEntriesSynced(false)
       return false
     }
-    applyHydrated(hydrated, { monkMode: cached.profile.monkMode })
+    applyHydrated(hydrated, {
+      monkMode: cached.profile.monkMode,
+      focusXpTotal: cached.focusXpTotal ?? 0,
+      lastFocusXpDate: cached.lastFocusXpDate,
+      entries: cached.entries,
+    })
     const hist = await fetchMySeasonHistory(userId)
     if (!('error' in hist)) {
       enqueueUnlocks(
@@ -263,9 +320,12 @@ export default function App() {
     [data.entries, data.startedOn],
   )
   const { goonStreak, dryStreak } = useMemo(() => signedToGoonDry(streak), [streak])
-  const xp = useMemo(() => totalXp(data.entries), [data.entries])
+  const totalMinutes = useMemo(() => sumEntryMinutes(data.entries), [data.entries])
+  const xp = useMemo(
+    () => totalXp(data.entries, data.focusXpTotal ?? 0),
+    [data.entries, data.focusXpTotal],
+  )
   const level = useMemo(() => levelFromXp(xp), [xp])
-  const totalMinutes = xp
   const rank = useMemo(() => rankFromMinutes(totalMinutes), [totalMinutes])
 
   const mySnapshot = useMemo(
@@ -276,6 +336,7 @@ export default function App() {
         entries: data.entries,
         goonStreak,
         dryStreak,
+        focusXpTotal: data.focusXpTotal ?? 0,
       }),
       username: data.profile.username,
       avatarUrl: data.profile.avatarUrl,
@@ -288,6 +349,7 @@ export default function App() {
       data.profile.username,
       data.profile.avatarUrl,
       data.entries,
+      data.focusXpTotal,
       goonStreak,
       dryStreak,
       rank.id,
@@ -341,7 +403,7 @@ export default function App() {
     goonometer: number,
     comment?: string,
   ) {
-    const entry = buildEntryFromParts({
+    const draft = buildEntryFromParts({
       id: newId(),
       parts,
       goonometer,
@@ -349,9 +411,13 @@ export default function App() {
       createdAt: new Date().toISOString(),
       comment,
     })
-    if (!entry) return
+    if (!draft) return
+    const streakDays = calcGoonStreak([...data.entries, draft])
+    const awarded = awardXp(draft.minutes, streakDays)
+    const entry = { ...draft, xp: awarded }
     setData((prev) => ({ ...prev, entries: [...prev.entries, entry] }))
-    setFlash(`+${entry.minutes} XP · G${goonometer}`)
+    const mult = awarded !== draft.minutes ? ` · ×${(awarded / draft.minutes).toFixed(2)}` : ''
+    setFlash(`+${awarded} XP${mult} · G${goonometer}`)
     window.setTimeout(() => setFlash(null), 1600)
 
     const userId = data.profile.cloudUserId
@@ -483,9 +549,10 @@ export default function App() {
   const activeUnlock = unlockQueue[0] ?? null
   const monkMode = Boolean(data.profile.monkMode)
   const rankedAnonymous = Boolean(data.profile.rankedAnonymous)
+  const hidePageChrome = tab === 'profile' || viewingForeignProfile
 
   return (
-    <div className="shell">
+    <div className={`shell${hidePageChrome ? ' shell--immersive' : ''}`}>
       {activeUnlock && (
         <AchievementUnlockOverlay
           achievement={activeUnlock}
@@ -525,12 +592,14 @@ export default function App() {
       />
 
       <div className="app">
-        <header className="top">
-          <div className="top__left">
-            <p className="top__brand">Goon Tracker</p>
-            <h1 className="top__title">{page.title}</h1>
-          </div>
-        </header>
+        {!hidePageChrome && (
+          <header className="top">
+            <div className="top__left">
+              <p className="top__brand">Goon Tracker</p>
+              <h1 className="top__title">{page.title}</h1>
+            </div>
+          </header>
+        )}
 
         <main className="page" id="main" key={tab}>
           {tab === 'profile' ? (
@@ -542,6 +611,7 @@ export default function App() {
               entries={data.entries}
               startedOn={data.startedOn}
               totalMinutes={totalMinutes}
+              xp={xp}
               level={level.level}
               goonStreak={goonStreak}
               dryStreak={dryStreak}
@@ -633,6 +703,7 @@ export default function App() {
                   onFriendsSync={onFriendsSync}
                   onRemoveLocal={removeFriend}
                   onViewedOtherProfile={handleViewedOtherProfile}
+                  onViewingChange={setViewingForeignProfile}
                 />
               )}
 
@@ -643,6 +714,7 @@ export default function App() {
                   userId={data.profile.cloudUserId}
                   onFriendsChanged={(friends) => onFriendsSync(friends)}
                   onViewedOtherProfile={handleViewedOtherProfile}
+                  onViewingChange={setViewingForeignProfile}
                 />
               )}
             </>

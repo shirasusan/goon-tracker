@@ -158,6 +158,28 @@ export function Leaderboard({
                 <RankBadge totalMinutes={row.totalMinutes} rank={rank} compact />
                 <span>{formatMinutes(row.totalMinutes)}</span>
               </button>
+              <span
+                className={`compare-streak${
+                  view.goonStreak > 0
+                    ? ' compare-streak--goon'
+                    : view.dryStreak > 0
+                      ? ' compare-streak--focus'
+                      : ''
+                }`}
+                title={
+                  view.goonStreak > 0
+                    ? `Goon-Streak ${view.goonStreak}`
+                    : view.dryStreak > 0
+                      ? `Focus-Streak ${view.dryStreak}`
+                      : t('no_streak')
+                }
+              >
+                {view.goonStreak > 0
+                  ? view.goonStreak
+                  : view.dryStreak > 0
+                    ? view.dryStreak
+                    : 0}
+              </span>
             </li>
           )
         })}

@@ -91,55 +91,61 @@ export function AddFriendControl({
 
   const panel = (
     <div className="friends__add-modal-card">
-      <div className="block__head">
+      <div className="friends__add-modal-card__head">
         <h3 id={titleId}>{t('add_friend_title')}</h3>
         {collapsible && (
-          <button type="button" className="friends__add-modal-close" onClick={close}>
-            {t('close')}
+          <button
+            type="button"
+            className="friends__add-modal-close"
+            onClick={close}
+            aria-label={t('close')}
+          >
+            ×
           </button>
         )}
       </div>
-      <div className="friends__share">
-        <p>{t('your_code')}</p>
-        <div className="friends__share-row">
-          <input className="friends__code" readOnly value={cloudCode || '…'} />
-          <button
-            type="button"
-            className="btn"
-            onClick={() => void copyFriendCode()}
-            disabled={!cloudCode}
-          >
-            {copied ? t('copied') : t('copy_code')}
-          </button>
-        </div>
-      </div>
-      <div className="friends__add">
-        <label htmlFor="add-friend-code">{t('friend_code')}</label>
-        <div className="friends__add-row">
-          <input
-            id="add-friend-code"
-            placeholder="AB12CD"
-            value={paste}
-            autoComplete="off"
-            spellCheck={false}
-            onChange={(e) => {
-              setPaste(e.target.value.toUpperCase())
-              setError(null)
-              setStatus(null)
-            }}
-          />
-          <button
-            type="button"
-            className="btn btn--solid"
-            onClick={() => void sendFriendInvite()}
-            disabled={busy || !userId || !paste.trim()}
-          >
-            {t('send_request')}
-          </button>
-        </div>
+
+      <section className="friends__add-modal-section">
+        <p className="friends__add-modal-label">{t('your_code_label')}</p>
+        <p className="friends__code">{cloudCode || '…'}</p>
+        <button
+          type="button"
+          className="btn btn--wide"
+          onClick={() => void copyFriendCode()}
+          disabled={!cloudCode}
+        >
+          {copied ? t('copied') : t('copy_code')}
+        </button>
+      </section>
+
+      <section className="friends__add-modal-section">
+        <label className="friends__add-modal-label" htmlFor="add-friend-code">
+          {t('friend_code')}
+        </label>
+        <input
+          id="add-friend-code"
+          className="friends__add-modal-input"
+          placeholder="AB12CD"
+          value={paste}
+          autoComplete="off"
+          spellCheck={false}
+          onChange={(e) => {
+            setPaste(e.target.value.toUpperCase())
+            setError(null)
+            setStatus(null)
+          }}
+        />
+        <button
+          type="button"
+          className="btn btn--solid btn--wide"
+          onClick={() => void sendFriendInvite()}
+          disabled={busy || !userId || !paste.trim()}
+        >
+          {t('send_request')}
+        </button>
         {status && <p className="friends__status">{status}</p>}
         {error && <p className="friends__error">{error}</p>}
-      </div>
+      </section>
     </div>
   )
 

@@ -22,6 +22,7 @@ type ProfilePanelProps = {
   entries: Entry[]
   startedOn: string
   totalMinutes: number
+  xp: number
   level: number
   goonStreak: number
   dryStreak: number
@@ -49,6 +50,7 @@ export function ProfilePanel({
   entries,
   startedOn,
   totalMinutes,
+  xp,
   level,
   goonStreak,
   dryStreak,
@@ -232,7 +234,7 @@ export function ProfilePanel({
             <span className="metric-strip__label">{t('level')}</span>
             <strong className="metric-strip__value">
               {level}
-              <span className="metric-strip__sub">{totalMinutes} XP</span>
+              <span className="metric-strip__sub">{xp} XP</span>
             </strong>
           </div>
         )}

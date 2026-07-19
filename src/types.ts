@@ -19,6 +19,8 @@ export type Entry = {
   category: Category
   /** Total minutes across all parts */
   minutes: number
+  /** XP awarded at log time (streak multiplier). Falls back to minutes if omitted. */
+  xp?: number
   /** Intensity 0–10 */
   goonometer: number
   date: string
@@ -55,6 +57,8 @@ export type GoonPost = {
   parts?: EntryPart[]
 }
 
+export type RecReaction = 'up' | 'mid' | 'down'
+
 export type Recommendation = {
   id: string
   userId: string
@@ -66,6 +70,8 @@ export type Recommendation = {
   fileUrl?: string
   fileName?: string
   createdAt: string
+  reactions: Record<RecReaction, number>
+  myReaction?: RecReaction | null
 }
 
 export type FriendSnapshot = {
@@ -88,6 +94,10 @@ export type FriendSnapshot = {
 export type TrackerData = {
   entries: Entry[]
   startedOn: string
+  /** Cumulative focus-streak daily XP grants (level only). */
+  focusXpTotal?: number
+  /** Last calendar day a focus XP grant was applied. */
+  lastFocusXpDate?: string
   profile: {
     id: string
     name: string

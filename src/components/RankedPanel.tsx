@@ -25,6 +25,7 @@ type RankedPanelProps = {
   userId?: string
   onViewedOtherProfile?: () => void
   onFriendsChanged?: (friends: FriendSnapshot[]) => void
+  onViewingChange?: (viewing: boolean) => void
 }
 
 export function RankedPanel({
@@ -33,6 +34,7 @@ export function RankedPanel({
   userId,
   onViewedOtherProfile,
   onFriendsChanged,
+  onViewingChange,
 }: RankedPanelProps) {
   const { t } = useLocale()
   const [seasonInfo, setSeasonInfo] = useState<SeasonInfo>(() => getSeasonInfo())
@@ -80,6 +82,7 @@ export function RankedPanel({
     const result = await fetchProfileById(id)
     if ('error' in result) return
     setViewing(result.profile)
+    onViewingChange?.(true)
   }
 
   async function refreshFriends() {
@@ -92,7 +95,10 @@ export function RankedPanel({
     return (
       <PublicProfileView
         profile={viewing}
-        onBack={() => setViewing(null)}
+        onBack={() => {
+          setViewing(null)
+          onViewingChange?.(false)
+        }}
         onViewedOtherProfile={onViewedOtherProfile}
         meId={userId}
         onFriendsChanged={() => void refreshFriends()}

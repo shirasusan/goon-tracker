@@ -14,6 +14,7 @@ import {
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
+  setRecommendationReaction,
   type FriendRequestRow,
 } from '../lib/cloud'
 import {
@@ -22,6 +23,7 @@ import {
   type Category,
   type FriendSnapshot,
   type GoonPost,
+  type RecReaction,
   type Recommendation,
 } from '../types'
 import { Avatar } from './Avatar'
@@ -46,6 +48,7 @@ type FriendsPanelProps = {
   onFriendsSync: (friends: FriendSnapshot[]) => void
   onRemoveLocal: (id: string) => void
   onViewedOtherProfile?: () => void
+  onViewingChange?: (viewing: boolean) => void
 }
 
 type FriendsView = 'feed' | 'compare' | 'recs'
@@ -65,6 +68,7 @@ export function FriendsPanel({
   onFriendsSync,
   onRemoveLocal,
   onViewedOtherProfile,
+  onViewingChange,
 }: FriendsPanelProps) {
   const { t } = useLocale()
   const [view, setView] = useState<FriendsView>('compare')
@@ -217,6 +221,7 @@ export function FriendsPanel({
       return
     }
     setViewing(result.profile)
+    onViewingChange?.(true)
   }
 
   async function refreshIncoming(userId: string) {
@@ -290,6 +295,41 @@ export function FriendsPanel({
     if (!('error' in r)) setRecs(r.items)
   }
 
+  async function reactToRec(recId: string, next: RecReaction) {
+    const user = await ensureCloudUser()
+    if ('error' in user) {
+      setError(user.error)
+      return
+    }
+
+    const prev = recs.find((r) => r.id === recId)
+    if (!prev) return
+    const current = prev.myReaction ?? null
+    const cleared = current === next
+    const reaction = cleared ? null : next
+
+    setRecs((list) =>
+      list.map((r) => {
+        if (r.id !== recId) return r
+        const reactions = { ...(r.reactions ?? { up: 0, mid: 0, down: 0 }) }
+        if (current) reactions[current] = Math.max(0, reactions[current] - 1)
+        if (reaction) reactions[reaction] += 1
+        return { ...r, reactions, myReaction: reaction }
+      }),
+    )
+
+    const result = await setRecommendationReaction({
+      userId: user.userId,
+      recommendationId: recId,
+      reaction,
+    })
+    if (result.error) {
+      setError(result.error)
+      const r = await loadRecommendations(user.userId)
+      if (!('error' in r)) setRecs(r.items)
+    }
+  }
+
   async function expandFeed() {
     const user = await ensureCloudUser()
     if ('error' in user) {
@@ -326,7 +366,10 @@ export function FriendsPanel({
     return (
       <PublicProfileView
         profile={viewing}
-        onBack={() => setViewing(null)}
+        onBack={() => {
+          setViewing(null)
+          onViewingChange?.(false)
+        }}
         onViewedOtherProfile={onViewedOtherProfile}
         meId={meId}
         onFriendsChanged={() => {
@@ -639,9 +682,11 @@ export function FriendsPanel({
           )}
 
           <ul className="rec-list">
-            {filteredRecs.map((r) => (
+            {filteredRecs.map((r) => {
+              const reactions = r.reactions ?? { up: 0, mid: 0, down: 0 }
+              return (
               <li key={r.id} className="rec-row">
-                <div>
+                <div className="rec-row__body">
                   <strong>{r.name}</strong>
                   <span className="rec-row__meta">
                     {t('by_author')} @{r.authorName}
@@ -666,6 +711,28 @@ export function FriendsPanel({
                       📎 {r.fileName || t('file')}
                     </a>
                   )}
+                  <div className="rec-react" role="group" aria-label={t('rec_reactions')}>
+                    {(
+                      [
+                        { key: 'up' as const, label: t('react_up'), Icon: ThumbUpIcon },
+                        { key: 'mid' as const, label: t('react_mid'), Icon: ThumbMidIcon },
+                        { key: 'down' as const, label: t('react_down'), Icon: ThumbDownIcon },
+                      ] as const
+                    ).map(({ key, label, Icon }) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className={`rec-react__btn${r.myReaction === key ? ' is-active' : ''} rec-react__btn--${key}`}
+                        onClick={() => void reactToRec(r.id, key)}
+                        aria-label={label}
+                        aria-pressed={r.myReaction === key}
+                        title={label}
+                      >
+                        <Icon />
+                        <span>{reactions[key]}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 {meId && r.userId === meId && (
                   <button
@@ -678,7 +745,8 @@ export function FriendsPanel({
                   </button>
                 )}
               </li>
-            ))}
+              )
+            })}
           </ul>
           {filteredRecs.length === 0 && (
             <p className="empty">
@@ -688,5 +756,54 @@ export function FriendsPanel({
         </div>
       )}
     </div>
+  )
+}
+
+function ThumbUpIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M14 9V5a3 3 0 0 0-3-3l-4 9v11h11.28a2 2 0 0 0 2-1.7l1.38-9a2 2 0 0 0-2-2.3H14zM7 22H4a2 2 0 0 1-2-2v-7a2 2 0 0 1 2-2h3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ThumbMidIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M8 12h13M8 12a3 3 0 0 1-3-3V7a2 2 0 0 1 2-2h1M8 12a3 3 0 0 0-3 3v2a2 2 0 0 0 2 2h1"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M14 7h5a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-5"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+function ThumbDownIcon() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
+      <path
+        d="M10 15v4a3 3 0 0 0 3 3l4-9V2H5.72a2 2 0 0 0-2 1.7l-1.38 9a2 2 0 0 0 2 2.3H10zM17 2h3a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-3"
+        stroke="currentColor"
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
   )
 }
