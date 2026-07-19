@@ -31,7 +31,6 @@ type ProfilePanelProps = {
   onLogout: () => void
   onDeleteAccount: () => Promise<void>
   onRemoveEntry: (id: string) => void
-  onBack?: () => void
   settingsNonce?: number
   freshAchievementKeys?: Set<string>
   monkMode?: boolean
@@ -59,7 +58,6 @@ export function ProfilePanel({
   onLogout,
   onDeleteAccount,
   onRemoveEntry,
-  onBack,
   settingsNonce,
   freshAchievementKeys,
   monkMode,
@@ -128,12 +126,6 @@ export function ProfilePanel({
 
   return (
     <div className="profile page-stack">
-      {onBack && (
-        <button type="button" className="btn profile__back" onClick={onBack}>
-          ← {t('back')}
-        </button>
-      )}
-
       <header className="panel-hero">
         <div className="panel-hero__identity">
           <Avatar

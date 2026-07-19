@@ -57,7 +57,7 @@ export function AchievementsSection({
   if (!progress) {
     return (
       <section className={shell}>
-        <p className="achievements__empty">Noch keine freigeschaltet.</p>
+        <p className="achievements__empty">None unlocked yet.</p>
       </section>
     )
   }
@@ -68,13 +68,13 @@ export function AchievementsSection({
   return (
     <section className={`${shell} ach-showcase`}>
       <div className="block__head">
-        <h2>Erfolge</h2>
+        <h2>Achievements</h2>
         <span>
           {unlockedCount} / {totalCount}
         </span>
       </div>
 
-      <div className="ach-progress" aria-label="Fortschritt">
+      <div className="ach-progress" aria-label="Progress">
         <div className="ach-progress__track">
           <div className="ach-progress__fill" style={{ width: `${pct}%` }} />
         </div>
@@ -82,7 +82,7 @@ export function AchievementsSection({
 
       {showAll ? (
         unlocked.length === 0 ? (
-          <p className="achievements__empty">Noch keine freigeschaltet.</p>
+          <p className="achievements__empty">None unlocked yet.</p>
         ) : (
           <ul className="achievements-grid">
             {unlocked.map((a) => (
@@ -95,7 +95,7 @@ export function AchievementsSection({
         )
       ) : recent.length > 0 ? (
         <>
-          <p className="ach-showcase__recent-label">Zuletzt freigeschaltet</p>
+          <p className="ach-showcase__recent-label">Recently unlocked</p>
           <ul className="ach-showcase__strip">
             {recent.map((a) => (
               <li key={a.key}>
@@ -105,12 +105,12 @@ export function AchievementsSection({
           </ul>
         </>
       ) : (
-        <p className="achievements__empty">Noch keine freigeschaltet.</p>
+        <p className="achievements__empty">None unlocked yet.</p>
       )}
 
       {unlockedCount > 0 && (
         <button type="button" className="btn" onClick={() => setShowAll((v) => !v)}>
-          {showAll ? 'Weniger anzeigen' : 'Alle anzeigen'}
+          {showAll ? 'Show less' : 'Show all'}
         </button>
       )}
     </section>

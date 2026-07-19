@@ -10,6 +10,7 @@ import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import { goonDryToSigned } from '../lib/streaks'
 import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
+import { useLocale } from '../lib/LocaleContext'
 import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
@@ -34,6 +35,7 @@ export function PublicProfileView({
   onFriendsChanged,
   onRemoveFriend,
 }: PublicProfileViewProps) {
+  const { t } = useLocale()
   const rank = rankFromMinutes(profile.totalMinutes)
   const maxCat = Math.max(1, ...CATEGORIES.map((c) => profile.categories[c] || 0))
   const streak = goonDryToSigned(profile.goonStreak, profile.dryStreak)
@@ -123,7 +125,7 @@ export function PublicProfileView({
   return (
     <div className="profile public-profile page-stack">
       <button type="button" className="btn profile__back" onClick={onBack}>
-        ← Zurück
+        ← {t('back')}
       </button>
 
       <header className="panel-hero">
@@ -136,7 +138,7 @@ export function PublicProfileView({
             size="lg"
           />
           <div className="panel-hero__text">
-            <p className="eyebrow">Profil</p>
+            <p className="eyebrow">{t('nav_profile')}</p>
             <h1 className="panel-hero__name">{profile.name}</h1>
             <p className="profile__user">@{profile.username || profile.name}</p>
           </div>
@@ -228,7 +230,7 @@ export function PublicProfileView({
           className={`chip${seg === 'overview' ? ' is-active' : ''}`}
           onClick={() => setSeg('overview')}
         >
-          Übersicht
+          {t('overview')}
         </button>
         <button
           type="button"
@@ -237,7 +239,7 @@ export function PublicProfileView({
           className={`chip${seg === 'stats' ? ' is-active' : ''}`}
           onClick={() => setSeg('stats')}
         >
-          Statistiken
+          {t('stats')}
         </button>
       </div>
 
@@ -248,8 +250,8 @@ export function PublicProfileView({
       {seg === 'stats' && (
         <section className="profile-panel">
           <div className="block__head">
-            <h2>Statistiken</h2>
-            <span>Kategorien</span>
+            <h2>{t('stats')}</h2>
+            <span>{t('categories')}</span>
           </div>
           <ul className="cat-stats">
             {CATEGORIES.map((cat) => {

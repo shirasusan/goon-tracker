@@ -275,7 +275,7 @@ export function loadPastSeasonRanks(): PastSeasonRank[] {
           typeof (x as PastSeasonRank).season === 'number' &&
           typeof (x as PastSeasonRank).rankId === 'string',
       )
-      .filter((x) => x.season >= 1)
+      .filter((x) => x.season >= 0)
   } catch {
     return []
   }
@@ -284,7 +284,7 @@ export function loadPastSeasonRanks(): PastSeasonRank[] {
 /** Merge completed-season ranks from cloud (only seasons before current). */
 export function syncPastSeasonRanks(rows: PastSeasonRank[]): PastSeasonRank[] {
   const current = getSeasonInfo().season
-  const completed = rows.filter((r) => r.season >= 1 && r.season < current)
+  const completed = rows.filter((r) => r.season >= 0 && r.season < current)
   const bySeason = new Map(loadPastSeasonRanks().map((r) => [r.season, r]))
   for (const r of completed) bySeason.set(r.season, r)
   const next = [...bySeason.values()].sort((a, b) => a.season - b.season)
@@ -394,7 +394,7 @@ function unlockedSeasonAchievements(
 ): UnlockedAchievement[] {
   const current = getSeasonInfo().season
   return past
-    .filter((r) => r.season >= 1 && r.season < current)
+    .filter((r) => r.season >= 0 && r.season < current)
     .map((r) => {
       const rank = RANKS.find((x) => x.id === r.rankId) ?? RANKS[0]
       return {

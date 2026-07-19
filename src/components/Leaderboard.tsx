@@ -3,6 +3,7 @@ import { fetchAllTimeLeaderboard, fetchSeasonLeaderboard } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import { getSeasonInfo } from '../lib/season'
+import { useLocale } from '../lib/LocaleContext'
 import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
@@ -20,13 +21,17 @@ type LeaderboardProps = {
   hideCategoryFilter?: boolean
 }
 
-function displayRow(row: FriendSnapshot, highlightId?: string) {
+function displayRow(
+  row: FriendSnapshot,
+  highlightId: string | undefined,
+  anonymousLabel: string,
+) {
   const isYou = row.id === highlightId
   const anon = Boolean(row.rankedAnonymous) && !isYou
   return {
     anon,
-    label: anon ? 'Anonym' : row.username ? `@${row.username}` : row.name,
-    name: anon ? 'Anonym' : row.name,
+    label: anon ? anonymousLabel : row.username ? `@${row.username}` : row.name,
+    name: anon ? anonymousLabel : row.name,
     avatarUrl: anon ? undefined : row.avatarUrl,
     goonStreak: anon ? 0 : row.goonStreak,
     dryStreak: anon ? 0 : row.dryStreak,
@@ -41,14 +46,15 @@ export function CategoryFilterSelect({
   value: Category | 'all'
   onChange: (value: Category | 'all') => void
 }) {
+  const { t } = useLocale()
   return (
     <div className="friends__filters">
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as Category | 'all')}
-        aria-label="Kategorie"
+        aria-label={t('category')}
       >
-        <option value="all">Alle Kategorien</option>
+        <option value="all">{t('all_categories')}</option>
         {CATEGORIES.map((c) => (
           <option key={c} value={c}>
             {CATEGORY_META[c].label}
@@ -68,6 +74,7 @@ export function Leaderboard({
   onCategoryChange,
   hideCategoryFilter = false,
 }: LeaderboardProps) {
+  const { t } = useLocale()
   const activeSeason = season ?? getSeasonInfo().season
   const [internalCategory, setInternalCategory] = useState<Category | 'all'>('all')
   const category = controlledCategory ?? internalCategory
@@ -119,7 +126,7 @@ export function Leaderboard({
       <ol className="leaderboard">
         {rows.map((row, i) => {
           const rank = rankFromMinutes(row.totalMinutes)
-          const view = displayRow(row, highlightId)
+          const view = displayRow(row, highlightId, t('anonymous'))
           return (
             <li
               key={row.id}

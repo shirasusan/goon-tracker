@@ -7,7 +7,7 @@ import {
 } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankProgressFromMinutes } from '../lib/ranks'
-import { formatCountdown, getSeasonInfo, seasonDisplayName, type SeasonInfo } from '../lib/season'
+import { formatCountdown, getSeasonInfo, type SeasonInfo } from '../lib/season'
 import type { Category, Entry, FriendSnapshot } from '../types'
 import {
   CategoryFilterSelect,
@@ -17,6 +17,7 @@ import {
 import { PublicProfileView } from './PublicProfileView'
 import { RankBadge } from './RankBadge'
 import { RankHelp } from './RankHelp'
+import { useLocale } from '../lib/LocaleContext'
 
 type RankedPanelProps = {
   entries: Entry[]
@@ -33,6 +34,7 @@ export function RankedPanel({
   onViewedOtherProfile,
   onFriendsChanged,
 }: RankedPanelProps) {
+  const { t } = useLocale()
   const [seasonInfo, setSeasonInfo] = useState<SeasonInfo>(() => getSeasonInfo())
   const [viewing, setViewing] = useState<FriendSnapshot | null>(null)
   const [syncError, setSyncError] = useState<string | null>(null)
@@ -103,7 +105,6 @@ export function RankedPanel({
     <div className="ranked page-stack">
       <header className="ranked__top">
         <div className="ranked__top-main">
-          <h2 className="ranked__title">{seasonDisplayName(seasonInfo.season)}</h2>
           <p className="ranked__dates">
             {seasonInfo.startKey} → {seasonInfo.endKeyExclusive}
           </p>
@@ -158,14 +159,14 @@ export function RankedPanel({
                 className={`chip${boardMode === 'season' ? ' is-active' : ''}`}
                 onClick={() => setBoardMode('season')}
               >
-                Saison
+                {t('season')}
               </button>
               <button
                 type="button"
                 className={`chip${boardMode === 'alltime' ? ' is-active' : ''}`}
                 onClick={() => setBoardMode('alltime')}
               >
-                Allzeit
+                {t('all_time')}
               </button>
             </div>
             <CategoryFilterSelect value={category} onChange={setCategory} />

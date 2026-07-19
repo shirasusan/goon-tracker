@@ -24,7 +24,7 @@ export function AchievementUnlockOverlay({
       style={{ ['--ach' as string]: achievement.color }}
       role="dialog"
       aria-modal="true"
-      aria-label="Achievement freigeschaltet"
+      aria-label="Achievement unlocked"
       onClick={onDone}
     >
       <div className="ach-fullscreen__veil" aria-hidden />
@@ -40,7 +40,7 @@ export function AchievementUnlockOverlay({
       </div>
 
       <div className="ach-fullscreen__content" onClick={(e) => e.stopPropagation()}>
-        <p className="ach-fullscreen__eyebrow">Erfolg freigeschaltet</p>
+        <p className="ach-fullscreen__eyebrow">Achievement unlocked</p>
         <div className="ach-fullscreen__badge ach-badge is-fresh" aria-hidden>
           <span className="ach-badge__ring" />
           <span className="ach-badge__core">
@@ -51,7 +51,7 @@ export function AchievementUnlockOverlay({
         <h2 className="ach-fullscreen__title">{achievement.title}</h2>
         <p className="ach-fullscreen__cat">{achievement.subtitle}</p>
         <button type="button" className="btn btn--solid ach-fullscreen__ok" onClick={onDone}>
-          Weiter
+          Continue
         </button>
       </div>
     </div>,

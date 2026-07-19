@@ -89,36 +89,42 @@ export function AddFriendControl({
           </div>
           <div className="friends__share">
             <p>{t('your_code')}</p>
-            <input className="friends__code" readOnly value={cloudCode || '…'} />
-            <button
-              type="button"
-              className="btn"
-              onClick={() => void copyFriendCode()}
-              disabled={!cloudCode}
-            >
-              {copied ? t('copied') : t('copy_code')}
-            </button>
+            <div className="friends__share-row">
+              <input className="friends__code" readOnly value={cloudCode || '…'} />
+              <button
+                type="button"
+                className="btn"
+                onClick={() => void copyFriendCode()}
+                disabled={!cloudCode}
+              >
+                {copied ? t('copied') : t('copy_code')}
+              </button>
+            </div>
           </div>
           <div className="friends__add">
             <label htmlFor="add-friend-code">{t('friend_code')}</label>
-            <input
-              id="add-friend-code"
-              placeholder="AB12CD"
-              value={paste}
-              onChange={(e) => {
-                setPaste(e.target.value.toUpperCase())
-                setError(null)
-                setStatus(null)
-              }}
-            />
-            <button
-              type="button"
-              className="btn btn--solid"
-              onClick={() => void sendFriendInvite()}
-              disabled={busy || !userId}
-            >
-              {t('send_request')}
-            </button>
+            <div className="friends__add-row">
+              <input
+                id="add-friend-code"
+                placeholder="AB12CD"
+                value={paste}
+                autoComplete="off"
+                spellCheck={false}
+                onChange={(e) => {
+                  setPaste(e.target.value.toUpperCase())
+                  setError(null)
+                  setStatus(null)
+                }}
+              />
+              <button
+                type="button"
+                className="btn btn--solid"
+                onClick={() => void sendFriendInvite()}
+                disabled={busy || !userId || !paste.trim()}
+              >
+                {t('send_request')}
+              </button>
+            </div>
             {status && <p className="friends__status">{status}</p>}
             {error && <p className="friends__error">{error}</p>}
           </div>

@@ -1,13 +1,11 @@
 /**
- * Season 0 is pre-launch (no competitive board).
- * Season 1 starts at this epoch; each season lasts 30 days, then season number +1.
+ * Seasons are 0-indexed from the epoch; each lasts 30 days, then season number +1.
  */
 const SEASON_EPOCH_UTC = Date.UTC(2026, 6, 1) // 2026-07-01
 const SEASON_MS = 30 * 24 * 60 * 60 * 1000
 
 export function seasonDisplayName(season: number): string {
-  if (season <= 0) return 'Season 0'
-  return `Season ${season}`
+  return `Season ${Math.max(0, season)}`
 }
 
 export type SeasonInfo = {
@@ -30,7 +28,7 @@ function toKey(d: Date): string {
 export function getSeasonInfo(now = new Date()): SeasonInfo {
   const elapsed = Math.max(0, now.getTime() - SEASON_EPOCH_UTC)
   const index = Math.floor(elapsed / SEASON_MS)
-  const season = index + 1
+  const season = index
   const start = new Date(SEASON_EPOCH_UTC + index * SEASON_MS)
   const end = new Date(start.getTime() + SEASON_MS)
   return {

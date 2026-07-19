@@ -46,6 +46,7 @@ import {
 } from './lib/storage'
 import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import { loadTour, saveTour, shouldShowTour, TOUR_STEPS, type TourState } from './lib/tour'
+import { getSeasonInfo, seasonDisplayName } from './lib/season'
 import type { Category, FriendSnapshot, TrackerData } from './types'
 import { useLocale } from './lib/LocaleContext'
 import type { MsgId } from './lib/i18n'
@@ -470,7 +471,12 @@ export default function App() {
     )
   }
 
-  const page = { title: t(PAGE_MSG[tab]) }
+  const page = {
+    title:
+      tab === 'ranked'
+        ? `${t('nav_ranked')} · ${seasonDisplayName(getSeasonInfo().season)}`
+        : t(PAGE_MSG[tab]),
+  }
   const displayLabel =
     data.profile.name.trim() || data.profile.username || t('nav_profile')
   const activeUnlock = unlockQueue[0] ?? null
@@ -549,7 +555,6 @@ export default function App() {
               onLogout={() => void handleLogout()}
               onDeleteAccount={handleDeleteAccount}
               onRemoveEntry={removeEntry}
-              onBack={() => setTab('home')}
               freshAchievementKeys={freshKeys}
               monkMode={monkMode}
               onMonkModeChange={setMonkMode}

@@ -579,7 +579,7 @@ export function FriendsPanel({
                     placeholder="Titel"
                     onChange={(e) => setRecName(e.target.value)}
                   />
-                  <label htmlFor="rec-category">Kategorie</label>
+                  <label htmlFor="rec-category">{t('category')}</label>
                   <select
                     id="rec-category"
                     value={recCategory}
