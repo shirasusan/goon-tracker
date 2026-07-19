@@ -21,6 +21,7 @@ export function BottomNav({ active, onChange, hideRanked }: BottomNavProps) {
       aria-label="Hauptnavigation"
       style={{ ['--nav-cols' as string]: String(tabs.length) }}
     >
+      <p className="bottom-nav__overview">Overview</p>
       {tabs.map((tab) => (
         <button
           key={tab.id}

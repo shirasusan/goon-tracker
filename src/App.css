@@ -212,6 +212,14 @@
   letter-spacing: 0.01em;
 }
 
+.bottom-nav__overview {
+  display: none;
+}
+
+.chrome {
+  display: none;
+}
+
 .level {
   padding: 0;
 }
@@ -2571,40 +2579,82 @@ button.avatar {
 /* —— Desktop / adaptive layout —— */
 @media (min-width: 900px) {
   :root {
-    --nav-side: 12rem;
+    --nav-side: 13rem;
+    --chrome-h: 3.75rem;
   }
 
-  .shell > .app {
-    width: calc(100% - var(--nav-side));
+  .shell {
+    display: grid;
+    grid-template-columns: var(--nav-side) minmax(0, 1fr);
+    grid-template-rows: var(--chrome-h) minmax(0, 1fr);
+    min-height: 100dvh;
+  }
+
+  .chrome {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1.25rem;
+    grid-column: 1 / -1;
+    grid-row: 1;
+    height: var(--chrome-h);
+    padding: 0 1.75rem 0 1.35rem;
+    border-bottom: 1px solid var(--line);
+    background: var(--bg);
+    z-index: 30;
+  }
+
+  .chrome__brand {
+    margin: 0;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+  }
+
+  .chrome__me {
     max-width: none;
-    margin: 0 0 0 var(--nav-side);
-    padding: 1.5rem max(2rem, calc((100% - 1080px) / 2)) 2.5rem;
   }
 
   .shell > .bottom-nav {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
+    grid-column: 1;
+    grid-row: 2;
+    position: relative;
+    top: auto;
+    left: auto;
+    bottom: auto;
     right: auto;
     transform: none;
-    width: var(--nav-side);
-    height: 100dvh;
+    width: 100%;
+    height: auto;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     align-items: stretch;
-    gap: 0.15rem;
-    padding: 1.75rem 0.85rem;
+    gap: 0.2rem;
+    padding: 1.35rem 0.9rem 1.5rem;
     border: none;
     border-top: none;
     border-right: 1px solid var(--line);
     background: var(--bg);
   }
 
+  .bottom-nav__overview {
+    display: block;
+    margin: 0 0 0.85rem;
+    padding: 0 0.85rem;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
   .bottom-nav__btn {
     justify-items: start;
     place-items: start;
-    padding: 0.7rem 0.85rem;
+    padding: 0.75rem 0.85rem;
     min-height: auto;
     border-bottom: none;
     border-left: 2px solid transparent;
@@ -2618,7 +2668,45 @@ button.avatar {
   }
 
   .bottom-nav__label {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
+  }
+
+  .shell > .app {
+    grid-column: 2;
+    grid-row: 2;
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 1.75rem 2.5rem 2.75rem;
+    overflow: auto;
+  }
+
+  .shell > .ach-fullscreen {
+    grid-column: 1 / -1;
+    grid-row: 1 / -1;
+  }
+
+  .shell > .app-version {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .top__brand,
+  .top__me--mobile {
+    display: none;
+  }
+
+  .top {
+    padding-bottom: 1.15rem;
+    margin-bottom: 0.45rem;
+  }
+
+  .top__title {
+    font-size: clamp(2rem, 2.6vw, 2.55rem);
+  }
+
+  .top__sub {
+    font-size: 0.95rem;
   }
 
   .app-version {
@@ -2627,49 +2715,40 @@ button.avatar {
     bottom: 1rem;
   }
 
-  .top {
-    padding-bottom: 1.1rem;
-    margin-bottom: 0.35rem;
-  }
-
-  .top__title {
-    font-size: clamp(1.85rem, 2.4vw, 2.35rem);
-  }
-
-  .top__me {
-    max-width: none;
-  }
-
   .home-compose {
-    gap: 1.5rem;
+    gap: 1.75rem;
   }
 
   .home-compose__hero:has(.home-compose__streak) {
     display: grid;
-    grid-template-columns: 1.35fr 0.9fr;
-    gap: 1.5rem 2rem;
+    grid-template-columns: 1.4fr 0.85fr;
+    gap: 1.75rem 2.5rem;
     align-items: start;
-    padding-bottom: 1.35rem;
+    padding-bottom: 1.5rem;
   }
 
   .home-compose__hero:has(.home-compose__streak) .home-compose__streak {
     border-top: none;
     border-left: 1px solid var(--line-soft);
     padding-top: 0;
-    padding-left: 1.5rem;
+    padding-left: 1.75rem;
   }
 
   .home-hero {
-    gap: 1.35rem;
+    gap: 1.5rem;
+  }
+
+  .home-compose__primary {
+    max-width: none;
   }
 
   .ranked.page-stack {
     display: grid;
-    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+    grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.25fr);
     grid-template-areas:
       'season season'
       'progress board';
-    gap: 1.25rem 1.75rem;
+    gap: 1.5rem 2rem;
     align-items: start;
   }
 
@@ -2686,21 +2765,15 @@ button.avatar {
   }
 
   .friends.page-stack {
-    gap: 1.25rem;
+    gap: 1.5rem;
   }
 
   .friends__board,
   .leaderboard-wrap,
-  .goon-feed {
-    max-width: none;
-  }
-
-  .metric-strip {
-    max-width: 42rem;
-  }
-
+  .goon-feed,
+  .metric-strip,
   .profile.page-stack {
-    max-width: 44rem;
+    max-width: none;
   }
 
   .auth {
@@ -2710,18 +2783,28 @@ button.avatar {
 
   .recs__modal-card,
   .friends__add-modal {
-    width: min(100%, 400px);
+    width: min(100%, 420px);
   }
 }
 
 @media (min-width: 1200px) {
   :root {
-    --nav-side: 13.5rem;
+    --nav-side: 14.5rem;
   }
 
   .shell > .app {
-    padding-top: 1.75rem;
-    padding-inline: max(2.5rem, calc((100% - 1140px) / 2));
+    padding: 2rem 3.25rem 3rem;
+  }
+
+  .chrome {
+    padding-left: 1.5rem;
+    padding-right: 2rem;
+  }
+}
+
+@media (min-width: 1440px) {
+  .shell > .app {
+    padding-inline: 4rem;
   }
 }
 

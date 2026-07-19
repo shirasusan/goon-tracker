@@ -461,6 +461,32 @@ export default function App() {
           onDone={() => setUnlockQueue((q) => q.slice(1))}
         />
       )}
+
+      <header className="chrome">
+        <p className="chrome__brand">Goon Tracker</p>
+        <button
+          type="button"
+          className={`top__me chrome__me${showProfile ? ' is-active' : ''}`}
+          onClick={() => setShowProfile(true)}
+          aria-label="Profil öffnen"
+        >
+          <Avatar
+            src={data.profile.avatarUrl}
+            name={displayLabel}
+            goonStreak={goonStreak}
+            dryStreak={dryStreak}
+            size="sm"
+          />
+          <span className="top__me-name">{displayLabel}</span>
+        </button>
+      </header>
+
+      <BottomNav
+        active={showProfile ? null : tab}
+        onChange={openTab}
+        hideRanked={monkMode}
+      />
+
       <div className="app">
         <header className="top">
           <div className="top__left">
@@ -470,7 +496,7 @@ export default function App() {
           </div>
           <button
             type="button"
-            className={`top__me${showProfile ? ' is-active' : ''}`}
+            className={`top__me top__me--mobile${showProfile ? ' is-active' : ''}`}
             onClick={() => setShowProfile(true)}
             aria-label="Profil öffnen"
           >
@@ -600,11 +626,6 @@ export default function App() {
         </main>
       </div>
 
-      <BottomNav
-        active={showProfile ? null : tab}
-        onChange={openTab}
-        hideRanked={monkMode}
-      />
       <p className="app-version" aria-label="Version">
         Beta 1.0
       </p>
