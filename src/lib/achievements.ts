@@ -17,7 +17,7 @@ export const ACHIEVEMENT_TIERS: AchievementTier[] = [
   { id: 'going-further', title: 'Going Further and Beyond', short: '100h', minHours: 100 },
   {
     id: 'just-to-suffer',
-    title: 'Why are we still here just to suffer',
+    title: 'Why Are We Still Here Just to Suffer',
     short: '1k',
     minHours: 1000,
   },
@@ -66,7 +66,7 @@ export const SPECIAL_ACHIEVEMENTS: SpecialAchievementDef[] = [
   },
   {
     id: 'just-getting-started',
-    title: "You're just getting started right?",
+    title: "You're Just Getting Started Right?",
     short: '2×',
     subtitle: 'Daily',
     color: '#ff9900',
@@ -74,7 +74,7 @@ export const SPECIAL_ACHIEVEMENTS: SpecialAchievementDef[] = [
   },
   {
     id: 'going-somewhere',
-    title: "You're going somewhere",
+    title: "You're Going Somewhere",
     short: '3×',
     subtitle: 'Daily',
     color: '#ff6b2d',
@@ -212,7 +212,7 @@ export const SPECIAL_ACHIEVEMENTS: SpecialAchievementDef[] = [
   },
   {
     id: 'its-ok-bro',
-    title: "It's Ok Bro",
+    title: "It's OK Bro",
     short: '≤1m',
     subtitle: 'Session',
     color: '#ed2553',

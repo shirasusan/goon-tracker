@@ -28,9 +28,12 @@ const dict = {
     settings: 'Einstellungen',
     display_name: 'Anzeigename',
     change_photo: 'Bild ändern',
+    change_photo_hint: 'Bild tippen zum Ändern',
     uploading: 'Upload…',
     language: 'Sprache',
     language_hint: 'Oberfläche auf Deutsch oder Englisch. Kategorien, Ränge, Achievements, Goonometer und Streak-Namen bleiben gleich.',
+    preferences: 'Präferenzen',
+    account: 'Konto',
     monk_mode: 'Mönchsmodus',
     monk_hint:
       'Blendet Eintragen, Rang, Rangliste, Empfehlungen, Statistiken und Goonometer aus',
@@ -92,10 +95,13 @@ const dict = {
     settings: 'Settings',
     display_name: 'Display name',
     change_photo: 'Change photo',
+    change_photo_hint: 'Tap photo to change',
     uploading: 'Upload…',
     language: 'Language',
     language_hint:
       'UI in German or English. Categories, ranks, achievements, Goonometer, and streak names stay the same.',
+    preferences: 'Preferences',
+    account: 'Account',
     monk_mode: 'Monk mode',
     monk_hint:
       'Hides logging, rank, ranked, recommendations, stats, and Goonometer',

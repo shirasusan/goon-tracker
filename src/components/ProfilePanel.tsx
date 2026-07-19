@@ -256,47 +256,69 @@ export function ProfilePanel({
           </div>
 
           <div className="settings-group">
-            <label htmlFor="display-name">{t('display_name')}</label>
-            <input
-              id="display-name"
-              value={displayName}
-              maxLength={24}
-              onChange={(e) => onNameChange(e.target.value)}
-            />
-            <input
-              ref={fileRef}
-              type="file"
-              accept="image/*"
-              hidden
-              onChange={(e) => void onPickAvatar(e.target.files?.[0])}
-            />
-            <button
-              type="button"
-              className="btn"
-              disabled={uploading || !userId}
-              onClick={() => fileRef.current?.click()}
-            >
-              {uploading ? t('uploading') : t('change_photo')}
-            </button>
+            <h3 className="settings-group__title">{t('nav_profile')}</h3>
+            <div className="settings-profile">
+              <input
+                ref={fileRef}
+                type="file"
+                accept="image/*"
+                hidden
+                onChange={(e) => void onPickAvatar(e.target.files?.[0])}
+              />
+              <button
+                type="button"
+                className="settings-profile__avatar"
+                disabled={uploading || !userId}
+                onClick={() => fileRef.current?.click()}
+                aria-label={uploading ? t('uploading') : t('change_photo')}
+              >
+                <Avatar
+                  src={avatarUrl}
+                  name={displayName}
+                  goonStreak={goonStreak}
+                  dryStreak={dryStreak}
+                  size="lg"
+                />
+              </button>
+              <div className="settings-profile__fields">
+                <label htmlFor="display-name">{t('display_name')}</label>
+                <input
+                  id="display-name"
+                  value={displayName}
+                  maxLength={24}
+                  onChange={(e) => onNameChange(e.target.value)}
+                />
+                <p className="profile__switch-hint">
+                  {uploading ? t('uploading') : t('change_photo_hint')}
+                </p>
+              </div>
+            </div>
           </div>
 
           <div className="settings-group">
-            <label htmlFor="ui-locale">{t('language')}</label>
+            <h3 className="settings-group__title">{t('language')}</h3>
             <p className="profile__switch-hint">{t('language_hint')}</p>
-            <select
-              id="ui-locale"
-              value={locale}
-              onChange={(e) => onLocaleChange(e.target.value as Locale)}
+            <div
+              className="settings-lang friends__tabs"
+              role="group"
+              aria-label={t('language')}
             >
               {LOCALES.map((opt) => (
-                <option key={opt.id} value={opt.id}>
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={`chip${locale === opt.id ? ' is-active' : ''}`}
+                  aria-pressed={locale === opt.id}
+                  onClick={() => onLocaleChange(opt.id)}
+                >
                   {opt.label}
-                </option>
+                </button>
               ))}
-            </select>
+            </div>
           </div>
 
           <div className="settings-group settings-group--switches">
+            <h3 className="settings-group__title">{t('preferences')}</h3>
             {onMonkModeChange && (
               <label className="profile__switch" htmlFor="monk-mode">
                 <span>
@@ -331,6 +353,7 @@ export function ProfilePanel({
           </div>
 
           <div className="settings-group settings-group--danger">
+            <h3 className="settings-group__title">{t('account')}</h3>
             <p className="profile__stat">{t('delete_warn')}</p>
             <div className="profile__account-actions">
               <button type="button" className="btn" onClick={onLogout}>
