@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { fetchAllTimeLeaderboard, fetchSeasonLeaderboard } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
-import { getSeasonInfo, seasonDisplayName } from '../lib/season'
+import { getSeasonInfo } from '../lib/season'
 import { CATEGORIES, CATEGORY_META, type Category, type FriendSnapshot } from '../types'
 import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
@@ -74,7 +74,6 @@ export function Leaderboard({
   return (
     <div className="leaderboard-wrap">
       <div className="friends__board-head">
-        <h3>{mode === 'alltime' ? 'All Time' : seasonDisplayName(activeSeason)}</h3>
         <div className="friends__filters">
           <select
             value={category}

@@ -95,81 +95,82 @@ export function RankedPanel({
 
   return (
     <div className="ranked page-stack">
-      <section className="panel-hero ranked__season">
-        <p className="ranked__eyebrow">Competitive</p>
-        <h2 className="ranked__title">{seasonDisplayName(seasonInfo.season)}</h2>
+      <header className="ranked__top">
+        <div className="ranked__top-main">
+          <h2 className="ranked__title">{seasonDisplayName(seasonInfo.season)}</h2>
+          <p className="ranked__dates">
+            {seasonInfo.startKey} → {seasonInfo.endKeyExclusive}
+          </p>
+        </div>
         <p className="ranked__reset">
           Reset in <strong>{formatCountdown(seasonInfo.msUntilReset)}</strong>
         </p>
-        <p className="ranked__dates">
-          {seasonInfo.startKey} → {seasonInfo.endKeyExclusive}
-        </p>
-      </section>
+      </header>
 
-      <section className="profile-panel ranked__progress">
-        <div className="block__head">
-          <h2 className="ranked__progress-title">
-            Ranked Progression
-            <button
-              type="button"
-              className="help-btn"
-              aria-label="Ranks erklären"
-              onClick={() => setShowRankHelp(true)}
-            >
-              ?
-            </button>
-          </h2>
-          <span>{formatMinutes(seasonMinutes)} diese Season</span>
-        </div>
-        <RankBadge totalMinutes={seasonMinutes} rank={progress.rank} />
-        <div className="ranked__bar" aria-hidden>
-          <div
-            className="ranked__bar-fill"
-            style={{
-              width: `${Math.round(progress.progress * 100)}%`,
-              background: progress.rank.color,
-            }}
+      <div className="ranked__body">
+        <aside className="ranked__progress profile-panel">
+          <div className="block__head">
+            <h2 className="ranked__progress-title">
+              Dein Rank
+              <button
+                type="button"
+                className="help-btn"
+                aria-label="Ranks erklären"
+                onClick={() => setShowRankHelp(true)}
+              >
+                ?
+              </button>
+            </h2>
+            <span>{formatMinutes(seasonMinutes)}</span>
+          </div>
+          <RankBadge totalMinutes={seasonMinutes} rank={progress.rank} />
+          <div className="ranked__bar" aria-hidden>
+            <div
+              className="ranked__bar-fill"
+              style={{
+                width: `${Math.round(progress.progress * 100)}%`,
+                background: progress.rank.color,
+              }}
+            />
+          </div>
+          <p className="ranked__next">
+            {progress.next
+              ? `${progress.intoBand.toFixed(1)} / ${progress.bandSize} h bis ${progress.next.title}`
+              : 'Max Rank erreicht'}
+          </p>
+          {syncError && <p className="friends__error">{syncError}</p>}
+        </aside>
+
+        <section className="ranked__board profile-panel">
+          <div className="ranked__board-toolbar">
+            <div className="friends__tabs ranked__mode">
+              <button
+                type="button"
+                className={`chip${boardMode === 'season' ? ' is-active' : ''}`}
+                onClick={() => setBoardMode('season')}
+              >
+                Season
+              </button>
+              <button
+                type="button"
+                className={`chip${boardMode === 'alltime' ? ' is-active' : ''}`}
+                onClick={() => setBoardMode('alltime')}
+              >
+                All Time
+              </button>
+            </div>
+          </div>
+          <Leaderboard
+            key={`${boardMode}-${boardKey}`}
+            mode={boardMode}
+            season={seasonInfo.season}
+            highlightId={highlightId}
+            onSelectUser={(id) => void openProfile(id)}
           />
-        </div>
-        <p className="ranked__next">
-          {progress.next
-            ? `${progress.intoBand.toFixed(1)} / ${progress.bandSize} h bis ${progress.next.title}`
-            : 'Max Rank erreicht'}
-        </p>
-        {syncError && <p className="friends__error">{syncError}</p>}
-      </section>
+        </section>
+      </div>
 
       <RankHelp open={showRankHelp} onClose={() => setShowRankHelp(false)} />
-
-      <section className="profile-panel ranked__board">
-        <div className="block__head">
-          <h2>Leaderboard</h2>
-          <span>alle Spieler</span>
-        </div>
-        <div className="friends__tabs ranked__mode">
-          <button
-            type="button"
-            className={`chip${boardMode === 'season' ? ' is-active' : ''}`}
-            onClick={() => setBoardMode('season')}
-          >
-            Season
-          </button>
-          <button
-            type="button"
-            className={`chip${boardMode === 'alltime' ? ' is-active' : ''}`}
-            onClick={() => setBoardMode('alltime')}
-          >
-            All Time
-          </button>
-        </div>
-        <Leaderboard
-          key={`${boardMode}-${boardKey}`}
-          mode={boardMode}
-          season={seasonInfo.season}
-          highlightId={highlightId}
-          onSelectUser={(id) => void openProfile(id)}
-        />
-      </section>
     </div>
   )
 }

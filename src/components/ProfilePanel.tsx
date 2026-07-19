@@ -275,7 +275,7 @@ export function ProfilePanel({
                 <span>
                   <strong>Monk Mode</strong>
                   <span className="profile__switch-hint">
-                    Blendet Eintragen, Rank, Ranked, Recs, Stats und Goonometer aus
+                    Blendet Eintragen, Rank, Ranked, Recommendations, Stats und Goonometer aus
                   </span>
                 </span>
                 <input

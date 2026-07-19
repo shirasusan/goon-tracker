@@ -460,7 +460,8 @@ export function FriendsPanel({
             className={`chip${view === 'recs' ? ' is-active' : ''}`}
             onClick={() => setView('recs')}
           >
-            Recs
+            <span className="friends__tab-short">Recs</span>
+            <span className="friends__tab-full">Recommendations</span>
           </button>
         )}
         <button
@@ -565,7 +566,7 @@ export function FriendsPanel({
               placeholder="Suche…"
               value={recQuery}
               onChange={(e) => setRecQuery(e.target.value)}
-              aria-label="Recs suchen"
+              aria-label="Recommendations suchen"
             />
             <button
               type="button"
@@ -581,7 +582,7 @@ export function FriendsPanel({
             <div className="recs__modal" role="dialog" aria-modal="true">
               <div className="recs__modal-card">
                 <div className="block__head">
-                  <h3>Neue Rec</h3>
+                  <h3>Neue Recommendation</h3>
                   <button
                     type="button"
                     className="section__close"

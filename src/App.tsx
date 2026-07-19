@@ -43,7 +43,7 @@ import './App.css'
 
 const PAGE_META: Record<TabId, { title: string; sub: string }> = {
   home: { title: 'Home', sub: 'Track & climb' },
-  friends: { title: 'Freunde', sub: 'Vergleich, Feed & Recs' },
+  friends: { title: 'Freunde', sub: 'Vergleich, Feed & Recommendations' },
   ranked: { title: 'Ranked', sub: 'Season & Leaderboard' },
 }
 
