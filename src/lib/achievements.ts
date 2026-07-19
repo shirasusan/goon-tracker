@@ -418,19 +418,134 @@ export function unlockedAchievementsFromContext(
 }
 
 export function loadSeenAchievements(): Set<string> {
+  return new Set(loadSeenAchievementOrder())
+}
+
+export function loadSeenAchievementOrder(): string[] {
   try {
     const raw = localStorage.getItem(SEEN_KEY)
-    if (!raw) return new Set()
+    if (!raw) return []
     const parsed = JSON.parse(raw) as unknown
-    if (!Array.isArray(parsed)) return new Set()
-    return new Set(parsed.filter((x): x is string => typeof x === 'string'))
+    if (!Array.isArray(parsed)) return []
+    return parsed.filter((x): x is string => typeof x === 'string')
   } catch {
-    return new Set()
+    return []
   }
 }
 
 export function saveSeenAchievements(keys: Iterable<string>): void {
   localStorage.setItem(SEEN_KEY, JSON.stringify([...keys]))
+}
+
+/** Fixed catalog size (specials + category tiers). Season badges add on top when unlocked. */
+export function catalogAchievementCount(): number {
+  return SPECIAL_ACHIEVEMENTS.length + CATEGORIES.length * ACHIEVEMENT_TIERS.length
+}
+
+export function nextLockedAchievement(
+  ctx: AchievementContext,
+): UnlockedAchievement | null {
+  for (const def of SPECIAL_ACHIEVEMENTS) {
+    if (def.unlocked(ctx)) continue
+    return {
+      key: `special:${def.id}`,
+      color: def.color,
+      subtitle: def.subtitle,
+      title: def.title,
+      short: def.short,
+    }
+  }
+  for (const category of CATEGORIES) {
+    const hours = hoursFromMinutes(ctx.categories[category] || 0)
+    for (const tier of ACHIEVEMENT_TIERS) {
+      if (hours >= tier.minHours) continue
+      return {
+        key: achievementKey(category, tier.id),
+        color: CATEGORY_META[category].color,
+        subtitle: CATEGORY_META[category].label,
+        title: tier.title,
+        short: tier.short,
+      }
+    }
+  }
+  return null
+}
+
+export function nextLockedFromCategories(
+  categories: Record<Category, number>,
+): UnlockedAchievement | null {
+  for (const category of CATEGORIES) {
+    const hours = hoursFromMinutes(categories[category] || 0)
+    for (const tier of ACHIEVEMENT_TIERS) {
+      if (hours >= tier.minHours) continue
+      return {
+        key: achievementKey(category, tier.id),
+        color: CATEGORY_META[category].color,
+        subtitle: CATEGORY_META[category].label,
+        title: tier.title,
+        short: tier.short,
+      }
+    }
+  }
+  return null
+}
+
+/** Most recently unlocked (by seen order), falling back to unlocked list. */
+export function recentAchievements(
+  unlocked: UnlockedAchievement[],
+  limit = 6,
+): UnlockedAchievement[] {
+  const byKey = new Map(unlocked.map((a) => [a.key, a]))
+  const out: UnlockedAchievement[] = []
+  const order = loadSeenAchievementOrder()
+  for (let i = order.length - 1; i >= 0 && out.length < limit; i--) {
+    const a = byKey.get(order[i])
+    if (a && !out.some((x) => x.key === a.key)) out.push(a)
+  }
+  for (const a of unlocked) {
+    if (out.length >= limit) break
+    if (!out.some((x) => x.key === a.key)) out.push(a)
+  }
+  return out
+}
+
+export type AchievementProgress = {
+  unlocked: UnlockedAchievement[]
+  unlockedCount: number
+  totalCount: number
+  next: UnlockedAchievement | null
+  recent: UnlockedAchievement[]
+}
+
+export function achievementProgressFromEntries(
+  entries: Entry[],
+  startedOn: string,
+  recentLimit = 6,
+): AchievementProgress {
+  const ctx = buildAchievementContext(entries, startedOn)
+  const unlocked = unlockedAchievementsFromContext(ctx)
+  const seasonExtra = unlocked.filter((a) => a.key.startsWith('special:season-')).length
+  return {
+    unlocked,
+    unlockedCount: unlocked.length,
+    totalCount: catalogAchievementCount() + seasonExtra,
+    next: nextLockedAchievement(ctx),
+    recent: recentAchievements(unlocked, recentLimit),
+  }
+}
+
+export function achievementProgressFromCategories(
+  categories: Record<Category, number>,
+  recentLimit = 6,
+): AchievementProgress {
+  const unlocked = unlockedCategoryAchievements(categories)
+  return {
+    unlocked,
+    unlockedCount: unlocked.length,
+    totalCount: CATEGORIES.length * ACHIEVEMENT_TIERS.length,
+    next: nextLockedFromCategories(categories),
+    recent: recentAchievements(unlocked, recentLimit),
+  }
 }
 
 /** Returns newly unlocked achievements and marks them as seen. First run seeds without returning. */
@@ -450,8 +565,10 @@ export function claimNewAchievements(
   const newly = unlocked.filter((a) => !seen.has(a.key))
   if (newly.length === 0) return []
 
-  const next = new Set(seen)
-  for (const a of newly) next.add(a.key)
+  const next = [...loadSeenAchievementOrder()]
+  for (const a of newly) {
+    if (!seen.has(a.key)) next.push(a.key)
+  }
   saveSeenAchievements(next)
   return newly
 }

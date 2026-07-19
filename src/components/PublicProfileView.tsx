@@ -14,7 +14,7 @@ import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
 type Relation = 'self' | 'friends' | 'outgoing' | 'incoming' | 'none'
-type PublicSeg = 'overview' | 'stats'
+type PublicSeg = 'overview' | 'achievements' | 'stats'
 
 type PublicProfileViewProps = {
   profile: FriendSnapshot
@@ -189,6 +189,15 @@ export function PublicProfileView({
         <button
           type="button"
           role="tab"
+          aria-selected={seg === 'achievements'}
+          className={`chip${seg === 'achievements' ? ' is-active' : ''}`}
+          onClick={() => setSeg('achievements')}
+        >
+          Achievements
+        </button>
+        <button
+          type="button"
+          role="tab"
           aria-selected={seg === 'stats'}
           className={`chip${seg === 'stats' ? ' is-active' : ''}`}
           onClick={() => setSeg('stats')}
@@ -198,7 +207,16 @@ export function PublicProfileView({
       </div>
 
       {seg === 'overview' && (
-        <AchievementsSection categories={profile.categories} embedded />
+        <AchievementsSection
+          categories={profile.categories}
+          embedded
+          variant="showcase"
+          onShowAll={() => setSeg('achievements')}
+        />
+      )}
+
+      {seg === 'achievements' && (
+        <AchievementsSection categories={profile.categories} embedded variant="full" />
       )}
 
       {seg === 'stats' && (

@@ -10,7 +10,7 @@ import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
 import { RankBadge } from './RankBadge'
 
-type ProfileSeg = 'overview' | 'stats' | 'settings'
+type ProfileSeg = 'overview' | 'achievements' | 'stats' | 'settings'
 
 type ProfilePanelProps = {
   userId?: string
@@ -177,6 +177,15 @@ export function ProfilePanel({
         >
           Übersicht
         </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeSeg === 'achievements'}
+          className={`chip${activeSeg === 'achievements' ? ' is-active' : ''}`}
+          onClick={() => setSeg('achievements')}
+        >
+          Achievements
+        </button>
         {!monkMode && (
           <button
             type="button"
@@ -205,6 +214,18 @@ export function ProfilePanel({
           startedOn={startedOn}
           freshKeys={freshAchievementKeys}
           embedded
+          variant="showcase"
+          onShowAll={() => setSeg('achievements')}
+        />
+      )}
+
+      {activeSeg === 'achievements' && (
+        <AchievementsSection
+          entries={entries}
+          startedOn={startedOn}
+          freshKeys={freshAchievementKeys}
+          embedded
+          variant="full"
         />
       )}
 

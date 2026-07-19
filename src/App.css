@@ -1876,6 +1876,105 @@ button.avatar {
   font-size: 0.9rem;
 }
 
+.ach-showcase {
+  gap: 0.85rem;
+}
+
+.ach-progress {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.ach-progress__track {
+  height: 0.45rem;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--line-soft);
+  overflow: hidden;
+}
+
+.ach-progress__fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--glow-dry), var(--glow-goon));
+  transition: width 0.25s ease;
+}
+
+.ach-next {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--line);
+  background: color-mix(in srgb, var(--bg-elevated) 80%, transparent);
+}
+
+.ach-next__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ach-next__row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.ach-next__text {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.ach-next__text strong {
+  font-size: 0.95rem;
+  line-height: 1.25;
+}
+
+.ach-next__text span {
+  font-size: 0.8rem;
+  color: var(--muted);
+}
+
+.ach-showcase__recent-label {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.ach-showcase__strip {
+  list-style: none;
+  margin: 0;
+  padding: 0.15rem 0;
+  display: flex;
+  gap: 0.65rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
+.ach-showcase__strip li {
+  flex: 0 0 auto;
+}
+
+.ach-badge--sm {
+  width: 64px;
+  height: 64px;
+}
+
+.ach-badge--sm .ach-badge__hours {
+  font-size: 0.78rem;
+}
+
+.ach-badge--sm .ach-badge__cat {
+  font-size: 0.55rem;
+}
+
 .achievements-grid {
   list-style: none;
   margin: 0;
