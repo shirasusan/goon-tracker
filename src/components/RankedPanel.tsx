@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   fetchProfileById,
   loadFriendProfiles,
@@ -44,6 +44,15 @@ export function RankedPanel({
   const [boardMode, setBoardMode] = useState<LeaderboardMode>('season')
   const [category, setCategory] = useState<Category | 'all'>('all')
   const [showRankHelp, setShowRankHelp] = useState(false)
+  const mounted = useRef(true)
+
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+      onViewingChange?.(false)
+    }
+  }, [onViewingChange])
 
   useEffect(() => {
     const tick = () => setSeasonInfo(getSeasonInfo())
@@ -80,6 +89,7 @@ export function RankedPanel({
 
   async function openProfile(id: string) {
     const result = await fetchProfileById(id)
+    if (!mounted.current) return
     if ('error' in result) return
     setViewing(result.profile)
     onViewingChange?.(true)

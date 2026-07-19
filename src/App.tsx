@@ -97,6 +97,7 @@ export default function App() {
   }, [data.entries, data.startedOn, todayKey])
 
   const focusAwardDay = useRef<string | null>(null)
+  const FOCUS_XP_LOCK_KEY = 'goon-tracker-focus-xp-day'
 
   /** Focus streak: 25 XP/day from day 2, times streak multiplier (once per calendar day). */
   useEffect(() => {
@@ -106,18 +107,38 @@ export default function App() {
     if (dry < 2) return
     const today = toDateKey()
     if (data.lastFocusXpDate === today || focusAwardDay.current === today) return
+    try {
+      if (localStorage.getItem(FOCUS_XP_LOCK_KEY) === today) {
+        focusAwardDay.current = today
+        if (data.lastFocusXpDate !== today) {
+          setData((prev) =>
+            prev.lastFocusXpDate === today
+              ? prev
+              : { ...prev, lastFocusXpDate: today },
+          )
+        }
+        return
+      }
+      localStorage.setItem(FOCUS_XP_LOCK_KEY, today)
+    } catch {
+      /* ignore quota / private mode */
+    }
     focusAwardDay.current = today
     const gained = awardXp(FOCUS_DAILY_XP, dry)
+    let applied = false
     setData((prev) => {
       if (prev.lastFocusXpDate === today) return prev
+      applied = true
       return {
         ...prev,
         focusXpTotal: (prev.focusXpTotal ?? 0) + gained,
         lastFocusXpDate: today,
       }
     })
-    setFlash(`+${gained} XP · Focus`)
-    window.setTimeout(() => setFlash(null), 1600)
+    if (applied) {
+      setFlash(`+${gained} XP · Focus`)
+      window.setTimeout(() => setFlash(null), 1600)
+    }
   }, [data.entries, data.startedOn, data.lastFocusXpDate, todayKey])
 
   function enqueueUnlocks(newly: UnlockedAchievement[]) {
@@ -167,8 +188,16 @@ export default function App() {
       entries,
       startedOn: hydrated.startedOn,
       friends: hydrated.friends,
-      focusXpTotal: preserveLocal?.focusXpTotal ?? 0,
-      lastFocusXpDate: preserveLocal?.lastFocusXpDate,
+      focusXpTotal: Math.max(
+        preserveLocal?.focusXpTotal ?? 0,
+        hydrated.focusXpTotal ?? 0,
+      ),
+      lastFocusXpDate:
+        preserveLocal?.lastFocusXpDate && hydrated.lastFocusXpDate
+          ? preserveLocal.lastFocusXpDate >= hydrated.lastFocusXpDate
+            ? preserveLocal.lastFocusXpDate
+            : hydrated.lastFocusXpDate
+          : preserveLocal?.lastFocusXpDate ?? hydrated.lastFocusXpDate,
       profile: {
         id: hydrated.profile.cloudUserId,
         cloudUserId: hydrated.profile.cloudUserId,
@@ -372,6 +401,8 @@ export default function App() {
         rankedAnonymous: data.profile.rankedAnonymous,
         startedOn: data.startedOn,
         snapshot: mySnapshot,
+        focusXpTotal: data.focusXpTotal ?? 0,
+        lastFocusXpDate: data.lastFocusXpDate,
       })
       void pushSeasonStats({
         userId: data.profile.cloudUserId!,
@@ -389,6 +420,8 @@ export default function App() {
     data.profile.cloudUserId,
     data.profile.cloudCode,
     data.profile.rankedAnonymous,
+    data.focusXpTotal,
+    data.lastFocusXpDate,
     mySnapshot,
     authed,
     entriesSynced,

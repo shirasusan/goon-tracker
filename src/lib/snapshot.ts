@@ -15,6 +15,20 @@ export function categoryTotals(entries: Entry[]): Record<Category, number> {
   return totals
 }
 
+/** Stats bars: only single-category goons count toward a category. */
+export function categoryTotalsSolo(entries: Entry[]): Record<Category, number> {
+  const totals = Object.fromEntries(CATEGORIES.map((c) => [c, 0])) as Record<
+    Category,
+    number
+  >
+  for (const e of entries) {
+    const parts = entryParts(e)
+    if (parts.length !== 1) continue
+    totals[parts[0].category] += parts[0].minutes
+  }
+  return totals
+}
+
 export function shortId(id: string): string {
   return id.replace(/-/g, '').slice(0, 8)
 }

@@ -7,7 +7,7 @@ import { CATEGORY_META, type Category, type Entry } from '../types'
 type EntryListProps = {
   entries: Entry[]
   onRemove: (id: string) => void
-  /** When set, show only this category's minutes for multi-part entries */
+  /** When set, time column uses this category's minutes; all parts still show as chips */
   focusCategory?: Category
 }
 
@@ -20,20 +20,25 @@ export function EntryList({ entries, onRemove, focusCategory }: EntryListProps) 
   return (
     <ul className="entry-list">
       {entries.map((entry) => {
-        const parts = focusCategory
-          ? entryParts(entry).filter((p) => p.category === focusCategory)
-          : entryParts(entry)
-        const displayMinutes = parts.reduce((sum, p) => sum + p.minutes, 0)
+        const parts = entryParts(entry)
+        const focusPart = focusCategory
+          ? parts.find((p) => p.category === focusCategory)
+          : undefined
+        const displayMinutes = focusPart
+          ? focusPart.minutes
+          : parts.reduce((sum, p) => sum + p.minutes, 0)
+        const multi = parts.length > 1
         return (
           <li key={entry.id} className="entry-row entry-row--g">
             <div className="entry-row__cats">
               {parts.map((p) => {
                 const meta = CATEGORY_META[p.category]
-                const showPartMins = Boolean(focusCategory) || parts.length > 1
+                const isFocus = !focusCategory || p.category === focusCategory
+                const showPartMins = multi
                 return (
                   <span
                     key={p.category}
-                    className="entry-row__chip"
+                    className={`entry-row__chip${multi && !isFocus ? ' entry-row__chip--side' : ''}`}
                     style={{
                       color: meta.color,
                       background: meta.bg,

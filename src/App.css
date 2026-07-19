@@ -1052,6 +1052,10 @@
   border: 1px solid;
 }
 
+.entry-row__chip--side {
+  opacity: 0.72;
+}
+
 .entry-row__date {
   color: var(--muted);
   font-size: 0.88rem;

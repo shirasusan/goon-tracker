@@ -10,6 +10,7 @@ import type {
 } from '../types'
 import { CATEGORIES } from '../types'
 import { buildEntryFromParts, normalizeParts } from './entries'
+import { levelFromXp } from './level'
 import { rankFromMinutes } from './ranks'
 import { getSeasonInfo } from './season'
 import { categoryTotals } from './snapshot'
@@ -174,6 +175,8 @@ export async function ensureCloudProfile(
       avatarUrl?: string | null
       rankedAnonymous?: boolean
       startedOn?: string | null
+      focusXpTotal?: number
+      lastFocusXpDate?: string
     }
   | { error: string }
 > {
@@ -181,15 +184,48 @@ export async function ensureCloudProfile(
 
   const { data: existing, error: readError } = await supabase
     .from('profiles')
-    .select('code, name, username, avatar_url, ranked_anonymous, started_on')
+    .select(
+      'code, name, username, avatar_url, ranked_anonymous, started_on, focus_xp_total, last_focus_xp_date',
+    )
     .eq('id', userId)
     .maybeSingle()
 
   if (readError) {
-    return {
-      error: readError.message.includes('relation')
-        ? 'Tabelle fehlt. SQL aus supabase/schema.sql im SQL Editor ausführen.'
-        : readError.message,
+    if (
+      readError.message.includes('focus_xp') ||
+      readError.message.includes('last_focus')
+    ) {
+      const fallback = await supabase
+        .from('profiles')
+        .select('code, name, username, avatar_url, ranked_anonymous, started_on')
+        .eq('id', userId)
+        .maybeSingle()
+      if (fallback.error) {
+        return {
+          error: fallback.error.message.includes('relation')
+            ? 'Tabelle fehlt. SQL aus supabase/schema.sql im SQL Editor ausführen.'
+            : fallback.error.message,
+        }
+      }
+      if (fallback.data?.code) {
+        if (username && !fallback.data.username) {
+          await supabase.from('profiles').update({ username }).eq('id', userId)
+        }
+        return {
+          code: fallback.data.code as string,
+          name: (fallback.data.name as string) || undefined,
+          username: (fallback.data.username as string) || undefined,
+          avatarUrl: (fallback.data.avatar_url as string | null) ?? null,
+          rankedAnonymous: Boolean(fallback.data.ranked_anonymous),
+          startedOn: (fallback.data.started_on as string | null) ?? null,
+        }
+      }
+    } else {
+      return {
+        error: readError.message.includes('relation')
+          ? 'Tabelle fehlt. SQL aus supabase/schema.sql im SQL Editor ausführen.'
+          : readError.message,
+      }
     }
   }
 
@@ -200,11 +236,19 @@ export async function ensureCloudProfile(
     }
     return {
       code: existing.code as string,
-      name: (existing.name as string | null) || undefined,
-      username: (existing.username as string | null) || username,
-      avatarUrl: existing.avatar_url as string | null,
+      name: (existing.name as string) || undefined,
+      username: (existing.username as string) || undefined,
+      avatarUrl: (existing.avatar_url as string | null) ?? null,
       rankedAnonymous: Boolean(existing.ranked_anonymous),
       startedOn: (existing.started_on as string | null) ?? null,
+      focusXpTotal:
+        typeof existing.focus_xp_total === 'number'
+          ? Math.max(0, Math.round(existing.focus_xp_total))
+          : 0,
+      lastFocusXpDate:
+        typeof existing.last_focus_xp_date === 'string'
+          ? existing.last_focus_xp_date
+          : undefined,
     }
   }
 
@@ -244,18 +288,29 @@ export async function pushCloudProfile(input: {
   rankedAnonymous?: boolean
   startedOn?: string
   snapshot: FriendSnapshot
+  focusXpTotal?: number
+  lastFocusXpDate?: string
 }): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
   const rank = rankFromMinutes(input.snapshot.totalMinutes)
 
-  const { error } = await supabase.from('profiles').upsert({
+  const { data: existing } = await supabase
+    .from('profiles')
+    .select('xp')
+    .eq('id', input.userId)
+    .maybeSingle()
+  const cloudXp = typeof existing?.xp === 'number' ? existing.xp : 0
+  const xp = Math.max(cloudXp, input.snapshot.xp)
+  const { level } = levelFromXp(xp)
+
+  const base = {
     id: input.userId,
     code: input.code,
     name: input.name.trim() || 'Anon',
     username: input.username ?? null,
     avatar_url: input.avatarUrl ?? input.snapshot.avatarUrl ?? null,
-    level: input.snapshot.level,
-    xp: input.snapshot.xp,
+    level,
+    xp,
     goon_streak: input.snapshot.goonStreak,
     dry_streak: input.snapshot.dryStreak,
     total_minutes: input.snapshot.totalMinutes,
@@ -264,9 +319,24 @@ export async function pushCloudProfile(input: {
     ranked_anonymous: Boolean(input.rankedAnonymous),
     started_on: input.startedOn ?? null,
     updated_at: new Date().toISOString(),
-  })
+  }
 
-  return error ? { error: error.message } : {}
+  const withFocus = {
+    ...base,
+    focus_xp_total: Math.max(0, Math.round(input.focusXpTotal ?? 0)),
+    last_focus_xp_date: input.lastFocusXpDate ?? null,
+  }
+
+  const first = await supabase.from('profiles').upsert(withFocus)
+  if (!first.error) return {}
+  if (
+    first.error.message.includes('focus_xp') ||
+    first.error.message.includes('last_focus')
+  ) {
+    const retry = await supabase.from('profiles').upsert(base)
+    return retry.error ? { error: retry.error.message } : {}
+  }
+  return { error: first.error.message }
 }
 
 export async function fetchProfileByCode(
@@ -972,6 +1042,7 @@ type TrackerEntryRow = {
   date: string
   created_at: string
   parts?: unknown
+  xp?: number | null
 }
 
 function parsePartsColumn(raw: unknown) {
@@ -997,6 +1068,10 @@ function trackerRowToEntry(row: TrackerEntryRow): Entry | null {
     typeof row.comment === 'string' && row.comment.trim()
       ? row.comment.trim().slice(0, 280)
       : undefined
+  const xp =
+    typeof row.xp === 'number' && Number.isFinite(row.xp)
+      ? Math.max(0, Math.round(row.xp))
+      : undefined
   const parts = parsePartsColumn(row.parts)
   if (parts && parts.length > 0) {
     return buildEntryFromParts({
@@ -1006,6 +1081,7 @@ function trackerRowToEntry(row: TrackerEntryRow): Entry | null {
       date: row.date,
       createdAt: row.created_at,
       comment,
+      xp,
     })
   }
   if (!CATEGORIES.includes(row.category as Category)) return null
@@ -1016,6 +1092,7 @@ function trackerRowToEntry(row: TrackerEntryRow): Entry | null {
     goonometer: Math.max(0, Math.min(10, Math.round(Number(row.goonometer) || 0))),
     date: row.date,
     createdAt: row.created_at,
+    ...(xp != null ? { xp } : {}),
     ...(comment ? { comment } : {}),
   }
 }
@@ -1031,6 +1108,7 @@ function entryToTrackerRow(userId: string, entry: Entry) {
     date: entry.date,
     created_at: entry.createdAt,
     parts: entry.parts && entry.parts.length > 0 ? entry.parts : null,
+    xp: typeof entry.xp === 'number' ? entry.xp : null,
   }
 }
 
@@ -1045,32 +1123,31 @@ export async function pullTrackerEntries(
 ): Promise<{ entries: Entry[] } | { error: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
-  const withParts =
-    'id, user_id, category, minutes, goonometer, comment, date, created_at, parts'
-  const withoutParts =
-    'id, user_id, category, minutes, goonometer, comment, date, created_at'
+  const selects = [
+    'id, user_id, category, minutes, goonometer, comment, date, created_at, parts, xp',
+    'id, user_id, category, minutes, goonometer, comment, date, created_at, parts',
+    'id, user_id, category, minutes, goonometer, comment, date, created_at',
+  ]
 
   let data: TrackerEntryRow[] | null = null
   let error: { message: string } | null = null
 
-  {
+  for (const cols of selects) {
     const res = await supabase
       .from('tracker_entries')
-      .select(withParts)
+      .select(cols)
       .eq('user_id', userId)
       .order('created_at', { ascending: true })
     data = (res.data as TrackerEntryRow[] | null) ?? null
     error = res.error
-  }
-
-  if (error && error.message.includes('parts')) {
-    const fallback = await supabase
-      .from('tracker_entries')
-      .select(withoutParts)
-      .eq('user_id', userId)
-      .order('created_at', { ascending: true })
-    data = (fallback.data as TrackerEntryRow[] | null) ?? null
-    error = fallback.error
+    if (!error) break
+    if (
+      !error.message.includes('parts') &&
+      !error.message.includes('xp') &&
+      !error.message.includes('column')
+    ) {
+      break
+    }
   }
 
   if (error) return { error: entriesTableMissing(error.message) }
@@ -1092,9 +1169,16 @@ export async function pushTrackerEntries(
   const chunkSize = 200
   for (let i = 0; i < rows.length; i += chunkSize) {
     const chunk = rows.slice(i, i + chunkSize)
-    const { error } = await supabase
+    let { error } = await supabase
       .from('tracker_entries')
       .upsert(chunk, { onConflict: 'id' })
+    if (error && (error.message.includes('xp') || error.message.includes('column'))) {
+      const withoutXp = chunk.map(({ xp: _xp, ...rest }) => rest)
+      const retry = await supabase
+        .from('tracker_entries')
+        .upsert(withoutXp, { onConflict: 'id' })
+      error = retry.error
+    }
     if (error) {
       if (error.message.includes('parts')) {
         return {
@@ -1222,6 +1306,8 @@ export async function hydrateAccountFromCloud(input: {
       entries: Entry[]
       startedOn: string
       friends: FriendSnapshot[]
+      focusXpTotal?: number
+      lastFocusXpDate?: string
       profile: {
         cloudUserId: string
         cloudCode: string
@@ -1257,6 +1343,8 @@ export async function hydrateAccountFromCloud(input: {
     entries: entriesResult.entries,
     startedOn: entriesResult.startedOn,
     friends,
+    focusXpTotal: profile.focusXpTotal ?? 0,
+    lastFocusXpDate: profile.lastFocusXpDate,
     profile: {
       cloudUserId: input.userId,
       cloudCode: profile.code,

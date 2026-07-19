@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { formatMinutes } from '../lib/format'
 import {
   acceptFriendRequest,
@@ -93,6 +93,7 @@ export function FriendsPanel({
   const [feedError, setFeedError] = useState<string | null>(null)
   const [feedBusy, setFeedBusy] = useState(false)
   const [myCode, setMyCode] = useState(cloudCode || '')
+  const mounted = useRef(true)
 
   const filteredRecs = useMemo(() => {
     const q = recQuery.trim().toLowerCase()
@@ -214,8 +215,17 @@ export function FriendsPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  useEffect(() => {
+    mounted.current = true
+    return () => {
+      mounted.current = false
+      onViewingChange?.(false)
+    }
+  }, [onViewingChange])
+
   async function openProfile(id: string) {
     const result = await fetchProfileById(id)
+    if (!mounted.current) return
     if ('error' in result) {
       setError(result.error)
       return
@@ -302,21 +312,23 @@ export function FriendsPanel({
       return
     }
 
-    const prev = recs.find((r) => r.id === recId)
-    if (!prev) return
-    const current = prev.myReaction ?? null
-    const cleared = current === next
-    const reaction = cleared ? null : next
-
-    setRecs((list) =>
-      list.map((r) => {
+    let reaction: RecReaction | null = null
+    let found = false
+    setRecs((list) => {
+      const prev = list.find((r) => r.id === recId)
+      if (!prev) return list
+      found = true
+      const current = prev.myReaction ?? null
+      reaction = current === next ? null : next
+      return list.map((r) => {
         if (r.id !== recId) return r
         const reactions = { ...(r.reactions ?? { up: 0, mid: 0, down: 0 }) }
         if (current) reactions[current] = Math.max(0, reactions[current] - 1)
         if (reaction) reactions[reaction] += 1
         return { ...r, reactions, myReaction: reaction }
-      }),
-    )
+      })
+    })
+    if (!found) return
 
     const result = await setRecommendationReaction({
       userId: user.userId,
