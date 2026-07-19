@@ -487,7 +487,6 @@ export function FriendsPanel({
       {view === 'compare' && (
         <div className="friends__board">
           <div className="friends__board-head">
-            <h3>Vergleich</h3>
             <div className="friends__filters">
               <select
                 value={categoryFilter}

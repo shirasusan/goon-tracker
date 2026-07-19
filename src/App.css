@@ -1166,9 +1166,13 @@
 .friends__board-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 0.75rem;
   margin-bottom: 0.65rem;
+}
+
+.friends__board-head:has(h3) {
+  justify-content: space-between;
 }
 
 .friends__board-head h3 {

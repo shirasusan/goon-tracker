@@ -47,10 +47,6 @@ export function GoonFeed({
 
   return (
     <div className="goon-feed">
-      <div className="block__head">
-        <h3>Letzte Goons</h3>
-        <span>{expanded ? 'Alle' : 'Top 5'}</span>
-      </div>
       {error && <p className="friends__error">{error}</p>}
       <ul className="goon-feed__list">
         {posts.map((post) => {
