@@ -41,10 +41,10 @@ import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
 import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
-const PAGE_META: Record<TabId, { title: string; sub: string }> = {
-  home: { title: 'Home', sub: 'Track & climb' },
-  friends: { title: 'Freunde', sub: 'Vergleich, Feed & Recommendations' },
-  ranked: { title: 'Ranked', sub: 'Season & Leaderboard' },
+const PAGE_META: Record<TabId, { title: string }> = {
+  home: { title: 'Home' },
+  friends: { title: 'Freunde' },
+  ranked: { title: 'Ranked' },
 }
 
 function newId() {
@@ -445,7 +445,7 @@ export default function App() {
   }
 
   const page = showProfile
-    ? { title: 'Profil', sub: 'Account & Stats' }
+    ? { title: 'Profil' }
     : PAGE_META[tab]
   const displayLabel =
     data.profile.name.trim() || data.profile.username || 'Profil'
@@ -490,9 +490,7 @@ export default function App() {
       <div className="app">
         <header className="top">
           <div className="top__left">
-            <p className="top__brand">Goon Tracker</p>
             <h1 className="top__title">{page.title}</h1>
-            <p className="top__sub">{page.sub}</p>
           </div>
           <button
             type="button"
@@ -546,12 +544,18 @@ export default function App() {
             <>
               {tab === 'home' && (
                 <div className="home-compose">
-                  {!monkMode ? (
-                    <section className="home-compose__hero">
-                      <div className="home-hero">
+                  <aside className="home-compose__overview">
+                    {!monkMode ? (
+                      <>
                         <div className="home-hero__rank">
                           <p className="eyebrow">Rank</p>
                           <RankBadge totalMinutes={totalMinutes} rank={rank} />
+                        </div>
+                        <div className="home-compose__streak" aria-label="Streak">
+                          <p className="eyebrow">Streak</p>
+                          <div className="streaks streaks--single">
+                            <StreakRing value={streak} embedded />
+                          </div>
                         </div>
                         <div className="home-hero__level">
                           <LevelBar
@@ -562,22 +566,16 @@ export default function App() {
                             totalXp={level.xp}
                           />
                         </div>
-                      </div>
+                      </>
+                    ) : (
                       <div className="home-compose__streak" aria-label="Streak">
                         <p className="eyebrow">Streak</p>
                         <div className="streaks streaks--single">
                           <StreakRing value={streak} embedded />
                         </div>
                       </div>
-                    </section>
-                  ) : (
-                    <section className="home-compose__hero" aria-label="Streak">
-                      <p className="eyebrow">Streak</p>
-                      <div className="streaks streaks--single">
-                        <StreakRing value={streak} embedded />
-                      </div>
-                    </section>
-                  )}
+                    )}
+                  </aside>
 
                   {!monkMode && (
                     <section className="home-compose__primary">

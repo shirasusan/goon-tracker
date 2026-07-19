@@ -385,12 +385,6 @@ export function FriendsPanel({
 
   return (
     <div className="friends page-stack">
-      <header className="friends__header">
-        <div className="friends__header-text">
-          <h2 className="friends__title">Freunde</h2>
-        </div>
-      </header>
-
       {incoming.length > 0 && (
         <div className="friends__requests">
           <h3>Anfragen</h3>

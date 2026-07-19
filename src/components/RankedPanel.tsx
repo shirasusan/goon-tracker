@@ -8,8 +8,12 @@ import {
 import { formatMinutes } from '../lib/format'
 import { rankProgressFromMinutes } from '../lib/ranks'
 import { formatCountdown, getSeasonInfo, seasonDisplayName, type SeasonInfo } from '../lib/season'
-import type { Entry, FriendSnapshot } from '../types'
-import { Leaderboard, type LeaderboardMode } from './Leaderboard'
+import type { Category, Entry, FriendSnapshot } from '../types'
+import {
+  CategoryFilterSelect,
+  Leaderboard,
+  type LeaderboardMode,
+} from './Leaderboard'
 import { PublicProfileView } from './PublicProfileView'
 import { RankBadge } from './RankBadge'
 import { RankHelp } from './RankHelp'
@@ -34,6 +38,7 @@ export function RankedPanel({
   const [syncError, setSyncError] = useState<string | null>(null)
   const [boardKey, setBoardKey] = useState(0)
   const [boardMode, setBoardMode] = useState<LeaderboardMode>('season')
+  const [category, setCategory] = useState<Category | 'all'>('all')
   const [showRankHelp, setShowRankHelp] = useState(false)
 
   useEffect(() => {
@@ -108,7 +113,7 @@ export function RankedPanel({
       </header>
 
       <div className="ranked__body">
-        <aside className="ranked__progress profile-panel">
+        <aside className="ranked__progress">
           <div className="block__head">
             <h2 className="ranked__progress-title">
               Dein Rank
@@ -141,7 +146,7 @@ export function RankedPanel({
           {syncError && <p className="friends__error">{syncError}</p>}
         </aside>
 
-        <section className="ranked__board profile-panel">
+        <section className="ranked__board">
           <div className="ranked__board-toolbar">
             <div className="friends__tabs ranked__mode">
               <button
@@ -159,12 +164,16 @@ export function RankedPanel({
                 All Time
               </button>
             </div>
+            <CategoryFilterSelect value={category} onChange={setCategory} />
           </div>
           <Leaderboard
             key={`${boardMode}-${boardKey}`}
             mode={boardMode}
             season={seasonInfo.season}
             highlightId={highlightId}
+            category={category}
+            onCategoryChange={setCategory}
+            hideCategoryFilter
             onSelectUser={(id) => void openProfile(id)}
           />
         </section>

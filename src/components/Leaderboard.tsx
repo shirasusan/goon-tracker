@@ -14,6 +14,10 @@ type LeaderboardProps = {
   season?: number
   highlightId?: string
   onSelectUser?: (id: string) => void
+  /** Controlled category; when set with onCategoryChange, filter UI is omitted here. */
+  category?: Category | 'all'
+  onCategoryChange?: (value: Category | 'all') => void
+  hideCategoryFilter?: boolean
 }
 
 function displayRow(row: FriendSnapshot, highlightId?: string) {
@@ -30,14 +34,44 @@ function displayRow(row: FriendSnapshot, highlightId?: string) {
   }
 }
 
+export function CategoryFilterSelect({
+  value,
+  onChange,
+}: {
+  value: Category | 'all'
+  onChange: (value: Category | 'all') => void
+}) {
+  return (
+    <div className="friends__filters">
+      <select
+        value={value}
+        onChange={(e) => onChange(e.target.value as Category | 'all')}
+        aria-label="Kategorie"
+      >
+        <option value="all">Alle Kategorien</option>
+        {CATEGORIES.map((c) => (
+          <option key={c} value={c}>
+            {CATEGORY_META[c].label}
+          </option>
+        ))}
+      </select>
+    </div>
+  )
+}
+
 export function Leaderboard({
   mode = 'season',
   season,
   highlightId,
   onSelectUser,
+  category: controlledCategory,
+  onCategoryChange,
+  hideCategoryFilter = false,
 }: LeaderboardProps) {
   const activeSeason = season ?? getSeasonInfo().season
-  const [category, setCategory] = useState<Category | 'all'>('all')
+  const [internalCategory, setInternalCategory] = useState<Category | 'all'>('all')
+  const category = controlledCategory ?? internalCategory
+  const setCategory = onCategoryChange ?? setInternalCategory
   const [rows, setRows] = useState<FriendSnapshot[]>([])
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
@@ -71,24 +105,15 @@ export function Leaderboard({
     }
   }, [category, activeSeason, mode])
 
+  const showFilter = !hideCategoryFilter
+
   return (
     <div className="leaderboard-wrap">
-      <div className="friends__board-head">
-        <div className="friends__filters">
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value as Category | 'all')}
-            aria-label="Kategorie"
-          >
-            <option value="all">Alle Kategorien</option>
-            {CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {CATEGORY_META[c].label}
-              </option>
-            ))}
-          </select>
+      {showFilter && (
+        <div className="friends__board-head">
+          <CategoryFilterSelect value={category} onChange={setCategory} />
         </div>
-      </div>
+      )}
       {busy && <p className="empty">Lade…</p>}
       {error && <p className="friends__error">{error}</p>}
       <ol className="leaderboard">
