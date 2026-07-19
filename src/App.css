@@ -205,8 +205,9 @@
   padding: 0.85rem 0.35rem 0.75rem;
   min-height: var(--nav-h);
   display: grid;
+  justify-items: center;
   place-items: center;
-  gap: 0;
+  gap: 0.15rem;
   cursor: pointer;
   transition:
     color 0.15s ease,
@@ -230,7 +231,38 @@
 }
 
 .bottom-nav__icon {
-  display: none;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.bottom-nav__btn.is-active .bottom-nav__icon {
+  color: var(--goon);
+  transform: scale(1.06);
+}
+
+.bottom-nav__btn.is-active .bottom-nav__avatar {
+  transform: scale(1.06);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--goon) 70%, transparent);
+}
+
+.bottom-nav__btn.is-bounce .bottom-nav__icon,
+.bottom-nav__btn.is-bounce .bottom-nav__avatar {
+  animation: nav-tab-bounce 0.28s ease;
+}
+
+@keyframes nav-tab-bounce {
+  0% { transform: translateY(0) scale(1); }
+  40% { transform: translateY(-4px) scale(1.12); }
+  100% { transform: translateY(0) scale(1.06); }
+}
+
+.bottom-nav__avatar {
+  display: grid;
+  place-items: center;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  border-radius: 50%;
 }
 
 .bottom-nav__label {

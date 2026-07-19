@@ -53,6 +53,7 @@ const PAGE_META: Record<TabId, { title: string }> = {
   home: { title: 'Start' },
   friends: { title: 'Freunde' },
   ranked: { title: 'Rangliste' },
+  profile: { title: 'Profil' },
 }
 
 /** Auto-refresh cloud account data */
