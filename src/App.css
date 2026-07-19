@@ -1236,6 +1236,17 @@
   padding-bottom: 0.35rem;
 }
 
+.friends__filters--tabs select {
+  width: auto;
+  max-width: 11rem;
+  min-width: 0;
+  padding: 0.35rem 0.45rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  line-height: 1.2;
+  border-radius: var(--radius-sm);
+}
+
 .friends__tab-full {
   display: none;
 }
@@ -3551,6 +3562,12 @@ button.avatar {
 
   .friends__filters--tabs {
     padding-bottom: 0.55rem;
+  }
+
+  .friends__filters--tabs select {
+    padding: 0.4rem 0.55rem;
+    font-size: 0.9rem;
+    max-width: 12.5rem;
   }
 
   .friends__board-head {

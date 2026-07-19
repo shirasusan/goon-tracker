@@ -605,10 +605,6 @@ export default function App() {
                           <span>{formatMinutes(todayMinutes)}</span>
                         )}
                       </div>
-                      <p className="home-compose__legend">
-                        Heute zählt für Streak · Saison für Rangliste · Allzeit für
-                        Level
-                      </p>
                       <CategoryPicker onLog={logCategory} />
                       {flash && <p className="flash flash--pop">{flash}</p>}
                     </section>
