@@ -9,7 +9,6 @@ import { Avatar } from './Avatar'
 import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
 import { RankBadge } from './RankBadge'
-import { IconSettings } from './NavIcons'
 
 type ProfileSeg = 'overview' | 'stats' | 'settings'
 
@@ -138,14 +137,6 @@ export function ProfilePanel({
             size="lg"
           />
           <div className="panel-hero__text">
-            <button
-              type="button"
-              className="panel-hero__gear"
-              aria-label="Einstellungen"
-              onClick={() => setSeg('settings')}
-            >
-              <IconSettings />
-            </button>
             <h1 className="panel-hero__name">{displayName.trim() || 'Anon'}</h1>
             <p className="profile__user">@{username || '—'}</p>
           </div>
@@ -209,6 +200,7 @@ export function ProfilePanel({
           role="tab"
           aria-selected={activeSeg === 'settings'}
           className={`chip${activeSeg === 'settings' ? ' is-active' : ''}`}
+          data-tour="profile-settings"
           onClick={() => setSeg('settings')}
         >
           Einstellungen

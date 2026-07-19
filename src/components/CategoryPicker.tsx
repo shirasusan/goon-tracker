@@ -84,7 +84,12 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
 
   if (!open) {
     return (
-      <button type="button" className="new-entry" onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className="new-entry"
+        data-tour="new-entry"
+        onClick={() => setOpen(true)}
+      >
         <span className="new-entry__plus" aria-hidden>
           +
         </span>

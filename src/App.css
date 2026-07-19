@@ -1421,12 +1421,12 @@
 }
 
 .friends__add-dock {
-  position: fixed;
-  left: max(0.75rem, calc(50% - min(320px, 50vw - 0.75rem)));
-  bottom: calc(var(--nav-h) + 0.75rem);
-  z-index: 30;
-  width: min(18.5rem, calc(100vw - 1.5rem));
-  pointer-events: none;
+  position: relative;
+  left: auto;
+  bottom: auto;
+  z-index: 1;
+  width: 100%;
+  pointer-events: auto;
 }
 
 .bottom-nav__add-friend {
@@ -1444,11 +1444,12 @@
   color: var(--ink);
   border-radius: var(--radius-sm);
   padding: 0.55rem 0.85rem;
+  width: 100%;
   font-family: 'Bricolage Grotesque', sans-serif;
   font-size: 0.92rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.28);
+  box-shadow: none;
   transition:
     transform 0.15s ease,
     border-color 0.15s ease,
@@ -1588,23 +1589,6 @@ button.avatar {
   min-width: 0;
   display: grid;
   gap: 0.15rem;
-}
-
-.panel-hero__gear {
-  appearance: none;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  padding: 0.25rem;
-  margin: 0 0 0.15rem;
-  cursor: pointer;
-  display: inline-grid;
-  place-items: center;
-}
-.panel-hero__gear:hover { color: var(--ink); }
-.panel-hero__gear:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--goon) 45%, transparent);
-  outline-offset: 2px;
 }
 
 .panel-hero__name {
@@ -1771,36 +1755,73 @@ button.avatar {
   position: fixed;
   inset: 0;
   z-index: 80;
-  display: grid;
-  align-items: end;
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
-  padding: 1rem;
+  pointer-events: none;
 }
+
+.coach-tour__spot {
+  position: fixed;
+  border-radius: calc(var(--radius) + 4px);
+  box-shadow:
+    0 0 0 2px var(--goon),
+    0 0 0 9999px color-mix(in srgb, var(--bg) 62%, transparent);
+  pointer-events: none;
+  z-index: 80;
+  transition:
+    top 0.2s ease,
+    left 0.2s ease,
+    width 0.2s ease,
+    height 0.2s ease;
+}
+
 .coach-tour__card {
+  position: fixed;
+  z-index: 81;
+  pointer-events: auto;
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: var(--radius);
-  padding: 1.1rem 1.15rem 1.25rem;
+  padding: 0.95rem 1rem 1.05rem;
   display: grid;
-  gap: 0.65rem;
+  gap: 0.55rem;
+  max-width: calc(100vw - 1.25rem);
+  box-shadow: 0 12px 40px color-mix(in srgb, #000 45%, transparent);
 }
+
+.coach-tour__card h2 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.1rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.coach-tour__card > p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
 .coach-tour__progress {
   margin: 0;
   color: var(--muted);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
+
 .coach-tour__actions {
   display: flex;
   justify-content: flex-end;
-  gap: 0.6rem;
+  gap: 0.5rem;
+  margin-top: 0.15rem;
 }
+
+.is-tour-target {
+  outline: none;
+}
+
 @media (min-width: 900px) {
-  .coach-tour {
-    place-items: center;
-    align-items: center;
-  }
   .coach-tour__card {
-    width: min(420px, 100%);
+    max-width: 320px;
   }
 }
 
@@ -1832,6 +1853,22 @@ button.avatar {
   bottom: auto;
   width: 100%;
   pointer-events: auto;
+}
+
+.friends__add-inline {
+  display: block;
+  width: 100%;
+  margin: 0.15rem 0 0.35rem;
+}
+
+.friends__add-inline .friends__add-dock {
+  width: 100%;
+}
+
+@media (min-width: 900px) {
+  .friends__add-inline {
+    display: none;
+  }
 }
 
 .goon-feed__hint {
@@ -3331,13 +3368,27 @@ button.avatar {
     left: auto;
     bottom: auto;
     width: 100%;
+    max-width: 100%;
     margin-top: auto;
     padding-top: 1.25rem;
     z-index: 1;
+    min-width: 0;
+  }
+
+  .bottom-nav__add-friend .friends__add-panel {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    box-shadow: none;
+    padding: 0.75rem;
+  }
+
+  .bottom-nav__add-friend .friends__add-fab {
+    width: 100%;
   }
 
   .friends__add-dock--mobile {
-    display: none;
+    display: none !important;
   }
 
   .bottom-nav__overview {

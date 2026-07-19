@@ -990,15 +990,37 @@ export async function pullTrackerEntries(
 ): Promise<{ entries: Entry[] } | { error: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
-  const { data, error } = await supabase
-    .from('tracker_entries')
-    .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true })
+  const withParts =
+    'id, user_id, category, minutes, goonometer, comment, date, created_at, parts'
+  const withoutParts =
+    'id, user_id, category, minutes, goonometer, comment, date, created_at'
+
+  let data: TrackerEntryRow[] | null = null
+  let error: { message: string } | null = null
+
+  {
+    const res = await supabase
+      .from('tracker_entries')
+      .select(withParts)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    data = (res.data as TrackerEntryRow[] | null) ?? null
+    error = res.error
+  }
+
+  if (error && error.message.includes('parts')) {
+    const fallback = await supabase
+      .from('tracker_entries')
+      .select(withoutParts)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    data = (fallback.data as TrackerEntryRow[] | null) ?? null
+    error = fallback.error
+  }
 
   if (error) return { error: entriesTableMissing(error.message) }
 
-  const entries = (data as TrackerEntryRow[] | null ?? [])
+  const entries = (data ?? [])
     .map(trackerRowToEntry)
     .filter((e): e is Entry => e !== null)
   return { entries }
@@ -1018,7 +1040,15 @@ export async function pushTrackerEntries(
     const { error } = await supabase
       .from('tracker_entries')
       .upsert(chunk, { onConflict: 'id' })
-    if (error) return { error: entriesTableMissing(error.message) }
+    if (error) {
+      if (error.message.includes('parts')) {
+        return {
+          error:
+            'Spalte fehlt. SQL aus supabase/entry_parts.sql im SQL Editor ausführen.',
+        }
+      }
+      return { error: entriesTableMissing(error.message) }
+    }
   }
   return {}
 }
@@ -1041,11 +1071,33 @@ async function pullOwnGoonPostsAsEntries(
 ): Promise<{ entries: Entry[] } | { error: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
 
-  const { data, error } = await supabase
-    .from('goon_posts')
-    .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
-    .eq('user_id', userId)
-    .order('created_at', { ascending: true })
+  const withParts =
+    'id, user_id, category, minutes, goonometer, comment, date, created_at, parts'
+  const withoutParts =
+    'id, user_id, category, minutes, goonometer, comment, date, created_at'
+
+  let data: TrackerEntryRow[] | null = null
+  let error: { message: string } | null = null
+
+  {
+    const res = await supabase
+      .from('goon_posts')
+      .select(withParts)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    data = (res.data as TrackerEntryRow[] | null) ?? null
+    error = res.error
+  }
+
+  if (error && error.message.includes('parts')) {
+    const fallback = await supabase
+      .from('goon_posts')
+      .select(withoutParts)
+      .eq('user_id', userId)
+      .order('created_at', { ascending: true })
+    data = (fallback.data as TrackerEntryRow[] | null) ?? null
+    error = fallback.error
+  }
 
   if (error) {
     return {
@@ -1055,7 +1107,7 @@ async function pullOwnGoonPostsAsEntries(
     }
   }
 
-  const entries = (data as TrackerEntryRow[] | null ?? [])
+  const entries = (data ?? [])
     .map(trackerRowToEntry)
     .filter((e): e is Entry => e !== null)
   return { entries }
@@ -1352,7 +1404,7 @@ export async function loadGoonFeed(
         date: p.date as string,
         createdAt: p.created_at as string,
         comments: commentsByPost.get(p.id as string) ?? [],
-        ...(parts && parts.length > 1 ? { parts } : {}),
+        ...(parts && parts.length > 0 ? { parts } : {}),
       }
     }),
   }

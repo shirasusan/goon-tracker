@@ -95,6 +95,7 @@ export function BottomNav({
         <button
           key={tab.id}
           type="button"
+          data-tour={`nav-${tab.id}`}
           className={`bottom-nav__btn${active === tab.id ? ' is-active' : ''}${bounceId === tab.id ? ' is-bounce' : ''}`}
           onClick={() => select(tab.id)}
           aria-current={active === tab.id ? 'page' : undefined}

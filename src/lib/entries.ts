@@ -66,7 +66,7 @@ export function buildEntryFromParts(input: {
     goonometer: Math.max(0, Math.min(10, Math.round(input.goonometer) || 0)),
     date: input.date,
     createdAt: input.createdAt,
-    ...(parts.length > 1 ? { parts } : {}),
+    parts,
     ...(comment ? { comment } : {}),
   }
 }

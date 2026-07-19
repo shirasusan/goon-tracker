@@ -401,6 +401,7 @@ export function FriendsPanel({
         <button
           type="button"
           className={`chip${view === 'feed' ? ' is-active' : ''}`}
+          data-tour="friends-feed"
           onClick={() => setView('feed')}
         >
           Feed
@@ -433,6 +434,15 @@ export function FriendsPanel({
 
       {status && <p className="friends__status">{status}</p>}
       {error && view !== 'recs' && <p className="friends__error">{error}</p>}
+
+      {friends.length > 0 && (
+        <div className="friends__add-inline">
+          <AddFriendControl
+            cloudCode={myCode || cloudCode}
+            userId={meId}
+          />
+        </div>
+      )}
 
       {view === 'feed' && (
         <GoonFeed
@@ -676,12 +686,6 @@ export function FriendsPanel({
           )}
         </div>
       )}
-
-      <AddFriendControl
-        className="friends__add-dock--mobile"
-        cloudCode={myCode || cloudCode}
-        userId={meId}
-      />
     </div>
   )
 }

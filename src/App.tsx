@@ -75,7 +75,6 @@ export default function App() {
   const [unlockQueue, setUnlockQueue] = useState<UnlockedAchievement[]>([])
   const [freshKeys, setFreshKeys] = useState<Set<string>>(() => new Set())
   const [tour, setTour] = useState<TourState | null>(null)
-  const [settingsNonce, setSettingsNonce] = useState(0)
 
   useEffect(() => {
     if (!data.profile.cloudUserId && cloudEnabled) return
@@ -239,6 +238,14 @@ export default function App() {
     if (!id || !authed) return
     setTour(loadTour(id))
   }, [data.profile.cloudUserId, authed])
+
+  // Open the right screen so the step's target button is visible
+  useEffect(() => {
+    if (!tour || !shouldShowTour(tour)) return
+    const step = TOUR_STEPS[Math.min(tour.stepIndex, TOUR_STEPS.length - 1)]
+    if (!step) return
+    setTab(step.tab)
+  }, [tour?.stepIndex, tour?.completed, tour?.skipped, Boolean(tour && shouldShowTour(tour))])
 
   function persistTour(next: TourState) {
     const id = data.profile.cloudUserId
@@ -488,13 +495,6 @@ export default function App() {
               persistTour({ ...tour, stepIndex: nextIndex })
             }
           }}
-          onAction={(stepId) => {
-            if (stepId === 'name' || stepId === 'profile') setTab('profile')
-            if (stepId === 'friends' || stepId === 'feed') setTab('friends')
-            if (stepId === 'ranked') setTab('ranked')
-            if (stepId === 'widgets' || stepId === 'entry' || stepId === 'welcome') setTab('home')
-            if (stepId === 'name') setSettingsNonce((n) => n + 1)
-          }}
         />
       )}
 
@@ -547,7 +547,6 @@ export default function App() {
               onDeleteAccount={handleDeleteAccount}
               onRemoveEntry={removeEntry}
               onBack={() => setTab('home')}
-              settingsNonce={settingsNonce}
               freshAchievementKeys={freshKeys}
               monkMode={monkMode}
               onMonkModeChange={setMonkMode}
@@ -558,7 +557,7 @@ export default function App() {
             <>
               {tab === 'home' && (
                 <div className="home-compose">
-                  <aside className="home-compose__overview">
+                  <aside className="home-compose__overview" data-tour="home-widgets">
                     {!monkMode ? (
                       <>
                         <div className="home-hero__rank">
