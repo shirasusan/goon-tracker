@@ -788,19 +788,20 @@ function ThumbUpIcon() {
 function ThumbMidIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden>
-      <path
-        d="M8 12h13M8 12a3 3 0 0 1-3-3V7a2 2 0 0 1 2-2h1M8 12a3 3 0 0 0-3 3v2a2 2 0 0 0 2 2h1"
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
         stroke="currentColor"
         strokeWidth="1.75"
-        strokeLinecap="round"
-        strokeLinejoin="round"
       />
+      <circle cx="9" cy="10" r="1.1" fill="currentColor" />
+      <circle cx="15" cy="10" r="1.1" fill="currentColor" />
       <path
-        d="M14 7h5a2 2 0 0 1 2 2v6a2 2 0 0 1-2 2h-5"
+        d="M8.5 15.5h7"
         stroke="currentColor"
         strokeWidth="1.75"
         strokeLinecap="round"
-        strokeLinejoin="round"
       />
     </svg>
   )
