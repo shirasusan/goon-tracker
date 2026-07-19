@@ -40,9 +40,15 @@
 }
 
 html {
-  zoom: 1.5;
+  zoom: 1;
   height: 100%;
   overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  html {
+    zoom: 1.5;
+  }
 }
 
 html,

@@ -77,7 +77,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
       minutes: drafts[category]!,
     }))
     onLog(parts, goonometer, comment.trim() || undefined)
-    resetEntry()
+    close()
   }
 
   if (!open) {
@@ -106,9 +106,6 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
               schließen
             </button>
           </div>
-          <p className="session__sub">
-            Mehrere Kategorien möglich — Minuten bleiben gespeichert.
-          </p>
           <div className="cat-grid">
             {CATEGORIES.map((cat) => {
               const meta = CATEGORY_META[cat]

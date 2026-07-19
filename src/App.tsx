@@ -584,9 +584,7 @@ export default function App() {
                       <div className="block__head">
                         <h2>Heute</h2>
                         {todayEntries.length > 0 && (
-                          <span>
-                            {todayEntries.length} · {formatMinutes(todayMinutes)}
-                          </span>
+                          <span>{formatMinutes(todayMinutes)}</span>
                         )}
                       </div>
                       <CategoryPicker onLog={logCategory} />
