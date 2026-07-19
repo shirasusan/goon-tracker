@@ -14,7 +14,6 @@ import {
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
-  removeFriendship,
   type FriendRequestRow,
 } from '../lib/cloud'
 import {
@@ -251,19 +250,6 @@ export function FriendsPanel({
     await refreshIncoming(user.userId)
   }
 
-  async function removeFriend(id: string) {
-    const user = await ensureCloudUser()
-    if ('error' in user) {
-      onRemoveLocal(id)
-      return
-    }
-    await removeFriendship(user.userId, id)
-    onRemoveLocal(id)
-    const loaded = await loadFriendProfiles(user.userId)
-    if (!('error' in loaded)) onFriendsSync(loaded.friends)
-    await refreshFeed(user.userId)
-  }
-
   async function addRec() {
     setError(null)
     const user = await ensureCloudUser()
@@ -349,6 +335,7 @@ export function FriendsPanel({
           void refreshIncoming(meId)
           void refreshFeed(meId)
         }}
+        onRemoveFriend={(id) => onRemoveLocal(id)}
       />
     )
   }
@@ -462,10 +449,10 @@ export function FriendsPanel({
         <div className="friends__board">
           {friends.length === 0 && (
             <div className="friends__empty-invite">
-              <h3>Lade Freunde ein</h3>
+              <h3>Lade deinen ersten Freund ein</h3>
               <p>
-                Teile deinen Code — sie senden eine Anfrage, die du annehmen
-                kannst.
+                Noch niemand hier außer dir. Teile deinen Code oder füge einen
+                Freund-Code ein — danach könnt ihr vergleichen.
               </p>
               <AddFriendControl
                 cloudCode={myCode || cloudCode}
@@ -535,15 +522,6 @@ export function FriendsPanel({
                       ? row.dryStreak
                       : 0}
                 </span>
-                {!row._you && (
-                  <button
-                    type="button"
-                    className="leaderboard__remove"
-                    onClick={() => void removeFriend(row.id)}
-                  >
-                    ×
-                  </button>
-                )}
               </li>
             ))}
           </ol>

@@ -3,6 +3,7 @@ import {
   acceptFriendRequest,
   getFriendRelation,
   listIncomingFriendRequests,
+  removeFriendship,
   sendFriendRequest,
 } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
@@ -22,6 +23,7 @@ type PublicProfileViewProps = {
   onViewedOtherProfile?: () => void
   meId?: string
   onFriendsChanged?: () => void
+  onRemoveFriend?: (id: string) => void
 }
 
 export function PublicProfileView({
@@ -30,6 +32,7 @@ export function PublicProfileView({
   onViewedOtherProfile,
   meId,
   onFriendsChanged,
+  onRemoveFriend,
 }: PublicProfileViewProps) {
   const rank = rankFromMinutes(profile.totalMinutes)
   const maxCat = Math.max(1, ...CATEGORIES.map((c) => profile.categories[c] || 0))
@@ -101,6 +104,22 @@ export function PublicProfileView({
     onFriendsChanged?.()
   }
 
+  async function unfriend() {
+    if (!meId) return
+    setBusy(true)
+    setMsg(null)
+    const result = await removeFriendship(meId, profile.id)
+    setBusy(false)
+    if (result.error) {
+      setMsg(result.error)
+      return
+    }
+    onRemoveFriend?.(profile.id)
+    onFriendsChanged?.()
+    setRelation('none')
+    onBack()
+  }
+
   return (
     <div className="profile public-profile page-stack">
       <button type="button" className="btn profile__back" onClick={onBack}>
@@ -149,7 +168,34 @@ export function PublicProfileView({
               </button>
             )}
             {relation === 'friends' && (
-              <p className="friends__status">Bereits Freunde</p>
+              <div className="public-profile__friend-row">
+                <p className="friends__status">Freunde</p>
+                <button
+                  type="button"
+                  className="public-profile__unfriend"
+                  disabled={busy}
+                  onClick={() => void unfriend()}
+                  aria-label="Freund entfernen"
+                  title="Freund entfernen"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+                    <circle cx="9" cy="7" r="4" />
+                    <line x1="17" y1="8" x2="22" y2="13" />
+                    <line x1="22" y1="8" x2="17" y2="13" />
+                  </svg>
+                </button>
+              </div>
             )}
             {msg && <p className="friends__status">{msg}</p>}
           </div>

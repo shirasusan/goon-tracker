@@ -94,6 +94,7 @@ export function RankedPanel({
         onViewedOtherProfile={onViewedOtherProfile}
         meId={userId}
         onFriendsChanged={() => void refreshFriends()}
+        onRemoveFriend={() => void refreshFriends()}
       />
     )
   }

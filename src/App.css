@@ -1853,6 +1853,41 @@ button.avatar {
   gap: 0.45rem;
 }
 
+.public-profile__friend-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.public-profile__unfriend {
+  appearance: none;
+  display: inline-grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-xs);
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.public-profile__unfriend:hover {
+  color: var(--danger);
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--line));
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.public-profile__unfriend:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
 .goon-scale {
   display: flex;
   flex-wrap: wrap;
@@ -2882,7 +2917,7 @@ button.avatar {
 }
 
 .compare-row.leaderboard__row {
-  grid-template-columns: auto auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto auto minmax(0, 1fr) auto;
   align-items: center;
 }
 
