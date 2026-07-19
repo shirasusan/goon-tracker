@@ -1737,13 +1737,14 @@ button.avatar {
 }
 
 .home-compose__overview {
-  order: 2;
+  order: 0;
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 0.75rem 1rem;
   align-items: start;
-  padding: 1rem 0 0;
-  border-top: 1px solid var(--line-soft);
+  padding: 0 0 1rem;
+  border-top: none;
+  border-bottom: 1px solid var(--line-soft);
 }
 
 .home-compose__overview .home-hero__level {
@@ -1758,11 +1759,11 @@ button.avatar {
 }
 
 .home-compose__primary {
-  order: 0;
+  order: 1;
 }
 
 .onboarding {
-  order: 1;
+  order: 2;
 }
 
 .onboarding {
