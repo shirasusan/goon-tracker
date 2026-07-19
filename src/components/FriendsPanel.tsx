@@ -398,7 +398,6 @@ export function FriendsPanel({
     <div className="friends page-stack">
       <header className="friends__header">
         <div className="friends__header-text">
-          <p className="eyebrow">Social</p>
           <h2 className="friends__title">Freunde</h2>
         </div>
         <button

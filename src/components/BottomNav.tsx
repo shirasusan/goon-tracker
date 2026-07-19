@@ -1,9 +1,9 @@
 export type TabId = 'home' | 'friends' | 'ranked'
 
-const ALL_TABS: { id: TabId; label: string; icon: string }[] = [
-  { id: 'home', label: 'Home', icon: '◉' },
-  { id: 'friends', label: 'Freunde', icon: '☰' },
-  { id: 'ranked', label: 'Ranked', icon: '◆' },
+const ALL_TABS: { id: TabId; label: string }[] = [
+  { id: 'home', label: 'Home' },
+  { id: 'friends', label: 'Freunde' },
+  { id: 'ranked', label: 'Ranked' },
 ]
 
 type BottomNavProps = {
@@ -29,9 +29,6 @@ export function BottomNav({ active, onChange, hideRanked }: BottomNavProps) {
           onClick={() => onChange(tab.id)}
           aria-current={active === tab.id ? 'page' : undefined}
         >
-          <span className="bottom-nav__icon" aria-hidden>
-            {tab.icon}
-          </span>
           <span className="bottom-nav__label">{tab.label}</span>
         </button>
       ))}
