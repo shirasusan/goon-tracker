@@ -394,7 +394,7 @@ export function FriendsPanel({
   }
 
   return (
-    <div className="friends">
+    <div className="friends page-stack">
       <div className="friends__tabs">
         <button
           type="button"

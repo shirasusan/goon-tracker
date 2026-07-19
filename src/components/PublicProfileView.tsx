@@ -7,20 +7,19 @@ import {
 } from '../lib/cloud'
 import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
+import { goonDryToSigned } from '../lib/streaks'
 import { CATEGORIES, CATEGORY_META, type FriendSnapshot } from '../types'
 import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
-import { ProfileStreaks } from './ProfileStreaks'
 import { RankBadge } from './RankBadge'
-import { goonDryToSigned } from '../lib/streaks'
 
 type Relation = 'self' | 'friends' | 'outgoing' | 'incoming' | 'none'
+type PublicSeg = 'overview' | 'stats'
 
 type PublicProfileViewProps = {
   profile: FriendSnapshot
   onBack: () => void
   onViewedOtherProfile?: () => void
-  /** Current user id — enables friend request actions */
   meId?: string
   onFriendsChanged?: () => void
 }
@@ -34,10 +33,16 @@ export function PublicProfileView({
 }: PublicProfileViewProps) {
   const rank = rankFromMinutes(profile.totalMinutes)
   const maxCat = Math.max(1, ...CATEGORIES.map((c) => profile.categories[c] || 0))
+  const streak = goonDryToSigned(profile.goonStreak, profile.dryStreak)
+  const [seg, setSeg] = useState<PublicSeg>('overview')
   const [relation, setRelation] = useState<Relation>('none')
   const [incomingId, setIncomingId] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState<string | null>(null)
+
+  const streakTone = streak > 0 ? 'goon' : streak < 0 ? 'focus' : 'neutral'
+  const streakLabel = streak > 0 ? 'Goon' : streak < 0 ? 'Focus' : 'Streak'
+  const streakValue = Math.abs(streak)
 
   useEffect(() => {
     onViewedOtherProfile?.()
@@ -97,16 +102,13 @@ export function PublicProfileView({
   }
 
   return (
-    <div className="profile public-profile">
-      <button type="button" className="btn" onClick={onBack}>
+    <div className="profile public-profile page-stack">
+      <button type="button" className="btn profile__back" onClick={onBack}>
         ← Zurück
       </button>
 
-      <section className="block">
-        <div className="block__head">
-          <h2>Profil</h2>
-        </div>
-        <div className="profile__hero">
+      <header className="panel-hero">
+        <div className="panel-hero__identity">
           <Avatar
             src={profile.avatarUrl}
             name={profile.name}
@@ -114,9 +116,10 @@ export function PublicProfileView({
             dryStreak={profile.dryStreak}
             size="lg"
           />
-          <div>
+          <div className="panel-hero__text">
+            <p className="eyebrow">Profil</p>
+            <h1 className="panel-hero__name">{profile.name}</h1>
             <p className="profile__user">@{profile.username || profile.name}</p>
-            <p className="profile__stat">{profile.name}</p>
           </div>
         </div>
 
@@ -151,49 +154,82 @@ export function PublicProfileView({
             {msg && <p className="friends__status">{msg}</p>}
           </div>
         )}
-      </section>
+      </header>
 
-      <section className="block">
-        <div className="block__head">
-          <h2>Rank</h2>
+      <div className="metric-strip" role="group" aria-label="Übersicht">
+        <div className="metric-strip__item">
+          <span className="metric-strip__label">Rank</span>
+          <RankBadge totalMinutes={profile.totalMinutes} rank={rank} compact />
         </div>
-        <RankBadge totalMinutes={profile.totalMinutes} rank={rank} />
-        <p className="profile__stat">
-          Level {profile.level} · {formatMinutes(profile.totalMinutes)}
-        </p>
-      </section>
-
-      <ProfileStreaks streak={goonDryToSigned(profile.goonStreak, profile.dryStreak)} compact />
-
-      <AchievementsSection categories={profile.categories} />
-
-      <section className="block">
-        <div className="block__head">
-          <h2>Stats</h2>
-          <span>Kategorien</span>
+        <div className="metric-strip__item">
+          <span className="metric-strip__label">Level</span>
+          <strong className="metric-strip__value">
+            {profile.level}
+            <span className="metric-strip__sub">
+              {formatMinutes(profile.totalMinutes)}
+            </span>
+          </strong>
         </div>
-        <ul className="cat-stats">
-          {CATEGORIES.map((cat) => {
-            const meta = CATEGORY_META[cat]
-            const mins = profile.categories[cat] || 0
-            const pct = Math.round((mins / maxCat) * 100)
-            return (
-              <li key={cat}>
-                <div className="cat-stats__label">
-                  <span style={{ color: meta.color }}>{meta.label}</span>
-                  <span>{formatMinutes(mins)}</span>
-                </div>
-                <div className="cat-stats__track">
-                  <div
-                    className="cat-stats__fill"
-                    style={{ width: `${pct}%`, background: meta.color }}
-                  />
-                </div>
-              </li>
-            )
-          })}
-        </ul>
-      </section>
+        <div className={`metric-strip__item metric-strip__item--${streakTone}`}>
+          <span className="metric-strip__label">{streakLabel}</span>
+          <strong className="metric-strip__value">{streakValue}</strong>
+        </div>
+      </div>
+
+      <div className="seg-tabs friends__tabs" role="tablist" aria-label="Profilbereiche">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={seg === 'overview'}
+          className={`chip${seg === 'overview' ? ' is-active' : ''}`}
+          onClick={() => setSeg('overview')}
+        >
+          Übersicht
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={seg === 'stats'}
+          className={`chip${seg === 'stats' ? ' is-active' : ''}`}
+          onClick={() => setSeg('stats')}
+        >
+          Stats
+        </button>
+      </div>
+
+      {seg === 'overview' && (
+        <AchievementsSection categories={profile.categories} embedded />
+      )}
+
+      {seg === 'stats' && (
+        <section className="profile-panel">
+          <div className="block__head">
+            <h2>Stats</h2>
+            <span>Kategorien</span>
+          </div>
+          <ul className="cat-stats">
+            {CATEGORIES.map((cat) => {
+              const meta = CATEGORY_META[cat]
+              const mins = profile.categories[cat] || 0
+              const pct = Math.round((mins / maxCat) * 100)
+              return (
+                <li key={cat}>
+                  <div className="cat-stats__label">
+                    <span style={{ color: meta.color }}>{meta.label}</span>
+                    <span>{formatMinutes(mins)}</span>
+                  </div>
+                  <div className="cat-stats__track">
+                    <div
+                      className="cat-stats__fill"
+                      style={{ width: `${pct}%`, background: meta.color }}
+                    />
+                  </div>
+                </li>
+              )
+            })}
+          </ul>
+        </section>
+      )}
     </div>
   )
 }

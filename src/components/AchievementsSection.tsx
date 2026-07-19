@@ -11,6 +11,8 @@ type AchievementsSectionProps = {
   /** Fallback when only category totals are known (public profiles) */
   categories?: Record<Category, number>
   freshKeys?: Set<string>
+  /** No outer card — for use inside a parent panel */
+  embedded?: boolean
 }
 
 export function AchievementsSection({
@@ -18,6 +20,7 @@ export function AchievementsSection({
   startedOn,
   categories,
   freshKeys,
+  embedded = false,
 }: AchievementsSectionProps) {
   const unlocked = useMemo(() => {
     if (entries && startedOn) return unlockedAchievementsFromEntries(entries, startedOn)
@@ -25,9 +28,11 @@ export function AchievementsSection({
     return []
   }, [entries, startedOn, categories])
 
+  const shell = embedded ? 'profile-panel' : 'block'
+
   if (unlocked.length === 0) {
     return (
-      <section className="block">
+      <section className={shell}>
         <div className="block__head">
           <h2>0 Achievements</h2>
         </div>
@@ -37,7 +42,7 @@ export function AchievementsSection({
   }
 
   return (
-    <section className="block">
+    <section className={shell}>
       <div className="block__head">
         <h2>
           {unlocked.length} Achievement{unlocked.length === 1 ? '' : 's'}

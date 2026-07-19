@@ -434,9 +434,9 @@ export default function App() {
           ) : (
             <>
               {tab === 'home' && (
-                <>
-                  {!monkMode && (
-                    <section className="block block--hero">
+                <div className="home-compose">
+                  {!monkMode ? (
+                    <section className="home-compose__hero">
                       <div className="home-hero">
                         <div className="home-hero__rank">
                           <p className="eyebrow">Rank</p>
@@ -452,20 +452,24 @@ export default function App() {
                           />
                         </div>
                       </div>
+                      <div className="home-compose__streak" aria-label="Streak">
+                        <p className="eyebrow">Streak</p>
+                        <div className="streaks streaks--single">
+                          <StreakRing value={streak} embedded />
+                        </div>
+                      </div>
+                    </section>
+                  ) : (
+                    <section className="home-compose__hero" aria-label="Streak">
+                      <p className="eyebrow">Streak</p>
+                      <div className="streaks streaks--single">
+                        <StreakRing value={streak} embedded />
+                      </div>
                     </section>
                   )}
 
-                  <section className="block block--streak" aria-label="Streak">
-                    <div className="block__head">
-                      <h2>Streak</h2>
-                    </div>
-                    <div className="streaks streaks--single">
-                      <StreakRing value={streak} embedded />
-                    </div>
-                  </section>
-
                   {!monkMode && (
-                    <section className="block block--primary">
+                    <section className="home-compose__primary">
                       <div className="block__head">
                         <h2>Heute</h2>
                         <span>
@@ -478,7 +482,7 @@ export default function App() {
                       {flash && <p className="flash">{flash}</p>}
                     </section>
                   )}
-                </>
+                </div>
               )}
 
               {tab === 'friends' && (

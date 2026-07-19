@@ -94,8 +94,8 @@ export function RankedPanel({
   }
 
   return (
-    <div className="ranked">
-      <section className="ranked__season">
+    <div className="ranked page-stack">
+      <section className="panel-hero ranked__season">
         <p className="ranked__eyebrow">Competitive</p>
         <h2 className="ranked__title">{seasonDisplayName(seasonInfo.season)}</h2>
         <p className="ranked__reset">
@@ -106,7 +106,7 @@ export function RankedPanel({
         </p>
       </section>
 
-      <section className="ranked__progress block">
+      <section className="profile-panel ranked__progress">
         <div className="block__head">
           <h2 className="ranked__progress-title">
             Ranked Progression
@@ -141,7 +141,7 @@ export function RankedPanel({
 
       <RankHelp open={showRankHelp} onClose={() => setShowRankHelp(false)} />
 
-      <section className="ranked__board block">
+      <section className="profile-panel ranked__board">
         <div className="block__head">
           <h2>Leaderboard</h2>
           <span>alle Spieler</span>

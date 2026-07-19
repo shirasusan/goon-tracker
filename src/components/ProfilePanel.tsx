@@ -8,8 +8,9 @@ import { AchievementsSection } from './AchievementsSection'
 import { Avatar } from './Avatar'
 import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
-import { ProfileStreaks } from './ProfileStreaks'
 import { RankBadge } from './RankBadge'
+
+type ProfileSeg = 'overview' | 'stats' | 'settings'
 
 type ProfilePanelProps = {
   userId?: string
@@ -62,6 +63,7 @@ export function ProfilePanel({
 }: ProfilePanelProps) {
   const weekAvg = useMemo(() => weeklyGoonometerAverage(entries), [entries])
   const rank = rankFromMinutes(totalMinutes)
+  const [seg, setSeg] = useState<ProfileSeg>('overview')
   const [historyCategory, setHistoryCategory] = useState<Category | null>(null)
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -76,6 +78,11 @@ export function ProfilePanel({
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, 30)
   }, [entries, historyCategory])
+
+  const streakTone = streak > 0 ? 'goon' : streak < 0 ? 'focus' : 'neutral'
+  const streakLabel =
+    streak > 0 ? 'Goon' : streak < 0 ? 'Focus' : 'Streak'
+  const streakValue = Math.abs(streak)
 
   async function onPickAvatar(file: File | undefined) {
     if (!file || !userId) return
@@ -102,134 +109,107 @@ export function ProfilePanel({
     }
   }
 
+  const activeSeg = monkMode && seg === 'stats' ? 'overview' : seg
+
   return (
-    <div className="profile">
+    <div className="profile page-stack">
       {onBack && (
-        <button type="button" className="btn" onClick={onBack}>
+        <button type="button" className="btn profile__back" onClick={onBack}>
           ← Zurück
         </button>
       )}
-      <section className="block">
-        <div className="block__head">
-          <h2>Profil</h2>
-          <button type="button" className="section__close" onClick={onLogout}>
-            Logout
-          </button>
-        </div>
 
-        <div className="profile__hero">
+      <header className="panel-hero">
+        <div className="panel-hero__identity">
           <Avatar
             src={avatarUrl}
             name={displayName}
             goonStreak={goonStreak}
             dryStreak={dryStreak}
             size="lg"
-            onClick={() => fileRef.current?.click()}
           />
-          <input
-            ref={fileRef}
-            type="file"
-            accept="image/*"
-            hidden
-            onChange={(e) => void onPickAvatar(e.target.files?.[0])}
-          />
-          <div>
+          <div className="panel-hero__text">
+            <p className="eyebrow">Profil</p>
+            <h1 className="panel-hero__name">{displayName.trim() || 'Anon'}</h1>
             <p className="profile__user">@{username || '—'}</p>
-            <button
-              type="button"
-              className="btn"
-              disabled={uploading || !userId}
-              onClick={() => fileRef.current?.click()}
-            >
-              {uploading ? 'Upload…' : 'Bild ändern'}
-            </button>
-            {error && <p className="friends__error">{error}</p>}
           </div>
         </div>
+      </header>
 
-        <label htmlFor="display-name">Anzeigename</label>
-        <input
-          id="display-name"
-          value={displayName}
-          maxLength={24}
-          onChange={(e) => onNameChange(e.target.value)}
+      <div className="metric-strip" role="group" aria-label="Übersicht">
+        {!monkMode && (
+          <div className="metric-strip__item">
+            <span className="metric-strip__label">Rank</span>
+            <RankBadge totalMinutes={totalMinutes} rank={rank} compact />
+          </div>
+        )}
+        {!monkMode && (
+          <div className="metric-strip__item">
+            <span className="metric-strip__label">Level</span>
+            <strong className="metric-strip__value">
+              {level}
+              <span className="metric-strip__sub">{formatMinutes(totalMinutes)}</span>
+            </strong>
+          </div>
+        )}
+        <div className={`metric-strip__item metric-strip__item--${streakTone}`}>
+          <span className="metric-strip__label">{streakLabel}</span>
+          <strong className="metric-strip__value">{streakValue}</strong>
+        </div>
+        {!monkMode && (
+          <div className="metric-strip__item">
+            <span className="metric-strip__label">Goonometer</span>
+            <strong className="metric-strip__value">
+              {weekAvg == null ? '—' : weekAvg}
+              {weekAvg != null && <span className="metric-strip__sub">/ 10</span>}
+            </strong>
+          </div>
+        )}
+      </div>
+
+      <div className="seg-tabs friends__tabs" role="tablist" aria-label="Profilbereiche">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeSeg === 'overview'}
+          className={`chip${activeSeg === 'overview' ? ' is-active' : ''}`}
+          onClick={() => setSeg('overview')}
+        >
+          Übersicht
+        </button>
+        {!monkMode && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeSeg === 'stats'}
+            className={`chip${activeSeg === 'stats' ? ' is-active' : ''}`}
+            onClick={() => setSeg('stats')}
+          >
+            Stats
+          </button>
+        )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={activeSeg === 'settings'}
+          className={`chip${activeSeg === 'settings' ? ' is-active' : ''}`}
+          onClick={() => setSeg('settings')}
+        >
+          Einstellungen
+        </button>
+      </div>
+
+      {activeSeg === 'overview' && (
+        <AchievementsSection
+          entries={entries}
+          startedOn={startedOn}
+          freshKeys={freshAchievementKeys}
+          embedded
         />
-
-        {onMonkModeChange && (
-          <label className="profile__switch" htmlFor="monk-mode">
-            <span>
-              <strong>Monk Mode</strong>
-              <span className="profile__switch-hint">
-                Blendet Eintragen, Rank, Ranked, Recs, Stats und Goonometer aus
-              </span>
-            </span>
-            <input
-              id="monk-mode"
-              type="checkbox"
-              checked={Boolean(monkMode)}
-              onChange={(e) => onMonkModeChange(e.target.checked)}
-            />
-          </label>
-        )}
-
-        {onRankedAnonymousChange && (
-          <label className="profile__switch" htmlFor="ranked-anon">
-            <span>
-              <strong>Ranked anonym</strong>
-              <span className="profile__switch-hint">
-                Im Ranked-Leaderboard als Anonymous erscheinen
-              </span>
-            </span>
-            <input
-              id="ranked-anon"
-              type="checkbox"
-              checked={Boolean(rankedAnonymous)}
-              onChange={(e) => onRankedAnonymousChange(e.target.checked)}
-            />
-          </label>
-        )}
-      </section>
-
-      {!monkMode && (
-        <section className="block">
-          <div className="block__head">
-            <h2>Rank</h2>
-          </div>
-          <RankBadge totalMinutes={totalMinutes} rank={rank} />
-          <p className="profile__stat">
-            Level {level} · {formatMinutes(totalMinutes)}
-          </p>
-        </section>
       )}
 
-      <ProfileStreaks streak={streak} compact />
-
-      {!monkMode && (
-        <section className="block">
-          <div className="block__head">
-            <h2>Goonometer</h2>
-          </div>
-          <p className="profile__goon">
-            {weekAvg == null ? (
-              'Noch keine Werte diese Woche'
-            ) : (
-              <>
-                Wochen-Schnitt: <strong>{weekAvg}</strong> / 10
-              </>
-            )}
-          </p>
-          <p className="profile__stat">Gesamtzeit: {formatMinutes(totalMinutes)}</p>
-        </section>
-      )}
-
-      <AchievementsSection
-        entries={entries}
-        startedOn={startedOn}
-        freshKeys={freshAchievementKeys}
-      />
-
-      {!monkMode && (
-        <section className="block">
+      {activeSeg === 'stats' && !monkMode && (
+        <section className="profile-panel">
           <div className="block__head">
             <h2>Stats</h2>
             <span>tippen für Verlauf</span>
@@ -259,52 +239,121 @@ export function ProfilePanel({
         </section>
       )}
 
-      <section className="block block--danger">
-        <div className="block__head">
-          <h2>Konto</h2>
-        </div>
-        <p className="profile__stat">
-          Logout oder Konto unwiderruflich löschen (inkl. Cloud-Daten).
-        </p>
-        <div className="profile__account-actions">
-          <button type="button" className="btn" onClick={onLogout}>
-            Logout
-          </button>
-          {!confirmDelete ? (
+      {activeSeg === 'settings' && (
+        <section className="profile-panel profile-panel--settings">
+          <div className="block__head">
+            <h2>Einstellungen</h2>
+          </div>
+
+          <div className="settings-group">
+            <label htmlFor="display-name">Anzeigename</label>
+            <input
+              id="display-name"
+              value={displayName}
+              maxLength={24}
+              onChange={(e) => onNameChange(e.target.value)}
+            />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              hidden
+              onChange={(e) => void onPickAvatar(e.target.files?.[0])}
+            />
             <button
               type="button"
-              className="btn btn--danger"
-              disabled={!userId || deleting}
-              onClick={() => setConfirmDelete(true)}
+              className="btn"
+              disabled={uploading || !userId}
+              onClick={() => fileRef.current?.click()}
             >
-              Konto löschen
+              {uploading ? 'Upload…' : 'Bild ändern'}
             </button>
-          ) : (
-            <div className="profile__delete-confirm">
-              <p className="friends__error">Wirklich alles löschen? Das geht nicht zurück.</p>
-              <div className="session__actions">
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={deleting}
-                  onClick={() => setConfirmDelete(false)}
-                >
-                  Abbrechen
-                </button>
+          </div>
+
+          <div className="settings-group settings-group--switches">
+            {onMonkModeChange && (
+              <label className="profile__switch" htmlFor="monk-mode">
+                <span>
+                  <strong>Monk Mode</strong>
+                  <span className="profile__switch-hint">
+                    Blendet Eintragen, Rank, Ranked, Recs, Stats und Goonometer aus
+                  </span>
+                </span>
+                <input
+                  id="monk-mode"
+                  type="checkbox"
+                  checked={Boolean(monkMode)}
+                  onChange={(e) => onMonkModeChange(e.target.checked)}
+                />
+              </label>
+            )}
+
+            {onRankedAnonymousChange && (
+              <label className="profile__switch" htmlFor="ranked-anon">
+                <span>
+                  <strong>Ranked anonym</strong>
+                  <span className="profile__switch-hint">
+                    Im Ranked-Leaderboard als Anonymous erscheinen
+                  </span>
+                </span>
+                <input
+                  id="ranked-anon"
+                  type="checkbox"
+                  checked={Boolean(rankedAnonymous)}
+                  onChange={(e) => onRankedAnonymousChange(e.target.checked)}
+                />
+              </label>
+            )}
+          </div>
+
+          <div className="settings-group settings-group--danger">
+            <p className="profile__stat">
+              Logout oder Konto unwiderruflich löschen (inkl. Cloud-Daten).
+            </p>
+            <div className="profile__account-actions">
+              <button type="button" className="btn" onClick={onLogout}>
+                Logout
+              </button>
+              {!confirmDelete ? (
                 <button
                   type="button"
                   className="btn btn--danger"
-                  disabled={deleting || !userId}
-                  onClick={() => void handleDeleteAccount()}
+                  disabled={!userId || deleting}
+                  onClick={() => setConfirmDelete(true)}
                 >
-                  {deleting ? 'Löschen…' : 'Endgültig löschen'}
+                  Konto löschen
                 </button>
-              </div>
+              ) : (
+                <div className="profile__delete-confirm">
+                  <p className="friends__error">
+                    Wirklich alles löschen? Das geht nicht zurück.
+                  </p>
+                  <div className="session__actions">
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={deleting}
+                      onClick={() => setConfirmDelete(false)}
+                    >
+                      Abbrechen
+                    </button>
+                    <button
+                      type="button"
+                      className="btn btn--danger"
+                      disabled={deleting || !userId}
+                      onClick={() => void handleDeleteAccount()}
+                    >
+                      {deleting ? 'Löschen…' : 'Endgültig löschen'}
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        {error && <p className="friends__error">{error}</p>}
-      </section>
+          </div>
+
+          {error && <p className="friends__error">{error}</p>}
+        </section>
+      )}
     </div>
   )
 }

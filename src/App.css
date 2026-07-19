@@ -938,6 +938,10 @@
   gap: var(--gap);
 }
 
+.friends.page-stack {
+  gap: 1.05rem;
+}
+
 .friends__tabs {
   display: flex;
   flex-wrap: wrap;
@@ -1174,6 +1178,171 @@ button.avatar {
   gap: 1rem;
 }
 
+.page-stack {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.profile__back {
+  justify-self: start;
+}
+
+.panel-hero {
+  padding: 1.15rem 1.1rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background:
+    radial-gradient(100% 80% at 0% 0%, color-mix(in srgb, var(--goon) 12%, transparent), transparent 55%),
+    linear-gradient(160deg, var(--surface-2) 0%, var(--bg-elevated) 100%);
+  display: grid;
+  gap: 0.95rem;
+}
+
+.panel-hero__identity {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-width: 0;
+}
+
+.panel-hero__text {
+  min-width: 0;
+  display: grid;
+  gap: 0.15rem;
+}
+
+.panel-hero__name {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: clamp(1.35rem, 4.5vw, 1.7rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(6.5rem, 1fr));
+  gap: 0.55rem;
+}
+
+.metric-strip__item {
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem 0.75rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--line-soft);
+  background: var(--bg-elevated);
+  min-width: 0;
+}
+
+.metric-strip__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.metric-strip__value {
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.3rem;
+  line-height: 1.2;
+}
+
+.metric-strip__sub {
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--muted);
+}
+
+.metric-strip__item .rank-badge {
+  margin: 0;
+}
+
+.metric-strip__item .rank-badge__title {
+  font-size: 0.92rem;
+  line-height: 1.2;
+}
+
+.metric-strip__item--goon .metric-strip__value {
+  color: var(--glow-goon);
+}
+
+.metric-strip__item--focus .metric-strip__value {
+  color: var(--glow-dry);
+}
+
+.seg-tabs {
+  margin: 0;
+}
+
+.profile-panel {
+  display: grid;
+  gap: 0.85rem;
+  padding: var(--pad);
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background: var(--surface);
+}
+
+.profile-panel--settings .settings-group {
+  display: grid;
+  gap: 0.55rem;
+}
+
+.profile-panel--settings .settings-group + .settings-group {
+  margin-top: 0.35rem;
+  padding-top: 0.85rem;
+  border-top: 1px solid var(--line-soft);
+}
+
+.settings-group--switches {
+  gap: 0.65rem;
+}
+
+.settings-group--switches .profile__switch {
+  margin-top: 0;
+}
+
+.settings-group--danger {
+  border-top-color: color-mix(in srgb, var(--danger) 35%, var(--line-soft));
+}
+
+.home-compose {
+  display: grid;
+  gap: 1.05rem;
+}
+
+.home-compose__hero {
+  padding: 1.15rem 1.1rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-soft);
+  background:
+    linear-gradient(160deg, rgba(255, 255, 255, 0.035), transparent 48%),
+    radial-gradient(120% 80% at 50% 0%, rgba(255, 255, 255, 0.028), transparent 55%),
+    var(--surface);
+  display: grid;
+  gap: 1.1rem;
+}
+
+.home-compose__streak {
+  display: grid;
+  gap: 0.35rem;
+  padding-top: 0.15rem;
+  border-top: 1px solid var(--line-soft);
+}
+
 .leaderboard__row {
   grid-template-columns: auto auto 1fr auto;
 }
@@ -1199,9 +1368,10 @@ button.avatar {
   object-fit: cover;
 }
 
-.public-profile {
+.public-profile__actions {
+  margin-top: 0;
   display: grid;
-  gap: var(--gap);
+  gap: 0.45rem;
 }
 
 .goon-scale {
@@ -1332,16 +1502,12 @@ button.avatar {
   color: var(--ink);
 }
 
-.profile {
-  display: grid;
-  gap: var(--gap);
-}
-
 .profile__user {
   margin: 0;
-  font-family: 'Bricolage Grotesque', sans-serif;
-  font-size: 1.4rem;
-  font-weight: 800;
+  font-family: 'IBM Plex Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: var(--muted);
 }
 
 .profile__code,
@@ -1518,12 +1684,6 @@ button.avatar {
   gap: 0.4rem;
 }
 
-.public-profile__actions {
-  margin-top: 0.85rem;
-  display: grid;
-  gap: 0.45rem;
-}
-
 .rec-preview {
   display: grid;
   grid-template-columns: auto 1fr;
@@ -1546,18 +1706,13 @@ button.avatar {
   border: none;
 }
 
-.ranked {
-  display: grid;
-  gap: var(--gap);
+.ranked.page-stack {
+  gap: 1.05rem;
 }
 
-.ranked__season {
-  padding: 1.2rem 1.15rem 1.3rem;
-  border-radius: var(--radius);
-  background:
-    radial-gradient(100% 80% at 0% 0%, color-mix(in srgb, var(--goon) 14%, transparent), transparent 55%),
-    linear-gradient(160deg, var(--surface-2) 0%, var(--bg-elevated) 100%);
-  border: 1px solid var(--line-soft);
+.ranked__season.panel-hero {
+  /* panel-hero provides surface; keep ranked title spacing */
+  gap: 0.35rem;
 }
 
 .ranked__eyebrow {
