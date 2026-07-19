@@ -3,9 +3,9 @@ import { AchievementUnlockOverlay } from './components/AchievementUnlockOverlay'
 import { AuthScreen } from './components/AuthScreen'
 import { BottomNav, type TabId } from './components/BottomNav'
 import { CategoryPicker } from './components/CategoryPicker'
+import { CoachTour } from './components/CoachTour'
 import { FriendsPanel } from './components/FriendsPanel'
 import { LevelBar } from './components/LevelBar'
-import { OnboardingChecklist } from './components/OnboardingChecklist'
 import { ProfilePanel } from './components/ProfilePanel'
 import { RankBadge } from './components/RankBadge'
 import { RankedPanel } from './components/RankedPanel'
@@ -45,6 +45,7 @@ import {
   saveData,
 } from './lib/storage'
 import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
+import { loadTour, saveTour, shouldShowTour, TOUR_STEPS, type TourState } from './lib/tour'
 import type { Category, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
@@ -73,6 +74,8 @@ export default function App() {
   const [entriesSynced, setEntriesSynced] = useState(!cloudEnabled)
   const [unlockQueue, setUnlockQueue] = useState<UnlockedAchievement[]>([])
   const [freshKeys, setFreshKeys] = useState<Set<string>>(() => new Set())
+  const [tour, setTour] = useState<TourState | null>(null)
+  const [settingsNonce, setSettingsNonce] = useState(0)
 
   useEffect(() => {
     if (!data.profile.cloudUserId && cloudEnabled) return
@@ -230,6 +233,19 @@ export default function App() {
     const id = window.setInterval(tick, CLOUD_REFRESH_MS)
     return () => window.clearInterval(id)
   }, [authed, data.profile.cloudUserId, data.profile.username])
+
+  useEffect(() => {
+    const id = data.profile.cloudUserId
+    if (!id || !authed) return
+    setTour(loadTour(id))
+  }, [data.profile.cloudUserId, authed])
+
+  function persistTour(next: TourState) {
+    const id = data.profile.cloudUserId
+    if (!id) return
+    saveTour(id, next)
+    setTour(next)
+  }
 
   const streak = useMemo(
     () => calcSignedStreak(data.entries, data.startedOn),
@@ -460,6 +476,28 @@ export default function App() {
         />
       )}
 
+      {tour && shouldShowTour(tour) && (
+        <CoachTour
+          stepIndex={tour.stepIndex}
+          onSkip={() => persistTour({ ...tour, skipped: true })}
+          onNext={() => {
+            const nextIndex = tour.stepIndex + 1
+            if (nextIndex >= TOUR_STEPS.length) {
+              persistTour({ ...tour, completed: true, stepIndex: nextIndex })
+            } else {
+              persistTour({ ...tour, stepIndex: nextIndex })
+            }
+          }}
+          onAction={(stepId) => {
+            if (stepId === 'name' || stepId === 'profile') setTab('profile')
+            if (stepId === 'friends' || stepId === 'feed') setTab('friends')
+            if (stepId === 'ranked') setTab('ranked')
+            if (stepId === 'widgets' || stepId === 'entry' || stepId === 'welcome') setTab('home')
+            if (stepId === 'name') setSettingsNonce((n) => n + 1)
+          }}
+        />
+      )}
+
       <header className="chrome">
         <p className="chrome__brand">Goon Tracker</p>
       </header>
@@ -509,6 +547,7 @@ export default function App() {
               onDeleteAccount={handleDeleteAccount}
               onRemoveEntry={removeEntry}
               onBack={() => setTab('home')}
+              settingsNonce={settingsNonce}
               freshAchievementKeys={freshKeys}
               monkMode={monkMode}
               onMonkModeChange={setMonkMode}
@@ -555,14 +594,6 @@ export default function App() {
                       </div>
                     )}
                   </aside>
-
-                  <OnboardingChecklist
-                    hasProfileName={Boolean(data.profile.name.trim())}
-                    hasEntry={data.entries.length > 0}
-                    hasFriends={data.friends.length > 0}
-                    onGoProfile={() => setTab('profile')}
-                    onGoFriends={() => setTab('friends')}
-                  />
 
                   {!monkMode && (
                     <section className="home-compose__primary">
