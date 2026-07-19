@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { uploadAvatar } from '../lib/cloud'
 import { entryHasCategory } from '../lib/entries'
 import { weeklyGoonometerAverage } from '../lib/goonometer'
@@ -9,6 +9,7 @@ import { Avatar } from './Avatar'
 import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
 import { RankBadge } from './RankBadge'
+import { IconSettings } from './NavIcons'
 
 type ProfileSeg = 'overview' | 'stats' | 'settings'
 
@@ -30,6 +31,7 @@ type ProfilePanelProps = {
   onDeleteAccount: () => Promise<void>
   onRemoveEntry: (id: string) => void
   onBack?: () => void
+  settingsNonce?: number
   freshAchievementKeys?: Set<string>
   monkMode?: boolean
   onMonkModeChange?: (on: boolean) => void
@@ -55,6 +57,7 @@ export function ProfilePanel({
   onDeleteAccount,
   onRemoveEntry,
   onBack,
+  settingsNonce,
   freshAchievementKeys,
   monkMode,
   onMonkModeChange,
@@ -70,6 +73,12 @@ export function ProfilePanel({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (settingsNonce != null && settingsNonce > 0) {
+      setSeg('settings')
+    }
+  }, [settingsNonce])
 
   const recent = useMemo(() => {
     if (!historyCategory) return []
@@ -129,7 +138,14 @@ export function ProfilePanel({
             size="lg"
           />
           <div className="panel-hero__text">
-            <p className="eyebrow">Profil</p>
+            <button
+              type="button"
+              className="panel-hero__gear"
+              aria-label="Einstellungen"
+              onClick={() => setSeg('settings')}
+            >
+              <IconSettings />
+            </button>
             <h1 className="panel-hero__name">{displayName.trim() || 'Anon'}</h1>
             <p className="profile__user">@{username || '—'}</p>
           </div>
