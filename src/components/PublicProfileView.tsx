@@ -14,7 +14,7 @@ import { Avatar } from './Avatar'
 import { RankBadge } from './RankBadge'
 
 type Relation = 'self' | 'friends' | 'outgoing' | 'incoming' | 'none'
-type PublicSeg = 'overview' | 'achievements' | 'stats'
+type PublicSeg = 'overview' | 'stats'
 
 type PublicProfileViewProps = {
   profile: FriendSnapshot
@@ -161,13 +161,11 @@ export function PublicProfileView({
           <span className="metric-strip__label">Rank</span>
           <RankBadge totalMinutes={profile.totalMinutes} rank={rank} compact />
         </div>
-        <div className="metric-strip__item">
+        <div className="metric-strip__item metric-strip__item--wide">
           <span className="metric-strip__label">Level</span>
           <strong className="metric-strip__value">
             {profile.level}
-            <span className="metric-strip__sub">
-              {formatMinutes(profile.totalMinutes)}
-            </span>
+            <span className="metric-strip__sub">{profile.xp} XP</span>
           </strong>
         </div>
         <div className={`metric-strip__item metric-strip__item--${streakTone}`}>
@@ -189,15 +187,6 @@ export function PublicProfileView({
         <button
           type="button"
           role="tab"
-          aria-selected={seg === 'achievements'}
-          className={`chip${seg === 'achievements' ? ' is-active' : ''}`}
-          onClick={() => setSeg('achievements')}
-        >
-          Achievements
-        </button>
-        <button
-          type="button"
-          role="tab"
           aria-selected={seg === 'stats'}
           className={`chip${seg === 'stats' ? ' is-active' : ''}`}
           onClick={() => setSeg('stats')}
@@ -207,16 +196,7 @@ export function PublicProfileView({
       </div>
 
       {seg === 'overview' && (
-        <AchievementsSection
-          categories={profile.categories}
-          embedded
-          variant="showcase"
-          onShowAll={() => setSeg('achievements')}
-        />
-      )}
-
-      {seg === 'achievements' && (
-        <AchievementsSection categories={profile.categories} embedded variant="full" />
+        <AchievementsSection categories={profile.categories} embedded />
       )}
 
       {seg === 'stats' && (

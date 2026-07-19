@@ -398,17 +398,17 @@ export function FriendsPanel({
       <div className="friends__tabs">
         <button
           type="button"
-          className={`chip${view === 'feed' ? ' is-active' : ''}`}
-          onClick={() => setView('feed')}
-        >
-          Feed
-        </button>
-        <button
-          type="button"
           className={`chip${view === 'compare' ? ' is-active' : ''}`}
           onClick={() => setView('compare')}
         >
           Vergleich
+        </button>
+        <button
+          type="button"
+          className={`chip${view === 'feed' ? ' is-active' : ''}`}
+          onClick={() => setView('feed')}
+        >
+          Feed
         </button>
         {!hideRecs && (
           <button

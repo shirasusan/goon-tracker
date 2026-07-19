@@ -50,7 +50,7 @@ const MINUTE = 1
 export const SPECIAL_ACHIEVEMENTS: SpecialAchievementDef[] = [
   {
     id: 'rudiger-goon',
-    title: 'Rüdiger Goon',
+    title: 'Reudiger Goon',
     short: '0/10',
     subtitle: 'Goonometer',
     color: '#8b95a3',

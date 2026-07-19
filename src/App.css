@@ -1229,6 +1229,17 @@ button.avatar {
   gap: 0.55rem;
 }
 
+.metric-strip__item--wide {
+  grid-column: span 1;
+  min-width: 8.5rem;
+}
+
+@media (min-width: 420px) {
+  .metric-strip__item--wide {
+    min-width: 9.5rem;
+  }
+}
+
 .metric-strip__item {
   display: grid;
   gap: 0.25rem;

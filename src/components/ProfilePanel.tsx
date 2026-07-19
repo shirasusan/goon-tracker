@@ -1,7 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { uploadAvatar } from '../lib/cloud'
 import { weeklyGoonometerAverage } from '../lib/goonometer'
-import { formatMinutes } from '../lib/format'
 import { rankFromMinutes } from '../lib/ranks'
 import type { Category, Entry } from '../types'
 import { AchievementsSection } from './AchievementsSection'
@@ -10,7 +9,7 @@ import { CategoryStats } from './CategoryStats'
 import { EntryList } from './EntryList'
 import { RankBadge } from './RankBadge'
 
-type ProfileSeg = 'overview' | 'achievements' | 'stats' | 'settings'
+type ProfileSeg = 'overview' | 'stats' | 'settings'
 
 type ProfilePanelProps = {
   userId?: string
@@ -144,11 +143,11 @@ export function ProfilePanel({
           </div>
         )}
         {!monkMode && (
-          <div className="metric-strip__item">
+          <div className="metric-strip__item metric-strip__item--wide">
             <span className="metric-strip__label">Level</span>
             <strong className="metric-strip__value">
               {level}
-              <span className="metric-strip__sub">{formatMinutes(totalMinutes)}</span>
+              <span className="metric-strip__sub">{totalMinutes} XP</span>
             </strong>
           </div>
         )}
@@ -176,15 +175,6 @@ export function ProfilePanel({
           onClick={() => setSeg('overview')}
         >
           Übersicht
-        </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={activeSeg === 'achievements'}
-          className={`chip${activeSeg === 'achievements' ? ' is-active' : ''}`}
-          onClick={() => setSeg('achievements')}
-        >
-          Achievements
         </button>
         {!monkMode && (
           <button
@@ -214,18 +204,6 @@ export function ProfilePanel({
           startedOn={startedOn}
           freshKeys={freshAchievementKeys}
           embedded
-          variant="showcase"
-          onShowAll={() => setSeg('achievements')}
-        />
-      )}
-
-      {activeSeg === 'achievements' && (
-        <AchievementsSection
-          entries={entries}
-          startedOn={startedOn}
-          freshKeys={freshAchievementKeys}
-          embedded
-          variant="full"
         />
       )}
 

@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
   achievementProgressFromCategories,
   achievementProgressFromEntries,
@@ -12,9 +12,6 @@ type AchievementsSectionProps = {
   categories?: Record<Category, number>
   freshKeys?: Set<string>
   embedded?: boolean
-  /** showcase = progress + recent strip; full = complete grid */
-  variant?: 'showcase' | 'full'
-  onShowAll?: () => void
 }
 
 function AchievementBadge({
@@ -47,9 +44,8 @@ export function AchievementsSection({
   categories,
   freshKeys,
   embedded = false,
-  variant = 'full',
-  onShowAll,
 }: AchievementsSectionProps) {
+  const [showAll, setShowAll] = useState(false)
   const progress = useMemo(() => {
     if (entries && startedOn) return achievementProgressFromEntries(entries, startedOn)
     if (categories) return achievementProgressFromCategories(categories)
@@ -69,91 +65,69 @@ export function AchievementsSection({
   const { unlocked, unlockedCount, totalCount, next, recent } = progress
   const pct = totalCount > 0 ? Math.min(100, Math.round((unlockedCount / totalCount) * 100)) : 0
 
-  if (variant === 'showcase') {
-    return (
-      <section className={`${shell} ach-showcase`}>
-        <div className="block__head">
-          <h2>Achievements</h2>
-          <span>
-            {unlockedCount} / {totalCount}
-          </span>
-        </div>
-
-        <div className="ach-progress" aria-label="Fortschritt">
-          <div className="ach-progress__track">
-            <div className="ach-progress__fill" style={{ width: `${pct}%` }} />
-          </div>
-        </div>
-
-        {next && (
-          <div className="ach-next">
-            <span className="ach-next__label">Als Nächstes</span>
-            <div className="ach-next__row">
-              <AchievementBadge a={next} compact />
-              <div className="ach-next__text">
-                <strong>{next.title}</strong>
-                <span>
-                  {next.subtitle} · {next.short}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {recent.length > 0 ? (
-          <>
-            <p className="ach-showcase__recent-label">Zuletzt freigeschaltet</p>
-            <ul className="ach-showcase__strip">
-              {recent.map((a) => (
-                <li key={a.key}>
-                  <AchievementBadge a={a} fresh={freshKeys?.has(a.key)} compact />
-                </li>
-              ))}
-            </ul>
-          </>
-        ) : (
-          <p className="achievements__empty">Noch keine freigeschaltet.</p>
-        )}
-
-        {onShowAll && unlockedCount > 0 && (
-          <button type="button" className="btn" onClick={onShowAll}>
-            Alle Achievements
-          </button>
-        )}
-      </section>
-    )
-  }
-
-  if (unlocked.length === 0) {
-    return (
-      <section className={shell}>
-        <div className="block__head">
-          <h2>0 Achievements</h2>
-        </div>
-        <p className="achievements__empty">Noch keine freigeschaltet.</p>
-      </section>
-    )
-  }
-
   return (
-    <section className={shell}>
+    <section className={`${shell} ach-showcase`}>
       <div className="block__head">
-        <h2>
-          {unlockedCount} Achievement{unlockedCount === 1 ? '' : 's'}
-        </h2>
+        <h2>Achievements</h2>
         <span>
           {unlockedCount} / {totalCount}
         </span>
       </div>
 
-      <ul className="achievements-grid">
-        {unlocked.map((a) => (
-          <li key={a.key} className="achievements-grid__item">
-            <AchievementBadge a={a} fresh={freshKeys?.has(a.key)} />
-            <p className="ach-badge__title">{a.title}</p>
-          </li>
-        ))}
-      </ul>
+      <div className="ach-progress" aria-label="Fortschritt">
+        <div className="ach-progress__track">
+          <div className="ach-progress__fill" style={{ width: `${pct}%` }} />
+        </div>
+      </div>
+
+      {!showAll && next && (
+        <div className="ach-next">
+          <span className="ach-next__label">Als Nächstes</span>
+          <div className="ach-next__row">
+            <AchievementBadge a={next} compact />
+            <div className="ach-next__text">
+              <strong>{next.title}</strong>
+              <span>
+                {next.subtitle} · {next.short}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showAll ? (
+        unlocked.length === 0 ? (
+          <p className="achievements__empty">Noch keine freigeschaltet.</p>
+        ) : (
+          <ul className="achievements-grid">
+            {unlocked.map((a) => (
+              <li key={a.key} className="achievements-grid__item">
+                <AchievementBadge a={a} fresh={freshKeys?.has(a.key)} />
+                <p className="ach-badge__title">{a.title}</p>
+              </li>
+            ))}
+          </ul>
+        )
+      ) : recent.length > 0 ? (
+        <>
+          <p className="ach-showcase__recent-label">Zuletzt freigeschaltet</p>
+          <ul className="ach-showcase__strip">
+            {recent.map((a) => (
+              <li key={a.key}>
+                <AchievementBadge a={a} fresh={freshKeys?.has(a.key)} compact />
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : (
+        <p className="achievements__empty">Noch keine freigeschaltet.</p>
+      )}
+
+      {unlockedCount > 0 && (
+        <button type="button" className="btn" onClick={() => setShowAll((v) => !v)}>
+          {showAll ? 'Weniger anzeigen' : 'Alle anzeigen'}
+        </button>
+      )}
     </section>
   )
 }
