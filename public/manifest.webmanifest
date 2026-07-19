@@ -1,0 +1,18 @@
+{
+  "name": "Goon Tracker",
+  "short_name": "Goon Tracker",
+  "description": "Sessions tracken, Streaks halten und mit Freunden vergleichen.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090b0e",
+  "theme_color": "#0a0c0f",
+  "lang": "de",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

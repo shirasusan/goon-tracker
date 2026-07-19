@@ -43,7 +43,15 @@ export function GoonFeed({
   }
 
   if (posts.length === 0) {
-    return <p className="empty">Noch keine Goons im Feed.</p>
+    return (
+      <div className="goon-feed goon-feed--empty">
+        <p className="empty">Noch keine Goons im Feed.</p>
+        <p className="goon-feed__hint">
+          Deine gespeicherten Entries erscheinen hier für Freunde. Lade jemanden
+          ein oder speichere einen Entry mit Kommentar.
+        </p>
+      </div>
+    )
   }
 
   return (

@@ -13,7 +13,11 @@ export function RankBadge({ totalMinutes, rank, compact }: RankBadgeProps) {
 
   return (
     <div className={`rank-badge${compact ? ' rank-badge--compact' : ''}`}>
-      <span className="rank-badge__title" style={{ color: r.color }}>
+      <span
+        className="rank-badge__title"
+        style={{ color: r.color }}
+        title={r.flavor}
+      >
         {r.title}
       </span>
       {!compact && (

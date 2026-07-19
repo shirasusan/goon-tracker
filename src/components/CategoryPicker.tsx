@@ -86,7 +86,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
         <span className="new-entry__plus" aria-hidden>
           +
         </span>
-        <span className="new-entry__label">New Entry</span>
+        <span className="new-entry__label">Neuer Eintrag</span>
       </button>
     )
   }

@@ -68,7 +68,7 @@ export function AchievementsSection({
   return (
     <section className={`${shell} ach-showcase`}>
       <div className="block__head">
-        <h2>Achievements</h2>
+        <h2>Erfolge</h2>
         <span>
           {unlockedCount} / {totalCount}
         </span>

@@ -108,7 +108,7 @@ export function RankedPanel({
           </p>
         </div>
         <p className="ranked__reset">
-          Reset in <strong>{formatCountdown(seasonInfo.msUntilReset)}</strong>
+          Zurücksetzen in <strong>{formatCountdown(seasonInfo.msUntilReset)}</strong>
         </p>
       </header>
 
@@ -116,11 +116,11 @@ export function RankedPanel({
         <aside className="ranked__progress">
           <div className="block__head">
             <h2 className="ranked__progress-title">
-              Dein Rank
+              Dein Rang
               <button
                 type="button"
                 className="help-btn"
-                aria-label="Ranks erklären"
+                aria-label="Ränge erklären"
                 onClick={() => setShowRankHelp(true)}
               >
                 ?
@@ -141,7 +141,10 @@ export function RankedPanel({
           <p className="ranked__next">
             {progress.next
               ? `${progress.intoBand.toFixed(1)} / ${progress.bandSize} h bis ${progress.next.title}`
-              : 'Max Rank erreicht'}
+              : 'Maximalrang erreicht'}
+          </p>
+          <p className="ranked__legend">
+            Saison-Stunden zählen für Rang · Allzeit für Level auf Start
           </p>
           {syncError && <p className="friends__error">{syncError}</p>}
         </aside>
@@ -154,14 +157,14 @@ export function RankedPanel({
                 className={`chip${boardMode === 'season' ? ' is-active' : ''}`}
                 onClick={() => setBoardMode('season')}
               >
-                Season
+                Saison
               </button>
               <button
                 type="button"
                 className={`chip${boardMode === 'alltime' ? ' is-active' : ''}`}
                 onClick={() => setBoardMode('alltime')}
               >
-                All Time
+                Allzeit
               </button>
             </div>
             <CategoryFilterSelect value={category} onChange={setCategory} />

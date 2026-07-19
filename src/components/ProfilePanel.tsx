@@ -158,7 +158,7 @@ export function ProfilePanel({
         </div>
         {!monkMode && (
           <div className="metric-strip__item">
-            <span className="metric-strip__label">Goonometer</span>
+            <span className="metric-strip__label">Intensität</span>
             <strong className="metric-strip__value">
               {weekAvg == null ? '—' : weekAvg}
               {weekAvg != null && <span className="metric-strip__sub">/ 10</span>}
@@ -185,7 +185,7 @@ export function ProfilePanel({
             className={`chip${activeSeg === 'stats' ? ' is-active' : ''}`}
             onClick={() => setSeg('stats')}
           >
-            Stats
+            Statistiken
           </button>
         )}
         <button
@@ -211,7 +211,7 @@ export function ProfilePanel({
       {activeSeg === 'stats' && !monkMode && (
         <section className="profile-panel">
           <div className="block__head">
-            <h2>Stats</h2>
+            <h2>Statistiken</h2>
             <span>tippen für Verlauf</span>
           </div>
           <CategoryStats
@@ -278,9 +278,9 @@ export function ProfilePanel({
             {onMonkModeChange && (
               <label className="profile__switch" htmlFor="monk-mode">
                 <span>
-                  <strong>Monk Mode</strong>
+                  <strong>Mönchsmodus</strong>
                   <span className="profile__switch-hint">
-                    Blendet Eintragen, Rank, Ranked, Recommendations, Stats und Goonometer aus
+                    Blendet Eintragen, Rang, Rangliste, Empfehlungen, Statistiken und Intensität aus
                   </span>
                 </span>
                 <input
@@ -295,9 +295,9 @@ export function ProfilePanel({
             {onRankedAnonymousChange && (
               <label className="profile__switch" htmlFor="ranked-anon">
                 <span>
-                  <strong>Ranked anonym</strong>
+                  <strong>Rangliste anonym</strong>
                   <span className="profile__switch-hint">
-                    Im Ranked-Leaderboard als Anonymous erscheinen
+                    In der Rangliste als Anonym erscheinen
                   </span>
                 </span>
                 <input

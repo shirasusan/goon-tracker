@@ -1,6 +1,8 @@
 export type RankInfo = {
   id: string
   title: string
+  /** Playful flavor — shown in tooltips */
+  flavor: string
   minHours: number
   maxHours: number
   color: string
@@ -8,15 +10,58 @@ export type RankInfo = {
 
 /** Hours of total goon time → rank (lower inclusive, upper exclusive except last) */
 export const RANKS: RankInfo[] = [
-  { id: 'unranked', title: 'Unranked', minHours: 0, maxHours: 2, color: '#8b95a3' },
-  { id: 'bronze', title: 'Bronze Beater', minHours: 2, maxHours: 5, color: '#cd7f32' },
-  { id: 'silver', title: 'Silver Stroker', minHours: 5, maxHours: 10, color: '#c0c0c0' },
-  { id: 'golden', title: 'Golden Gooner', minHours: 10, maxHours: 20, color: '#ffd700' },
-  { id: 'emerald', title: 'Emerald Edger', minHours: 20, maxHours: 30, color: '#50c878' },
-  { id: 'platinum', title: 'Platinum Puller', minHours: 30, maxHours: 40, color: '#e5e4e2' },
+  {
+    id: 'unranked',
+    title: 'Ohne Rang',
+    flavor: 'Unranked',
+    minHours: 0,
+    maxHours: 2,
+    color: '#8b95a3',
+  },
+  {
+    id: 'bronze',
+    title: 'Bronze',
+    flavor: 'Bronze Beater',
+    minHours: 2,
+    maxHours: 5,
+    color: '#cd7f32',
+  },
+  {
+    id: 'silver',
+    title: 'Silber',
+    flavor: 'Silver Stroker',
+    minHours: 5,
+    maxHours: 10,
+    color: '#c0c0c0',
+  },
+  {
+    id: 'golden',
+    title: 'Gold',
+    flavor: 'Golden Gooner',
+    minHours: 10,
+    maxHours: 20,
+    color: '#ffd700',
+  },
+  {
+    id: 'emerald',
+    title: 'Smaragd',
+    flavor: 'Emerald Edger',
+    minHours: 20,
+    maxHours: 30,
+    color: '#50c878',
+  },
+  {
+    id: 'platinum',
+    title: 'Platin',
+    flavor: 'Platinum Puller',
+    minHours: 30,
+    maxHours: 40,
+    color: '#e5e4e2',
+  },
   {
     id: 'grandmaster',
-    title: 'Grandmaster Gripgod',
+    title: 'Großmeister',
+    flavor: 'Grandmaster Gripgod',
     minHours: 40,
     maxHours: 10_000_000,
     color: '#ff4b91',

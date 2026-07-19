@@ -3,9 +3,9 @@ import { AddFriendControl } from './AddFriendControl'
 export type TabId = 'home' | 'friends' | 'ranked'
 
 const ALL_TABS: { id: TabId; label: string }[] = [
-  { id: 'home', label: 'Home' },
+  { id: 'home', label: 'Start' },
   { id: 'friends', label: 'Freunde' },
-  { id: 'ranked', label: 'Ranked' },
+  { id: 'ranked', label: 'Rangliste' },
 ]
 
 type BottomNavProps = {
@@ -31,7 +31,7 @@ export function BottomNav({
       aria-label="Hauptnavigation"
       style={{ ['--nav-cols' as string]: String(tabs.length) }}
     >
-      <p className="bottom-nav__overview">Overview</p>
+      <p className="bottom-nav__overview">Menü</p>
       {tabs.map((tab) => (
         <button
           key={tab.id}

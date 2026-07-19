@@ -191,7 +191,7 @@ export function PublicProfileView({
           className={`chip${seg === 'stats' ? ' is-active' : ''}`}
           onClick={() => setSeg('stats')}
         >
-          Stats
+          Statistiken
         </button>
       </div>
 
@@ -202,7 +202,7 @@ export function PublicProfileView({
       {seg === 'stats' && (
         <section className="profile-panel">
           <div className="block__head">
-            <h2>Stats</h2>
+            <h2>Statistiken</h2>
             <span>Kategorien</span>
           </div>
           <ul className="cat-stats">

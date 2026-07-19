@@ -25,8 +25,8 @@ function displayRow(row: FriendSnapshot, highlightId?: string) {
   const anon = Boolean(row.rankedAnonymous) && !isYou
   return {
     anon,
-    label: anon ? 'Anonymous' : row.username ? `@${row.username}` : row.name,
-    name: anon ? 'Anonymous' : row.name,
+    label: anon ? 'Anonym' : row.username ? `@${row.username}` : row.name,
+    name: anon ? 'Anonym' : row.name,
     avatarUrl: anon ? undefined : row.avatarUrl,
     goonStreak: anon ? 0 : row.goonStreak,
     dryStreak: anon ? 0 : row.dryStreak,
@@ -159,7 +159,7 @@ export function Leaderboard({
         <p className="empty">
           {mode === 'alltime'
             ? 'Noch keine Einträge.'
-            : 'Noch keine Season-Einträge. Logge Zeit, um aufzutauchen.'}
+            : 'Noch keine Season-Einträge. Speichere Zeit, um aufzutauchen.'}
         </p>
       )}
     </div>

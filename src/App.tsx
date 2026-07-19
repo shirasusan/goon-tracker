@@ -6,6 +6,7 @@ import { BottomNav, type TabId } from './components/BottomNav'
 import { CategoryPicker } from './components/CategoryPicker'
 import { FriendsPanel } from './components/FriendsPanel'
 import { LevelBar } from './components/LevelBar'
+import { OnboardingChecklist } from './components/OnboardingChecklist'
 import { ProfilePanel } from './components/ProfilePanel'
 import { RankBadge } from './components/RankBadge'
 import { RankedPanel } from './components/RankedPanel'
@@ -43,9 +44,9 @@ import type { Category, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
 const PAGE_META: Record<TabId, { title: string }> = {
-  home: { title: 'Home' },
+  home: { title: 'Start' },
   friends: { title: 'Freunde' },
-  ranked: { title: 'Ranked' },
+  ranked: { title: 'Rangliste' },
 }
 
 function newId() {
@@ -279,7 +280,7 @@ export default function App() {
     if (!entry) return
     setData((prev) => ({ ...prev, entries: [...prev.entries, entry] }))
     setFlash(`+${entry.minutes} XP · G${goonometer}`)
-    window.setTimeout(() => setFlash(null), 1000)
+    window.setTimeout(() => setFlash(null), 1600)
 
     const userId = data.profile.cloudUserId
     if (userId && cloudEnabled) {
@@ -492,6 +493,7 @@ export default function App() {
       <div className="app">
         <header className="top">
           <div className="top__left">
+            <p className="top__brand">Goon Tracker</p>
             <h1 className="top__title">{page.title}</h1>
           </div>
           <button
@@ -511,7 +513,7 @@ export default function App() {
           </button>
         </header>
 
-        <main className="page" key={showProfile ? 'profile' : tab}>
+        <main className="page" id="main" key={showProfile ? 'profile' : tab}>
           {showProfile ? (
             <ProfilePanel
               userId={data.profile.cloudUserId}
@@ -546,17 +548,49 @@ export default function App() {
             <>
               {tab === 'home' && (
                 <div className="home-compose">
+                  {!monkMode && (
+                    <section className="home-compose__primary">
+                      <div className="block__head">
+                        <h2>Heute</h2>
+                        {todayEntries.length > 0 && (
+                          <span>{formatMinutes(todayMinutes)}</span>
+                        )}
+                      </div>
+                      <p className="home-compose__legend">
+                        Heute zählt für Streak · Season für Rangliste · Allzeit für Level
+                      </p>
+                      <CategoryPicker onLog={logCategory} />
+                      {flash && <p className="flash flash--pop">{flash}</p>}
+                    </section>
+                  )}
+
+                  <OnboardingChecklist
+                    hasProfileName={Boolean(data.profile.name.trim())}
+                    hasEntry={data.entries.length > 0}
+                    hasFriends={data.friends.length > 0}
+                    onGoProfile={() => setShowProfile(true)}
+                    onGoFriends={() => {
+                      setShowProfile(false)
+                      setTab('friends')
+                    }}
+                  />
+
                   <aside className="home-compose__overview">
                     {!monkMode ? (
-                      <>
+                      <div className="home-compose__metrics">
                         <div className="home-hero__rank">
-                          <p className="eyebrow">Rank</p>
+                          <p className="eyebrow">Rang</p>
                           <RankBadge totalMinutes={totalMinutes} rank={rank} />
                         </div>
                         <div className="home-compose__streak" aria-label="Streak">
                           <p className="eyebrow">Streak</p>
                           <div className="streaks streaks--single">
-                            <StreakRing value={streak} embedded />
+                            <StreakRing
+                              key={streak}
+                              value={streak}
+                              embedded
+                              compact
+                            />
                           </div>
                         </div>
                         <div className="home-hero__level">
@@ -568,29 +602,16 @@ export default function App() {
                             totalXp={level.xp}
                           />
                         </div>
-                      </>
+                      </div>
                     ) : (
                       <div className="home-compose__streak" aria-label="Streak">
                         <p className="eyebrow">Streak</p>
                         <div className="streaks streaks--single">
-                          <StreakRing value={streak} embedded />
+                          <StreakRing key={streak} value={streak} embedded />
                         </div>
                       </div>
                     )}
                   </aside>
-
-                  {!monkMode && (
-                    <section className="home-compose__primary">
-                      <div className="block__head">
-                        <h2>Heute</h2>
-                        {todayEntries.length > 0 && (
-                          <span>{formatMinutes(todayMinutes)}</span>
-                        )}
-                      </div>
-                      <CategoryPicker onLog={logCategory} />
-                      {flash && <p className="flash">{flash}</p>}
-                    </section>
-                  )}
                 </div>
               )}
 

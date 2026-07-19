@@ -40,7 +40,7 @@ export function AchievementUnlockOverlay({
       </div>
 
       <div className="ach-fullscreen__content" onClick={(e) => e.stopPropagation()}>
-        <p className="ach-fullscreen__eyebrow">Achievement unlocked</p>
+        <p className="ach-fullscreen__eyebrow">Erfolg freigeschaltet</p>
         <div className="ach-fullscreen__badge ach-badge is-fresh" aria-hidden>
           <span className="ach-badge__ring" />
           <span className="ach-badge__core">

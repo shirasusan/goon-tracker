@@ -424,8 +424,8 @@ export function FriendsPanel({
             className={`chip${view === 'recs' ? ' is-active' : ''}`}
             onClick={() => setView('recs')}
           >
-            <span className="friends__tab-short">Recs</span>
-            <span className="friends__tab-full">Recommendations</span>
+            <span className="friends__tab-short">Tipps</span>
+            <span className="friends__tab-full">Empfehlungen</span>
           </button>
         )}
         <div className="friends__filters friends__filters--tabs">
@@ -460,6 +460,20 @@ export function FriendsPanel({
 
       {view === 'compare' && (
         <div className="friends__board">
+          {friends.length === 0 && (
+            <div className="friends__empty-invite">
+              <h3>Lade Freunde ein</h3>
+              <p>
+                Teile deinen Code — sie senden eine Anfrage, die du annehmen
+                kannst.
+              </p>
+              <AddFriendControl
+                cloudCode={myCode || cloudCode}
+                userId={meId}
+                collapsible={false}
+              />
+            </div>
+          )}
           <ol className="leaderboard compare-list">
             {board.map((row, i) => (
               <li
@@ -547,7 +561,7 @@ export function FriendsPanel({
               placeholder="Suche…"
               value={recQuery}
               onChange={(e) => setRecQuery(e.target.value)}
-              aria-label="Recommendations suchen"
+              aria-label="Empfehlungen suchen"
             />
             <button
               type="button"
@@ -563,7 +577,7 @@ export function FriendsPanel({
             <div className="recs__modal" role="dialog" aria-modal="true">
               <div className="recs__modal-card">
                 <div className="block__head">
-                  <h3>Neue Recommendation</h3>
+                  <h3>Neue Empfehlung</h3>
                   <button
                     type="button"
                     className="section__close"
@@ -681,7 +695,7 @@ export function FriendsPanel({
           </ul>
           {filteredRecs.length === 0 && (
             <p className="empty">
-              {recs.length === 0 ? 'Noch keine Recommendations.' : 'Keine Treffer.'}
+              {recs.length === 0 ? 'Noch keine Empfehlungen.' : 'Keine Treffer.'}
             </p>
           )}
         </div>
