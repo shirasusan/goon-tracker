@@ -9,14 +9,12 @@ import {
   deleteRecommendation,
   ensureCloudProfile,
   ensureCloudUser,
-  fetchProfileByCode,
   fetchProfileById,
   listIncomingFriendRequests,
   loadFriendProfiles,
   loadGoonFeed,
   loadRecommendations,
   removeFriendship,
-  sendFriendRequest,
   type FriendRequestRow,
 } from '../lib/cloud'
 import {
@@ -28,6 +26,7 @@ import {
   type Recommendation,
 } from '../types'
 import { Avatar } from './Avatar'
+import { AddFriendControl } from './AddFriendControl'
 import { GoonFeed } from './GoonFeed'
 import { PublicProfileView } from './PublicProfileView'
 
@@ -89,12 +88,6 @@ export function FriendsPanel({
   const [feedError, setFeedError] = useState<string | null>(null)
   const [feedBusy, setFeedBusy] = useState(false)
   const [myCode, setMyCode] = useState(cloudCode || '')
-  const [showAddFriend, setShowAddFriend] = useState(false)
-  const [paste, setPaste] = useState('')
-  const [copied, setCopied] = useState(false)
-  const [friendBusy, setFriendBusy] = useState(false)
-
-  const shareCode = myCode || cloudCode || ''
 
   const filteredRecs = useMemo(() => {
     const q = recQuery.trim().toLowerCase()
@@ -111,7 +104,12 @@ export function FriendsPanel({
 
   const filteredFeed = useMemo(() => {
     if (categoryFilter === 'all') return feed
-    return feed.filter((p) => p.category === categoryFilter)
+    return feed.filter((p) => {
+      if (p.parts && p.parts.length > 0) {
+        return p.parts.some((part) => part.category === categoryFilter)
+      }
+      return p.category === categoryFilter
+    })
   }, [feed, categoryFilter])
 
   useEffect(() => {
@@ -264,47 +262,6 @@ export function FriendsPanel({
     const loaded = await loadFriendProfiles(user.userId)
     if (!('error' in loaded)) onFriendsSync(loaded.friends)
     await refreshFeed(user.userId)
-  }
-
-  async function copyFriendCode() {
-    if (!shareCode) return
-    try {
-      await navigator.clipboard.writeText(shareCode)
-      setCopied(true)
-      window.setTimeout(() => setCopied(false), 1400)
-    } catch {
-      setError('Kopieren fehlgeschlagen.')
-    }
-  }
-
-  async function sendFriendInvite() {
-    if (!meId || !cloudEnabled) {
-      setError('Cloud nicht konfiguriert.')
-      return
-    }
-    setError(null)
-    setStatus(null)
-    setFriendBusy(true)
-    const found = await fetchProfileByCode(paste)
-    if ('error' in found) {
-      setFriendBusy(false)
-      setError(found.error)
-      return
-    }
-    if (found.profile.id === meId) {
-      setFriendBusy(false)
-      setError('Das ist dein eigener Code.')
-      return
-    }
-    const sent = await sendFriendRequest(meId, found.profile.id)
-    setFriendBusy(false)
-    if (sent.error) {
-      setError(sent.error)
-      return
-    }
-    setPaste('')
-    setStatus('Anfrage gesendet')
-    setShowAddFriend(false)
   }
 
   async function addRec() {
@@ -519,16 +476,40 @@ export function FriendsPanel({
                   onClick={row._you ? undefined : () => void openProfile(row.id)}
                 />
                 <div className="leaderboard__main compare-row__main">
-                  <button
-                    type="button"
-                    className="leaderboard__name-btn"
-                    onClick={row._you ? undefined : () => void openProfile(row.id)}
-                  >
-                    <strong>
-                      {row.name}
-                      {row._you ? ' · du' : ''}
-                    </strong>
-                  </button>
+                  <div className="compare-row__top">
+                    <button
+                      type="button"
+                      className="leaderboard__name-btn"
+                      onClick={row._you ? undefined : () => void openProfile(row.id)}
+                    >
+                      <strong>
+                        {row.name}
+                        {row._you ? ' · du' : ''}
+                      </strong>
+                    </button>
+                    <span
+                      className={`compare-streak${
+                        row.goonStreak > 0
+                          ? ' compare-streak--goon'
+                          : row.dryStreak > 0
+                            ? ' compare-streak--focus'
+                            : ''
+                      }`}
+                      title={
+                        row.goonStreak > 0
+                          ? `Goon Streak ${row.goonStreak}`
+                          : row.dryStreak > 0
+                            ? `Focus Streak ${row.dryStreak}`
+                            : 'Keine Streak'
+                      }
+                    >
+                      {row.goonStreak > 0
+                        ? row.goonStreak
+                        : row.dryStreak > 0
+                          ? row.dryStreak
+                          : 0}
+                    </span>
+                  </div>
                   <span>
                     Lv {row.level} · {formatMinutes(row._metric)}
                     {categoryFilter !== 'all' ? (
@@ -542,28 +523,6 @@ export function FriendsPanel({
                     ) : null}
                   </span>
                 </div>
-                <span
-                  className={`compare-streak${
-                    row.goonStreak > 0
-                      ? ' compare-streak--goon'
-                      : row.dryStreak > 0
-                        ? ' compare-streak--focus'
-                        : ''
-                  }`}
-                  title={
-                    row.goonStreak > 0
-                      ? `Goon Streak ${row.goonStreak}`
-                      : row.dryStreak > 0
-                        ? `Focus Streak ${row.dryStreak}`
-                        : 'Keine Streak'
-                  }
-                >
-                  {row.goonStreak > 0
-                    ? row.goonStreak
-                    : row.dryStreak > 0
-                      ? row.dryStreak
-                      : 0}
-                </span>
                 {!row._you && (
                   <button
                     type="button"
@@ -728,63 +687,11 @@ export function FriendsPanel({
         </div>
       )}
 
-      <div className={`friends__add-dock${showAddFriend ? ' is-open' : ''}`}>
-        {showAddFriend ? (
-          <div className="friends__add-panel">
-            <div className="block__head">
-              <h3>Freund hinzufügen</h3>
-              <button
-                type="button"
-                className="section__close"
-                onClick={() => setShowAddFriend(false)}
-              >
-                schließen
-              </button>
-            </div>
-            <div className="friends__share">
-              <p>Dein Code — Anfrage senden; der andere muss noch akzeptieren.</p>
-              <input className="friends__code" readOnly value={shareCode || '…'} />
-              <button
-                type="button"
-                className="btn"
-                onClick={() => void copyFriendCode()}
-                disabled={!shareCode}
-              >
-                {copied ? 'Kopiert' : 'Code kopieren'}
-              </button>
-            </div>
-            <div className="friends__add">
-              <label htmlFor="friend-code">Freund-Code</label>
-              <input
-                id="friend-code"
-                placeholder="AB12CD"
-                value={paste}
-                onChange={(e) => {
-                  setPaste(e.target.value.toUpperCase())
-                  setError(null)
-                  setStatus(null)
-                }}
-              />
-              <button
-                type="button"
-                className="btn btn--solid"
-                onClick={() => void sendFriendInvite()}
-                disabled={friendBusy || !meId || busy}
-              >
-                Anfrage senden
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="friends__add-fab"
-            onClick={() => setShowAddFriend(true)}
-          >
-            + Freund
-          </button>
-        )}
-      </div>
+      <AddFriendControl
+        className="friends__add-dock--mobile"
+        cloudCode={myCode || cloudCode}
+        userId={meId}
+      />
     </div>
   )
 }

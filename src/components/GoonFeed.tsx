@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { formatDisplayDate } from '../lib/dates'
+import { entryParts } from '../lib/entries'
 import { formatMinutes } from '../lib/format'
 import { CATEGORY_META, type GoonPost } from '../types'
 import { Avatar } from './Avatar'
@@ -50,7 +51,17 @@ export function GoonFeed({
       {error && <p className="friends__error">{error}</p>}
       <ul className="goon-feed__list">
         {posts.map((post) => {
-          const meta = CATEGORY_META[post.category]
+          const parts =
+            post.parts && post.parts.length > 0
+              ? post.parts
+              : entryParts({
+                  id: post.id,
+                  category: post.category,
+                  minutes: post.minutes,
+                  goonometer: post.goonometer,
+                  date: post.date,
+                  createdAt: post.createdAt,
+                })
           return (
             <li key={post.id} className="goon-card">
               <div className="goon-card__head">
@@ -66,12 +77,22 @@ export function GoonFeed({
                     {post.goonometer}
                   </span>
                 </div>
-                <span
-                  className="goon-card__cat"
-                  style={{ color: meta.color, borderColor: meta.color }}
-                >
-                  {meta.label}
-                </span>
+                <div className="goon-card__cats">
+                  {parts.map((p) => {
+                    const meta = CATEGORY_META[p.category]
+                    return (
+                      <span
+                        key={p.category}
+                        className="goon-card__cat"
+                        style={{ color: meta.color, borderColor: meta.color }}
+                        title={formatMinutes(p.minutes)}
+                      >
+                        {meta.label}
+                        {parts.length > 1 ? ` ${p.minutes}m` : ''}
+                      </span>
+                    )
+                  })}
+                </div>
               </div>
               {post.comment ? (
                 <p className="goon-card__comment">{post.comment}</p>

@@ -32,13 +32,14 @@ import {
   type UnlockedAchievement,
 } from './lib/achievements'
 import { toDateKey } from './lib/dates'
+import { buildEntryFromParts } from './lib/entries'
 import { formatMinutes } from './lib/format'
 import { levelFromXp, totalXp } from './lib/level'
 import { rankFromMinutes } from './lib/ranks'
 import { buildSnapshot } from './lib/snapshot'
 import { clearLocalTrackerData, loadData, saveData } from './lib/storage'
 import { calcSignedStreak, signedToGoonDry } from './lib/streaks'
-import type { Category, Entry, FriendSnapshot, TrackerData } from './types'
+import type { Category, FriendSnapshot, TrackerData } from './types'
 import './App.css'
 
 const PAGE_META: Record<TabId, { title: string }> = {
@@ -263,22 +264,21 @@ export default function App() {
   const todayMinutes = todayEntries.reduce((sum, e) => sum + e.minutes, 0)
 
   function logCategory(
-    category: Category,
-    minutes: number,
+    parts: { category: Category; minutes: number }[],
     goonometer: number,
     comment?: string,
   ) {
-    const entry: Entry = {
+    const entry = buildEntryFromParts({
       id: newId(),
-      category,
-      minutes,
+      parts,
       goonometer,
       date: today,
       createdAt: new Date().toISOString(),
-      ...(comment ? { comment } : {}),
-    }
+      comment,
+    })
+    if (!entry) return
     setData((prev) => ({ ...prev, entries: [...prev.entries, entry] }))
-    setFlash(`+${minutes} XP · G${goonometer}`)
+    setFlash(`+${entry.minutes} XP · G${goonometer}`)
     window.setTimeout(() => setFlash(null), 1000)
 
     const userId = data.profile.cloudUserId
@@ -485,6 +485,8 @@ export default function App() {
         active={showProfile ? null : tab}
         onChange={openTab}
         hideRanked={monkMode}
+        cloudCode={data.profile.cloudCode}
+        userId={data.profile.cloudUserId}
       />
 
       <div className="app">

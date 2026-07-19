@@ -1,5 +1,6 @@
 import { useMemo, useRef, useState } from 'react'
 import { uploadAvatar } from '../lib/cloud'
+import { entryHasCategory } from '../lib/entries'
 import { weeklyGoonometerAverage } from '../lib/goonometer'
 import { rankFromMinutes } from '../lib/ranks'
 import type { Category, Entry } from '../types'
@@ -73,7 +74,7 @@ export function ProfilePanel({
   const recent = useMemo(() => {
     if (!historyCategory) return []
     return [...entries]
-      .filter((e) => e.category === historyCategory)
+      .filter((e) => entryHasCategory(e, historyCategory))
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
       .slice(0, 30)
   }, [entries, historyCategory])
@@ -232,7 +233,11 @@ export function ProfilePanel({
                   schließen
                 </button>
               </div>
-              <EntryList entries={recent} onRemove={onRemoveEntry} />
+              <EntryList
+                entries={recent}
+                onRemove={onRemoveEntry}
+                focusCategory={historyCategory}
+              />
             </>
           )}
         </section>

@@ -1,3 +1,5 @@
+import { AddFriendControl } from './AddFriendControl'
+
 export type TabId = 'home' | 'friends' | 'ranked'
 
 const ALL_TABS: { id: TabId; label: string }[] = [
@@ -10,9 +12,17 @@ type BottomNavProps = {
   active: TabId | null
   onChange: (tab: TabId) => void
   hideRanked?: boolean
+  cloudCode?: string
+  userId?: string
 }
 
-export function BottomNav({ active, onChange, hideRanked }: BottomNavProps) {
+export function BottomNav({
+  active,
+  onChange,
+  hideRanked,
+  cloudCode,
+  userId,
+}: BottomNavProps) {
   const tabs = hideRanked ? ALL_TABS.filter((t) => t.id !== 'ranked') : ALL_TABS
 
   return (
@@ -33,6 +43,11 @@ export function BottomNav({ active, onChange, hideRanked }: BottomNavProps) {
           <span className="bottom-nav__label">{tab.label}</span>
         </button>
       ))}
+      <AddFriendControl
+        className="bottom-nav__add-friend"
+        cloudCode={cloudCode}
+        userId={userId}
+      />
     </nav>
   )
 }

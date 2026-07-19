@@ -8,6 +8,7 @@ import type {
   Recommendation,
 } from '../types'
 import { CATEGORIES } from '../types'
+import { buildEntryFromParts, normalizeParts } from './entries'
 import { rankFromMinutes } from './ranks'
 import { getSeasonInfo } from './season'
 import { categoryTotals } from './snapshot'
@@ -874,24 +875,29 @@ export async function pushGoonPost(input: {
   entry: Entry
 }): Promise<{ error?: string }> {
   if (!supabase) return { error: 'Cloud nicht konfiguriert.' }
-  const { error } = await supabase.from('goon_posts').upsert(
-    {
-      id: input.entry.id,
-      user_id: input.userId,
-      category: input.entry.category,
-      minutes: input.entry.minutes,
-      goonometer: input.entry.goonometer,
-      comment: (input.entry.comment || '').slice(0, 280),
-      date: input.entry.date,
-      created_at: input.entry.createdAt,
-    },
-    { onConflict: 'id' },
-  )
+  const payload: Record<string, unknown> = {
+    id: input.entry.id,
+    user_id: input.userId,
+    category: input.entry.category,
+    minutes: input.entry.minutes,
+    goonometer: input.entry.goonometer,
+    comment: (input.entry.comment || '').slice(0, 280),
+    date: input.entry.date,
+    created_at: input.entry.createdAt,
+  }
+  if (input.entry.parts && input.entry.parts.length > 0) {
+    payload.parts = input.entry.parts
+  }
+  const { error } = await supabase.from('goon_posts').upsert(payload, {
+    onConflict: 'id',
+  })
   if (error) {
     return {
       error: error.message.includes('relation')
         ? 'Tabelle fehlt. SQL aus supabase/goon_feed.sql im SQL Editor ausführen.'
-        : error.message,
+        : error.message.includes('parts')
+          ? 'Spalte fehlt. SQL aus supabase/entry_parts.sql im SQL Editor ausführen.'
+          : error.message,
     }
   }
   return {}
@@ -906,14 +912,44 @@ type TrackerEntryRow = {
   comment: string | null
   date: string
   created_at: string
+  parts?: unknown
+}
+
+function parsePartsColumn(raw: unknown) {
+  if (!Array.isArray(raw)) return undefined
+  const parts = normalizeParts(
+    raw
+      .filter(
+        (p): p is { category: Category; minutes: number } =>
+          !!p &&
+          typeof p === 'object' &&
+          CATEGORIES.includes((p as { category?: Category }).category as Category),
+      )
+      .map((p) => ({
+        category: (p as { category: Category }).category,
+        minutes: Number((p as { minutes: number }).minutes) || 0,
+      })),
+  )
+  return parts.length > 0 ? parts : undefined
 }
 
 function trackerRowToEntry(row: TrackerEntryRow): Entry | null {
-  if (!CATEGORIES.includes(row.category as Category)) return null
   const comment =
     typeof row.comment === 'string' && row.comment.trim()
       ? row.comment.trim().slice(0, 280)
       : undefined
+  const parts = parsePartsColumn(row.parts)
+  if (parts && parts.length > 0) {
+    return buildEntryFromParts({
+      id: row.id,
+      parts,
+      goonometer: Math.max(0, Math.min(10, Math.round(Number(row.goonometer) || 0))),
+      date: row.date,
+      createdAt: row.created_at,
+      comment,
+    })
+  }
+  if (!CATEGORIES.includes(row.category as Category)) return null
   return {
     id: row.id,
     category: row.category as Category,
@@ -935,6 +971,7 @@ function entryToTrackerRow(userId: string, entry: Entry) {
     comment: (entry.comment || '').slice(0, 280),
     date: entry.date,
     created_at: entry.createdAt,
+    parts: entry.parts && entry.parts.length > 0 ? entry.parts : null,
   }
 }
 
@@ -1099,12 +1136,29 @@ export async function loadGoonFeed(
   const friendIds = (links ?? []).map((l) => l.friend_id)
   const ids = [userId, ...friendIds]
 
-  const { data, error } = await supabase
-    .from('goon_posts')
-    .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
-    .in('user_id', ids)
-    .order('created_at', { ascending: false })
-    .limit(limit)
+  let postsRaw: Array<Record<string, unknown>> | null = null
+  let error: { message: string } | null = null
+
+  {
+    const res = await supabase
+      .from('goon_posts')
+      .select('id, user_id, category, minutes, goonometer, comment, date, created_at, parts')
+      .in('user_id', ids)
+      .order('created_at', { ascending: false })
+      .limit(limit)
+    error = res.error
+    postsRaw = (res.data as Array<Record<string, unknown>> | null) ?? null
+    if (error && error.message.includes('parts')) {
+      const fallback = await supabase
+        .from('goon_posts')
+        .select('id, user_id, category, minutes, goonometer, comment, date, created_at')
+        .in('user_id', ids)
+        .order('created_at', { ascending: false })
+        .limit(limit)
+      error = fallback.error
+      postsRaw = (fallback.data as Array<Record<string, unknown>> | null) ?? null
+    }
+  }
 
   if (error) {
     return {
@@ -1114,7 +1168,7 @@ export async function loadGoonFeed(
     }
   }
 
-  const posts = data ?? []
+  const posts = postsRaw ?? []
   if (posts.length === 0) return { posts: [] }
 
   const postIds = posts.map((p) => p.id as string)
@@ -1180,6 +1234,7 @@ export async function loadGoonFeed(
   return {
     posts: posts.map((p) => {
       const author = profileById.get(p.user_id as string)
+      const parts = parsePartsColumn(p.parts)
       return {
         id: p.id as string,
         userId: p.user_id as string,
@@ -1192,6 +1247,7 @@ export async function loadGoonFeed(
         date: p.date as string,
         createdAt: p.created_at as string,
         comments: commentsByPost.get(p.id as string) ?? [],
+        ...(parts && parts.length > 1 ? { parts } : {}),
       }
     }),
   }

@@ -290,7 +290,8 @@ create table if not exists public.tracker_entries (
   goonometer int not null check (goonometer >= 0 and goonometer <= 10),
   comment text not null default '',
   date text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  parts jsonb
 );
 
 create index if not exists tracker_entries_user_date_idx
@@ -337,7 +338,8 @@ create table if not exists public.goon_posts (
   goonometer int not null check (goonometer >= 0 and goonometer <= 10),
   comment text not null default '',
   date text not null,
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+  parts jsonb
 );
 
 create index if not exists goon_posts_created_idx

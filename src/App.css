@@ -1,7 +1,9 @@
 .shell {
-  min-height: 100dvh;
+  height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .app {
@@ -9,9 +11,12 @@
   margin: 0 auto;
   padding: 1rem 0 calc(var(--nav-h) + 0.75rem);
   flex: 1;
+  min-height: 0;
   display: grid;
   gap: 0;
   align-content: start;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 .top {
@@ -486,7 +491,7 @@
   display: grid;
   gap: 0.85rem;
   width: 100%;
-  min-height: 11rem;
+  min-height: 0;
   padding: 1rem;
   border: 1px solid var(--line);
   border-radius: var(--radius);
@@ -777,6 +782,14 @@
   letter-spacing: 0.1em;
 }
 
+.duration__placeholder {
+  color: var(--muted);
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
 .duration__slider {
   width: 100%;
   accent-color: #e8ecf2;
@@ -904,7 +917,14 @@
 }
 
 .entry-row--g {
-  grid-template-columns: auto 1fr auto auto auto;
+  grid-template-columns: minmax(0, auto) 1fr auto auto auto;
+}
+
+.entry-row__cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  max-width: 11rem;
 }
 
 .entry-row__comment {
@@ -1293,6 +1313,10 @@
   z-index: 30;
   width: min(18.5rem, calc(100vw - 1.5rem));
   pointer-events: none;
+}
+
+.bottom-nav__add-friend {
+  display: none;
 }
 
 .friends__add-dock > * {
@@ -2659,17 +2683,30 @@ button.avatar {
 }
 
 .compare-row.leaderboard__row {
-  grid-template-columns: auto auto 1fr auto auto;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
 }
 
 .compare-row.leaderboard__row.is-you {
-  grid-template-columns: auto auto 1fr auto;
+  grid-template-columns: auto auto 1fr;
+}
+
+.compare-row__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.compare-row__top .leaderboard__name-btn {
+  min-width: 0;
 }
 
 .compare-streak {
   display: inline-grid;
   place-items: center;
+  flex-shrink: 0;
   min-width: 1.85rem;
   padding: 0.2rem 0.35rem;
   font-family: 'Bricolage Grotesque', sans-serif;
@@ -2807,8 +2844,8 @@ button.avatar {
 
 .goon-card__head {
   display: grid;
-  grid-template-columns: auto 1fr auto;
-  gap: 0.65rem;
+  grid-template-columns: auto 1fr;
+  gap: 0.55rem 0.65rem;
   align-items: center;
 }
 
@@ -2825,6 +2862,13 @@ button.avatar {
 .goon-card__meta span {
   color: var(--muted);
   font-size: 0.8rem;
+}
+
+.goon-card__cats {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
 }
 
 .goon-card__cat {
@@ -2923,7 +2967,9 @@ button.avatar {
     display: grid;
     grid-template-columns: var(--nav-side) minmax(0, 1fr);
     grid-template-rows: var(--chrome-h) minmax(0, 1fr);
-    min-height: 100dvh;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .chrome {
@@ -2963,7 +3009,7 @@ button.avatar {
     right: auto;
     transform: none;
     width: 100%;
-    height: auto;
+    height: 100%;
     min-height: 0;
     display: flex;
     flex-direction: column;
@@ -2974,6 +3020,21 @@ button.avatar {
     border-top: none;
     border-right: 1px solid var(--line);
     background: var(--bg);
+  }
+
+  .bottom-nav__add-friend.friends__add-dock {
+    display: block;
+    position: relative;
+    left: auto;
+    bottom: auto;
+    width: 100%;
+    margin-top: auto;
+    padding-top: 1.25rem;
+    z-index: 1;
+  }
+
+  .friends__add-dock--mobile {
+    display: none;
   }
 
   .bottom-nav__overview {
@@ -3054,7 +3115,6 @@ button.avatar {
     grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr);
     gap: 2rem 2.5rem;
     align-items: start;
-    min-height: calc(100dvh - var(--chrome-h) - 8rem);
   }
 
   .home-compose__overview {
@@ -3088,12 +3148,8 @@ button.avatar {
     font-size: 1.25rem;
   }
 
-  .home-compose__primary .new-entry,
-  .home-compose__primary .session {
-    min-height: 12rem;
-  }
-
   .home-compose__primary .new-entry {
+    min-height: 10rem;
     padding: 2.25rem 1.25rem;
   }
 
@@ -3102,7 +3158,6 @@ button.avatar {
     grid-template-rows: auto minmax(0, 1fr);
     gap: 1.5rem;
     align-content: start;
-    min-height: calc(100dvh - var(--chrome-h) - 7rem);
   }
 
   .ranked__top {
@@ -3167,12 +3222,6 @@ button.avatar {
 
   .friends.page-stack {
     gap: 1.25rem;
-  }
-
-  .friends__add-dock {
-    left: calc(var(--nav-side) + 2.5rem);
-    bottom: 1.5rem;
-    width: min(20rem, calc(100vw - var(--nav-side) - 5rem));
   }
 
   .friends__tabs {

@@ -3,8 +3,7 @@ import { CATEGORIES, CATEGORY_META, type Category } from '../types'
 
 type CategoryPickerProps = {
   onLog: (
-    category: Category,
-    minutes: number,
+    parts: { category: Category; minutes: number }[],
     goonometer: number,
     comment?: string,
   ) => void
@@ -13,7 +12,7 @@ type CategoryPickerProps = {
 type Drafts = Partial<Record<Category, number>>
 
 function clampMinutes(n: number) {
-  return Math.max(1, Math.min(24 * 60, Math.round(n) || 1))
+  return Math.max(1, Math.min(24 * 60, Math.round(n)))
 }
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
@@ -24,9 +23,9 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
   const [goonometer, setGoonometer] = useState(5)
   const [comment, setComment] = useState('')
 
-  const selected = CATEGORIES.filter((c) => drafts[c] != null)
+  const selected = CATEGORIES.filter((c) => (drafts[c] ?? 0) >= 1)
   const totalMinutes = selected.reduce((sum, c) => sum + (drafts[c] || 0), 0)
-  const activeMinutes = active ? (drafts[active] ?? 30) : 30
+  const activeMinutes = active != null ? drafts[active] : undefined
 
   function resetEntry() {
     setDrafts({})
@@ -43,21 +42,23 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
 
   function selectCategory(cat: Category) {
     if (active === cat) {
-      // Collapse slider; keep the minutes
       setActive(null)
       return
     }
-    setDrafts((prev) => ({
-      ...prev,
-      [cat]: prev[cat] ?? 30,
-    }))
     setActive(cat)
   }
 
   function setActiveMinutes(n: number) {
     if (!active) return
-    const minutes = clampMinutes(n)
-    setDrafts((prev) => ({ ...prev, [active]: minutes }))
+    if (n < 1) {
+      setDrafts((prev) => {
+        const next = { ...prev }
+        delete next[active]
+        return next
+      })
+      return
+    }
+    setDrafts((prev) => ({ ...prev, [active]: clampMinutes(n) }))
   }
 
   function clearCategory(cat: Category) {
@@ -71,12 +72,11 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
 
   function submit() {
     if (selected.length === 0) return
-    const note = comment.trim() || undefined
-    selected.forEach((cat, i) => {
-      const minutes = drafts[cat]
-      if (!minutes) return
-      onLog(cat, minutes, goonometer, i === 0 ? note : undefined)
-    })
+    const parts = selected.map((category) => ({
+      category,
+      minutes: drafts[category]!,
+    }))
+    onLog(parts, goonometer, comment.trim() || undefined)
     resetEntry()
   }
 
@@ -113,7 +113,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
             {CATEGORIES.map((cat) => {
               const meta = CATEGORY_META[cat]
               const mins = drafts[cat]
-              const hasValue = mins != null
+              const hasValue = (mins ?? 0) >= 1
               const isOpen = active === cat
               return (
                 <div
@@ -148,15 +148,21 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
                   {isOpen && (
                     <div className="cat-block__panel">
                       <div className="duration__value">
-                        <strong>{activeMinutes}</strong>
-                        <span>min</span>
+                        {(activeMinutes ?? 0) >= 1 ? (
+                          <>
+                            <strong>{activeMinutes}</strong>
+                            <span>min</span>
+                          </>
+                        ) : (
+                          <span className="duration__placeholder">Minuten wählen</span>
+                        )}
                       </div>
                       <input
                         className="duration__slider"
                         type="range"
-                        min={1}
+                        min={0}
                         max={180}
-                        value={Math.min(180, activeMinutes)}
+                        value={activeMinutes != null && activeMinutes >= 1 ? Math.min(180, activeMinutes) : 0}
                         onChange={(e) =>
                           setActiveMinutes(Number(e.target.value))
                         }

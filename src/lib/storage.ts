@@ -1,5 +1,6 @@
 import { toDateKey } from './dates'
-import type { Entry, FriendSnapshot, TrackerData } from '../types'
+import { buildEntryFromParts, normalizeParts } from './entries'
+import { CATEGORIES, type Category, type Entry, type FriendSnapshot, type TrackerData } from '../types'
 
 const KEY = 'goon-tracker-v1'
 
@@ -17,12 +18,41 @@ function emptyData(): TrackerData {
 }
 
 function normalizeEntry(raw: Partial<Entry> & { id?: string }): Entry | null {
-  if (!raw.id || !raw.category || !raw.date || !raw.createdAt) return null
+  if (!raw.id || !raw.date || !raw.createdAt) return null
   const g = typeof raw.goonometer === 'number' ? raw.goonometer : 5
   const comment =
     typeof raw.comment === 'string' && raw.comment.trim()
       ? raw.comment.trim().slice(0, 280)
       : undefined
+
+  const rawParts = Array.isArray(raw.parts)
+    ? normalizeParts(
+        raw.parts
+          .filter(
+            (p): p is { category: Category; minutes: number } =>
+              !!p &&
+              typeof p === 'object' &&
+              CATEGORIES.includes((p as { category?: Category }).category as Category),
+          )
+          .map((p) => ({
+            category: p.category,
+            minutes: Number(p.minutes) || 0,
+          })),
+      )
+    : []
+
+  if (rawParts.length > 0) {
+    return buildEntryFromParts({
+      id: raw.id,
+      parts: rawParts,
+      goonometer: g,
+      date: raw.date,
+      createdAt: raw.createdAt,
+      comment,
+    })
+  }
+
+  if (!raw.category || !CATEGORIES.includes(raw.category)) return null
   return {
     id: raw.id,
     category: raw.category,

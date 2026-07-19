@@ -8,9 +8,16 @@ export const CATEGORIES = [
 
 export type Category = (typeof CATEGORIES)[number]
 
+export type EntryPart = {
+  category: Category
+  minutes: number
+}
+
 export type Entry = {
   id: string
+  /** Primary category (first part); kept for legacy / DB column */
   category: Category
+  /** Total minutes across all parts */
   minutes: number
   /** Intensity 0–10 */
   goonometer: number
@@ -18,6 +25,8 @@ export type Entry = {
   createdAt: string
   /** Optional note shown in the friends feed */
   comment?: string
+  /** Multi-category session breakdown; omit for single-category entries */
+  parts?: EntryPart[]
 }
 
 export type GoonComment = {
@@ -42,6 +51,8 @@ export type GoonPost = {
   date: string
   createdAt: string
   comments: GoonComment[]
+  /** Multi-category breakdown when present */
+  parts?: EntryPart[]
 }
 
 export type Recommendation = {

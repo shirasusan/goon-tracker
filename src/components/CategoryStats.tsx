@@ -1,5 +1,6 @@
 import { CATEGORIES, CATEGORY_META, type Category, type Entry } from '../types'
 import { formatMinutes } from '../lib/format'
+import { categoryTotals } from '../lib/snapshot'
 
 type CategoryStatsProps = {
   entries: Entry[]
@@ -8,16 +9,7 @@ type CategoryStatsProps = {
 }
 
 export function CategoryStats({ entries, selected, onSelect }: CategoryStatsProps) {
-  const totals = CATEGORIES.reduce(
-    (acc, cat) => {
-      acc[cat] = entries
-        .filter((e) => e.category === cat)
-        .reduce((sum, e) => sum + e.minutes, 0)
-      return acc
-    },
-    {} as Record<Category, number>,
-  )
-
+  const totals = categoryTotals(entries)
   const max = Math.max(1, ...Object.values(totals))
 
   return (

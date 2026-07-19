@@ -1,4 +1,5 @@
 import { CATEGORIES, type Category, type Entry, type FriendSnapshot } from '../types'
+import { entryParts } from './entries'
 import { levelFromXp, totalXp } from './level'
 
 export function categoryTotals(entries: Entry[]): Record<Category, number> {
@@ -7,7 +8,9 @@ export function categoryTotals(entries: Entry[]): Record<Category, number> {
     number
   >
   for (const e of entries) {
-    totals[e.category] += e.minutes
+    for (const part of entryParts(e)) {
+      totals[part.category] += part.minutes
+    }
   }
   return totals
 }
