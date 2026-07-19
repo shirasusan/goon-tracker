@@ -2,22 +2,24 @@
 
 :root {
   color-scheme: dark;
-  --bg: #090b0e;
-  --bg-elevated: #0e1217;
-  --surface: #12171e;
-  --surface-2: #171d26;
-  --ink: #eef1f4;
-  --muted: #9aa3b0;
-  --line: #2e3642;
-  --line-soft: #232a33;
-  --goon: #ff2d4a;
-  --dry: #3dceb8;
-  --glow-goon: #ff2d4a;
-  --glow-dry: #3dceb8;
-  --accent: #ff2d4a;
-  --danger: #ed2553;
-  --link: #5ec8ff;
-  --warm: #e8910f;
+  --bg: #100e0d;
+  --bg-elevated: #1a1614;
+  --surface: #1a1614;
+  --surface-2: #221e1b;
+  --ink: #f2ebe4;
+  --muted: #9a9088;
+  --line: #2a2420;
+  --line-soft: #231f1c;
+  --goon: #e85a4a;
+  --goon-soft: #3a1f1c;
+  --dry: #5a9e8f;
+  --rank: #d4a35c;
+  --glow-goon: #e85a4a;
+  --glow-dry: #5a9e8f;
+  --accent: #e85a4a;
+  --danger: #d64545;
+  --link: #7eb8c9;
+  --warm: #d4a35c;
   --radius-xs: 4px;
   --radius-sm: 6px;
   --radius: 8px;
@@ -62,8 +64,8 @@ body,
 body {
   min-width: 320px;
   background:
-    radial-gradient(120% 80% at 50% -10%, rgba(255, 45, 74, 0.07), transparent 55%),
-    radial-gradient(90% 60% at 100% 100%, rgba(61, 206, 184, 0.04), transparent 50%),
+    radial-gradient(120% 80% at 50% -10%, rgba(232, 90, 74, 0.08), transparent 55%),
+    radial-gradient(90% 60% at 100% 100%, rgba(90, 158, 143, 0.05), transparent 50%),
     var(--bg);
   overflow: hidden;
 }
