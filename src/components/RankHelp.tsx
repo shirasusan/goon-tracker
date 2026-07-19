@@ -1,4 +1,5 @@
 import { RANKS } from '../lib/ranks'
+import { useLocale } from '../lib/LocaleContext'
 
 type RankHelpProps = {
   open: boolean
@@ -6,20 +7,19 @@ type RankHelpProps = {
 }
 
 export function RankHelp({ open, onClose }: RankHelpProps) {
+  const { t } = useLocale()
   if (!open) return null
 
   return (
-    <div className="rank-help" role="dialog" aria-modal="true" aria-label="Rang-Übersicht">
+    <div className="rank-help" role="dialog" aria-modal="true" aria-label={t('rank_overview')}>
       <div className="rank-help__card">
         <div className="block__head">
-          <h2>Ränge</h2>
+          <h2>{t('ranks')}</h2>
           <button type="button" className="section__close" onClick={onClose}>
-            schließen
+            {t('close')}
           </button>
         </div>
-        <p className="rank-help__hint">
-          Basiert auf Stunden in der aktuellen Saison (nicht Allzeit / nicht Heute).
-        </p>
+        <p className="rank-help__hint">{t('rank_help_hint')}</p>
         <ul className="rank-help__list">
           {RANKS.map((rank, i) => {
             const next = RANKS[i + 1]
@@ -40,7 +40,7 @@ export function RankHelp({ open, onClose }: RankHelpProps) {
           })}
         </ul>
       </div>
-      <button type="button" className="rank-help__backdrop" aria-label="Schließen" onClick={onClose} />
+      <button type="button" className="rank-help__backdrop" aria-label={t('close')} onClick={onClose} />
     </div>
   )
 }

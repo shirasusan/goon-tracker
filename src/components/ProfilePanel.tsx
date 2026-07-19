@@ -122,7 +122,7 @@ export function ProfilePanel({
     try {
       await onDeleteAccount()
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Löschen fehlgeschlagen.')
+      setError(e instanceof Error ? e.message : t('delete_failed'))
       setDeleting(false)
       setConfirmDelete(false)
     }

@@ -145,7 +145,7 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
                     <button
                       type="button"
                       className="cat-tile__clear"
-                      aria-label={`${meta.label} entfernen`}
+                      aria-label={`${meta.label} ${t('remove_category')}`}
                       onClick={() => clearCategory(cat)}
                     >
                       ×

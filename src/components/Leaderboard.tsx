@@ -121,7 +121,7 @@ export function Leaderboard({
           <CategoryFilterSelect value={category} onChange={setCategory} />
         </div>
       )}
-      {busy && <p className="empty">Lade…</p>}
+      {busy && <p className="empty">{t('loading')}</p>}
       {error && <p className="friends__error">{error}</p>}
       <ol className="leaderboard">
         {rows.map((row, i) => {
@@ -153,7 +153,7 @@ export function Leaderboard({
               >
                 <strong>
                   {view.label}
-                  {row.id === highlightId ? ' · du' : ''}
+                  {row.id === highlightId ? t('you_suffix') : ''}
                 </strong>
                 <RankBadge totalMinutes={row.totalMinutes} rank={rank} compact />
                 <span>{formatMinutes(row.totalMinutes)}</span>
@@ -164,9 +164,7 @@ export function Leaderboard({
       </ol>
       {!busy && rows.length === 0 && (
         <p className="empty">
-          {mode === 'alltime'
-            ? 'Noch keine Einträge.'
-            : 'Noch keine Season-Einträge. Speichere Zeit, um aufzutauchen.'}
+          {mode === 'alltime' ? t('no_entries') : t('no_season_entries')}
         </p>
       )}
     </div>

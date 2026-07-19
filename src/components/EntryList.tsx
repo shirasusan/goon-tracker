@@ -1,6 +1,7 @@
 import { formatDisplayDate } from '../lib/dates'
 import { entryParts } from '../lib/entries'
 import { formatMinutes } from '../lib/format'
+import { useLocale } from '../lib/LocaleContext'
 import { CATEGORY_META, type Category, type Entry } from '../types'
 
 type EntryListProps = {
@@ -11,8 +12,9 @@ type EntryListProps = {
 }
 
 export function EntryList({ entries, onRemove, focusCategory }: EntryListProps) {
+  const { t } = useLocale()
   if (entries.length === 0) {
-    return <p className="empty">Noch keine Einträge.</p>
+    return <p className="empty">{t('no_entries')}</p>
   }
 
   return (
@@ -50,7 +52,7 @@ export function EntryList({ entries, onRemove, focusCategory }: EntryListProps) 
             <button
               type="button"
               className="entry-row__remove"
-              aria-label="Eintrag löschen"
+              aria-label={t('delete_entry')}
               onClick={() => onRemove(entry.id)}
             >
               ×

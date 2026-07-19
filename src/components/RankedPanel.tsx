@@ -110,7 +110,8 @@ export function RankedPanel({
           </p>
         </div>
         <p className="ranked__reset">
-          Zurücksetzen in <strong>{formatCountdown(seasonInfo.msUntilReset)}</strong>
+          {t('season_resets_in')}{' '}
+          <strong>{formatCountdown(seasonInfo.msUntilReset)}</strong>
         </p>
       </header>
 
@@ -118,11 +119,11 @@ export function RankedPanel({
         <aside className="ranked__progress">
           <div className="block__head">
             <h2 className="ranked__progress-title">
-              Dein Rang
+              {t('your_rank')}
               <button
                 type="button"
                 className="help-btn"
-                aria-label="Ränge erklären"
+                aria-label={t('explain_ranks')}
                 onClick={() => setShowRankHelp(true)}
               >
                 ?
@@ -142,12 +143,10 @@ export function RankedPanel({
           </div>
           <p className="ranked__next">
             {progress.next
-              ? `${progress.intoBand.toFixed(1)} / ${progress.bandSize} h bis ${progress.next.title}`
-              : 'Maximalrang erreicht'}
+              ? `${progress.intoBand.toFixed(1)} / ${progress.bandSize} ${t('hours_until_rank')} ${progress.next.title}`
+              : t('max_rank')}
           </p>
-          <p className="ranked__legend">
-            Saison-Stunden zählen für Rang · Allzeit für Level auf Start
-          </p>
+          <p className="ranked__legend">{t('ranked_legend')}</p>
           {syncError && <p className="friends__error">{syncError}</p>}
         </aside>
 

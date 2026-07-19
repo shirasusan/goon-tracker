@@ -159,14 +159,14 @@ export function CoachTour({ stepIndex, onNext, onSkip }: CoachTourProps) {
         <p className="coach-tour__progress">
           {stepIndex + 1} / {TOUR_STEPS.length}
         </p>
-        <h2 id="coach-tour-title">{step.title}</h2>
-        <p>{step.body}</p>
+        <h2 id="coach-tour-title">{t(step.title)}</h2>
+        <p>{t(step.body)}</p>
         <div className="coach-tour__actions">
           <button type="button" className="btn" onClick={onSkip}>
             {t('skip')}
           </button>
           <button type="button" className="btn btn--solid" onClick={onNext}>
-            {step.cta}
+            {t(step.cta)}
           </button>
         </div>
       </div>

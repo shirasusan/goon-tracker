@@ -1520,6 +1520,103 @@
   letter-spacing: -0.02em;
 }
 
+.friends__add-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+}
+
+.friends__add-modal-backdrop {
+  position: absolute;
+  inset: 0;
+  appearance: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  background: color-mix(in srgb, var(--bg) 62%, transparent);
+  backdrop-filter: blur(6px);
+}
+
+.friends__add-modal-card {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 440px);
+  max-height: min(88vh, 560px);
+  overflow: auto;
+  display: grid;
+  gap: 1.15rem;
+  padding: 1.35rem 1.4rem 1.5rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.45);
+}
+
+.friends__add-modal-card .block__head {
+  align-items: center;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 1px solid var(--line-soft);
+}
+
+.friends__add-modal-card h3 {
+  margin: 0;
+  font-family: 'Bricolage Grotesque', sans-serif;
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+}
+
+.friends__add-modal-close {
+  appearance: none;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  color: var(--ink);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0.45rem 0.75rem;
+  border-radius: var(--radius-sm);
+  min-height: 2.4rem;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease;
+}
+
+.friends__add-modal-close:hover {
+  border-color: color-mix(in srgb, var(--ink) 35%, var(--line));
+  background: var(--bg-elevated);
+}
+
+.friends__add-modal-close:active {
+  transform: scale(0.97);
+}
+
+.friends__add-modal-card .friends__share,
+.friends__add-modal-card .friends__add {
+  gap: 0.55rem;
+}
+
+.friends__add-modal-card input {
+  border: none;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  border-radius: 0;
+  padding: 0.72rem 0.15rem;
+  min-height: var(--touch, 2.75rem);
+}
+
+.friends__add-modal-card input:focus {
+  outline: none;
+  border-bottom-color: color-mix(in srgb, var(--goon) 55%, var(--line));
+}
+
 .friends__add-dock {
   position: relative;
   left: auto;
@@ -3393,6 +3490,35 @@ button.avatar {
   font-size: 0.95rem;
 }
 
+.goon-card__author {
+  appearance: none;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: color 0.15s ease;
+}
+
+.goon-card__author:hover {
+  color: var(--goon);
+}
+
+.goon-card__author:focus-visible {
+  outline: none;
+  color: var(--goon);
+  text-decoration: underline;
+}
+
+.goon-card__replies .goon-card__author {
+  font-size: inherit;
+}
+
 .goon-card__meta span {
   color: var(--muted);
   font-size: 0.8rem;
@@ -3573,14 +3699,6 @@ button.avatar {
     padding-top: 1.25rem;
     z-index: 1;
     min-width: 0;
-  }
-
-  .bottom-nav__add-friend .friends__add-panel {
-    width: 100%;
-    max-width: 100%;
-    box-sizing: border-box;
-    box-shadow: none;
-    padding: 0.75rem;
   }
 
   .bottom-nav__add-friend .friends__add-fab {

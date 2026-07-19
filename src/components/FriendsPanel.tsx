@@ -134,13 +134,13 @@ export function FriendsPanel({
         : row.categories[categoryFilter] || 0
 
     const rows = [
-      { ...me, name: displayName.trim() || 'Du', _you: true as const },
+      { ...me, name: displayName.trim() || t('you'), _you: true as const },
       ...friends.map((f) => ({ ...f, _you: false as const })),
     ]
     return rows
       .map((row) => ({ ...row, _metric: metric(row) }))
       .sort((a, b) => b._metric - a._metric || b.level - a.level)
-  }, [me, friends, displayName, categoryFilter])
+  }, [me, friends, displayName, categoryFilter, t])
 
   async function refreshFeed(userId: string, expanded = feedExpanded) {
     setFeedBusy(true)
@@ -239,7 +239,7 @@ export function FriendsPanel({
     if (!('error' in loaded)) onFriendsSync(loaded.friends)
     await refreshIncoming(user.userId)
     await refreshFeed(user.userId)
-    setStatus('Freundschaft akzeptiert')
+    setStatus(t('friend_accepted'))
   }
 
   async function declineRequest(id: string) {
@@ -319,7 +319,7 @@ export function FriendsPanel({
   }
 
   if (!cloudEnabled) {
-    return <p className="empty">Cloud nicht konfiguriert.</p>
+    return <p className="empty">{t('cloud_not_configured')}</p>
   }
 
   if (viewing) {
@@ -346,7 +346,7 @@ export function FriendsPanel({
     <div className="friends page-stack">
       {incoming.length > 0 && (
         <div className="friends__requests">
-          <h3>Anfragen</h3>
+          <h3>{t('friend_requests')}</h3>
           <ul className="friends__request-list">
             {incoming.map((req) => (
               <li key={req.id} className="friends__request-row">
@@ -368,7 +368,7 @@ export function FriendsPanel({
                       ? `@${req.fromProfile.username}`
                       : req.fromProfile?.name || 'User'}
                   </strong>
-                  <span>möchte befreundet sein</span>
+                  <span>{t('wants_to_be_friends')}</span>
                 </div>
                 <div className="friends__request-actions">
                   <button
@@ -376,14 +376,14 @@ export function FriendsPanel({
                     className="btn btn--solid"
                     onClick={() => void acceptRequest(req.id)}
                   >
-                    Annehmen
+                    {t('accept')}
                   </button>
                   <button
                     type="button"
                     className="btn"
                     onClick={() => void declineRequest(req.id)}
                   >
-                    Ablehnen
+                    {t('decline')}
                   </button>
                 </div>
               </li>
@@ -452,8 +452,10 @@ export function FriendsPanel({
           expanded={feedExpanded}
           busy={feedBusy || busy}
           error={feedError}
+          meId={meId}
           onExpand={() => void expandFeed()}
           onComment={commentOnPost}
+          onSelectUser={(id) => void openProfile(id)}
         />
       )}
 
@@ -493,7 +495,7 @@ export function FriendsPanel({
                   >
                     <strong>
                       {row.name}
-                      {row._you ? ' · du' : ''}
+                      {row._you ? t('you_suffix') : ''}
                     </strong>
                   </button>
                   <span>
@@ -522,7 +524,7 @@ export function FriendsPanel({
                       ? `Goon-Streak ${row.goonStreak}`
                       : row.dryStreak > 0
                         ? `Focus-Streak ${row.dryStreak}`
-                        : 'Keine Streak'
+                        : t('no_streak')
                   }
                 >
                   {row.goonStreak > 0
@@ -543,15 +545,15 @@ export function FriendsPanel({
             <input
               className="recs__search"
               type="search"
-              placeholder="Suche…"
+              placeholder={t('search_ph')}
               value={recQuery}
               onChange={(e) => setRecQuery(e.target.value)}
-              aria-label="Empfehlungen suchen"
+              aria-label={t('search_recs')}
             />
             <button
               type="button"
               className="recs__add-btn"
-              aria-label="Empfehlung erstellen"
+              aria-label={t('create_rec')}
               onClick={() => setShowRecCreate(true)}
             >
               +
@@ -562,21 +564,21 @@ export function FriendsPanel({
             <div className="recs__modal" role="dialog" aria-modal="true">
               <div className="recs__modal-card">
                 <div className="block__head">
-                  <h3>Neue Empfehlung</h3>
+                  <h3>{t('new_rec')}</h3>
                   <button
                     type="button"
                     className="section__close"
                     onClick={() => setShowRecCreate(false)}
                   >
-                    schließen
+                    {t('close')}
                   </button>
                 </div>
                 <div className="friends__add">
-                  <label htmlFor="rec-name">Name</label>
+                  <label htmlFor="rec-name">{t('rec_name')}</label>
                   <input
                     id="rec-name"
                     value={recName}
-                    placeholder="Titel"
+                    placeholder={t('rec_title_ph')}
                     onChange={(e) => setRecName(e.target.value)}
                   />
                   <label htmlFor="rec-category">{t('category')}</label>
@@ -591,14 +593,14 @@ export function FriendsPanel({
                       </option>
                     ))}
                   </select>
-                  <label htmlFor="rec-link">Link (optional)</label>
+                  <label htmlFor="rec-link">{t('link_optional')}</label>
                   <input
                     id="rec-link"
                     value={recLink}
                     placeholder="https://…"
                     onChange={(e) => setRecLink(e.target.value)}
                   />
-                  <label htmlFor="rec-image">Foto</label>
+                  <label htmlFor="rec-image">{t('photo')}</label>
                   <input
                     id="rec-image"
                     type="file"
@@ -607,17 +609,17 @@ export function FriendsPanel({
                   />
                   {recImagePreview && (
                     <div className="rec-preview">
-                      <img src={recImagePreview} alt="Vorschau" />
+                      <img src={recImagePreview} alt={t('preview')} />
                       <button
                         type="button"
                         className="section__close"
                         onClick={() => setRecImage(null)}
                       >
-                        entfernen
+                        {t('remove')}
                       </button>
                     </div>
                   )}
-                  <label htmlFor="rec-file">Datei</label>
+                  <label htmlFor="rec-file">{t('file')}</label>
                   <input
                     id="rec-file"
                     type="file"
@@ -628,7 +630,7 @@ export function FriendsPanel({
                     className="btn btn--solid"
                     onClick={() => void addRec()}
                   >
-                    Teilen
+                    {t('share')}
                   </button>
                   {error && <p className="friends__error">{error}</p>}
                 </div>
@@ -642,7 +644,7 @@ export function FriendsPanel({
                 <div>
                   <strong>{r.name}</strong>
                   <span className="rec-row__meta">
-                    von @{r.authorName}
+                    {t('by_author')} @{r.authorName}
                     {r.category ? (
                       <span
                         className="compare-cat-tag"
@@ -661,7 +663,7 @@ export function FriendsPanel({
                   {r.imageUrl && <img className="rec-row__img" src={r.imageUrl} alt="" />}
                   {r.fileUrl && (
                     <a href={r.fileUrl} target="_blank" rel="noreferrer">
-                      📎 {r.fileName || 'Datei'}
+                      📎 {r.fileName || t('file')}
                     </a>
                   )}
                 </div>
@@ -670,7 +672,7 @@ export function FriendsPanel({
                     type="button"
                     className="leaderboard__remove"
                     onClick={() => void removeRec(r.id)}
-                    aria-label="Recommendation löschen"
+                    aria-label={t('delete_rec')}
                   >
                     ×
                   </button>
@@ -680,7 +682,7 @@ export function FriendsPanel({
           </ul>
           {filteredRecs.length === 0 && (
             <p className="empty">
-              {recs.length === 0 ? 'Noch keine Empfehlungen.' : 'Keine Treffer.'}
+              {recs.length === 0 ? t('no_recs') : t('no_results')}
             </p>
           )}
         </div>

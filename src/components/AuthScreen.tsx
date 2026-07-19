@@ -34,7 +34,7 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
     return (
       <div className="auth">
         <h1 className="auth__hero-brand">Goon Tracker</h1>
-        <p className="empty">Cloud nicht konfiguriert (.env fehlt).</p>
+        <p className="empty">{t('auth_cloud_missing')}</p>
       </div>
     )
   }
@@ -44,21 +44,21 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
       <h1 className="auth__hero-brand">Goon Tracker</h1>
       <p className="auth__value">{t('auth_value')}</p>
 
-      <p className="auth__mode">{mode === 'login' ? 'Anmelden' : 'Registrieren'}</p>
+      <p className="auth__mode">{mode === 'login' ? t('auth_login') : t('auth_register')}</p>
 
       <form className="auth__form" onSubmit={(e) => void submit(e)}>
-        <label htmlFor="auth-user">Benutzername</label>
+        <label htmlFor="auth-user">{t('auth_username')}</label>
         <input
           id="auth-user"
           autoComplete="username"
           value={username}
           onChange={(e) => setUsername(e.target.value)}
-          placeholder="z.B. shirasu"
+          placeholder={t('auth_username_ph')}
           required
           minLength={3}
           maxLength={20}
         />
-        <label htmlFor="auth-pass">Passwort</label>
+        <label htmlFor="auth-pass">{t('auth_password')}</label>
         <input
           id="auth-pass"
           type="password"
@@ -69,9 +69,7 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
           minLength={6}
         />
         {mode === 'register' && (
-          <p className="auth__hint">
-            Mindestens 6 Zeichen. Benutzername: 3–20 Zeichen, a–z, 0–9, _.
-          </p>
+          <p className="auth__hint">{t('auth_register_hint')}</p>
         )}
         {error && <p className="friends__error">{error}</p>}
         <button
@@ -79,7 +77,11 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
           className="btn btn--accent btn--wide btn--lg"
           disabled={busy}
         >
-          {busy ? '…' : mode === 'login' ? 'Einloggen' : 'Account erstellen'}
+          {busy
+            ? '…'
+            : mode === 'login'
+              ? t('auth_submit_login')
+              : t('auth_submit_register')}
         </button>
       </form>
 
@@ -91,7 +93,7 @@ export function AuthScreen({ onAuthed }: AuthScreenProps) {
           setError(null)
         }}
       >
-        {mode === 'login' ? 'Neu hier? Registrieren' : 'Schon Account? Anmelden'}
+        {mode === 'login' ? t('auth_switch_to_register') : t('auth_switch_to_login')}
       </button>
     </div>
   )

@@ -1,3 +1,5 @@
+import { useLocale } from '../lib/LocaleContext'
+
 type AvatarProps = {
   src?: string | null
   name?: string
@@ -25,6 +27,7 @@ export function Avatar({
   size = 'md',
   onClick,
 }: AvatarProps) {
+  const { t } = useLocale()
   const glow =
     goonStreak > 0 ? 'goon' : dryStreak > 0 ? 'dry' : 'none'
 
@@ -35,7 +38,7 @@ export function Avatar({
       type={onClick ? 'button' : undefined}
       className={`avatar avatar--${size} avatar--glow-${glow}`}
       onClick={onClick}
-      aria-label={name ? `Profil ${name}` : 'Avatar'}
+      aria-label={name ? `${t('profile_of')} ${name}` : t('nav_profile')}
     >
       <img src={src || DEFAULT_AVATAR} alt="" />
     </Tag>

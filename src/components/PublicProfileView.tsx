@@ -86,7 +86,7 @@ export function PublicProfileView({
       return
     }
     setRelation('outgoing')
-    setMsg('Anfrage gesendet')
+    setMsg(t('request_sent'))
     onFriendsChanged?.()
   }
 
@@ -102,7 +102,7 @@ export function PublicProfileView({
     }
     setRelation('friends')
     setIncomingId(null)
-    setMsg('Freundschaft akzeptiert')
+    setMsg(t('friend_accepted'))
     onFriendsChanged?.()
   }
 
@@ -153,11 +153,11 @@ export function PublicProfileView({
                 disabled={busy}
                 onClick={() => void sendRequest()}
               >
-                Freundschaftsanfrage
+                {t('send_friend_request')}
               </button>
             )}
             {relation === 'outgoing' && (
-              <p className="friends__status">Anfrage ausstehend…</p>
+              <p className="friends__status">{t('request_pending')}</p>
             )}
             {relation === 'incoming' && (
               <button
@@ -166,19 +166,19 @@ export function PublicProfileView({
                 disabled={busy || !incomingId}
                 onClick={() => void acceptIncoming()}
               >
-                Anfrage akzeptieren
+                {t('accept_request')}
               </button>
             )}
             {relation === 'friends' && (
               <div className="public-profile__friend-row">
-                <p className="friends__status">Freunde</p>
+                <p className="friends__status">{t('friends_status')}</p>
                 <button
                   type="button"
                   className="public-profile__unfriend"
                   disabled={busy}
                   onClick={() => void unfriend()}
-                  aria-label="Freund entfernen"
-                  title="Freund entfernen"
+                  aria-label={t('remove_friend')}
+                  title={t('remove_friend')}
                 >
                   <svg
                     width="16"
@@ -204,13 +204,13 @@ export function PublicProfileView({
         )}
       </header>
 
-      <div className="metric-strip" role="group" aria-label="Übersicht">
+      <div className="metric-strip" role="group" aria-label={t('overview')}>
         <div className="metric-strip__item">
-          <span className="metric-strip__label">Rank</span>
+          <span className="metric-strip__label">{t('rank')}</span>
           <RankBadge totalMinutes={profile.totalMinutes} rank={rank} compact />
         </div>
         <div className="metric-strip__item metric-strip__item--wide">
-          <span className="metric-strip__label">Level</span>
+          <span className="metric-strip__label">{t('level')}</span>
           <strong className="metric-strip__value">
             {profile.level}
             <span className="metric-strip__sub">{profile.xp} XP</span>
@@ -222,7 +222,7 @@ export function PublicProfileView({
         </div>
       </div>
 
-      <div className="seg-tabs friends__tabs" role="tablist" aria-label="Profilbereiche">
+      <div className="seg-tabs friends__tabs" role="tablist" aria-label={t('profile_sections')}>
         <button
           type="button"
           role="tab"

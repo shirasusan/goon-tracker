@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { formatDisplayDate } from '../lib/dates'
 import { entryParts } from '../lib/entries'
 import { formatMinutes } from '../lib/format'
+import { useLocale } from '../lib/LocaleContext'
 import { CATEGORY_META, type GoonPost } from '../types'
 import { Avatar } from './Avatar'
 
@@ -10,8 +11,10 @@ type GoonFeedProps = {
   expanded: boolean
   busy?: boolean
   error?: string | null
+  meId?: string
   onExpand: () => void
   onComment: (postId: string, body: string) => Promise<void>
+  onSelectUser?: (userId: string) => void
 }
 
 export function GoonFeed({
@@ -19,11 +22,19 @@ export function GoonFeed({
   expanded,
   busy,
   error,
+  meId,
   onExpand,
   onComment,
+  onSelectUser,
 }: GoonFeedProps) {
+  const { t } = useLocale()
   const [drafts, setDrafts] = useState<Record<string, string>>({})
   const [sending, setSending] = useState<string | null>(null)
+
+  function openUser(userId: string) {
+    if (!onSelectUser || !userId || userId === meId) return
+    onSelectUser(userId)
+  }
 
   async function submit(postId: string) {
     const body = (drafts[postId] || '').trim()
@@ -35,7 +46,7 @@ export function GoonFeed({
   }
 
   if (busy && posts.length === 0) {
-    return <p className="empty">Feed lädt…</p>
+    return <p className="empty">{t('feed_loading')}</p>
   }
 
   if (error && posts.length === 0) {
@@ -45,11 +56,8 @@ export function GoonFeed({
   if (posts.length === 0) {
     return (
       <div className="goon-feed goon-feed--empty">
-        <p className="empty">Noch keine Goons im Feed.</p>
-        <p className="goon-feed__hint">
-          Deine gespeicherten Entries erscheinen hier für Freunde. Lade jemanden
-          ein oder speichere einen Entry mit Kommentar.
-        </p>
+        <p className="empty">{t('feed_empty')}</p>
+        <p className="goon-feed__hint">{t('feed_empty_hint')}</p>
       </div>
     )
   }
@@ -77,9 +85,24 @@ export function GoonFeed({
                   src={post.authorAvatarUrl}
                   name={post.authorName}
                   size="sm"
+                  onClick={
+                    onSelectUser && post.userId !== meId
+                      ? () => openUser(post.userId)
+                      : undefined
+                  }
                 />
                 <div className="goon-card__meta">
-                  <strong>@{post.authorName}</strong>
+                  {onSelectUser && post.userId !== meId ? (
+                    <button
+                      type="button"
+                      className="goon-card__author"
+                      onClick={() => openUser(post.userId)}
+                    >
+                      @{post.authorName}
+                    </button>
+                  ) : (
+                    <strong>@{post.authorName}</strong>
+                  )}
                   <span>
                     {formatDisplayDate(post.date)} · {formatMinutes(post.minutes)} · G
                     {post.goonometer}
@@ -106,14 +129,24 @@ export function GoonFeed({
                 <p className="goon-card__comment">{post.comment}</p>
               ) : (
                 <p className="goon-card__comment goon-card__comment--empty">
-                  Kein Kommentar
+                  {t('no_comment')}
                 </p>
               )}
               {post.comments.length > 0 && (
                 <ul className="goon-card__replies">
                   {post.comments.map((c) => (
                     <li key={c.id}>
-                      <strong>@{c.authorName}</strong>
+                      {onSelectUser && c.userId !== meId ? (
+                        <button
+                          type="button"
+                          className="goon-card__author"
+                          onClick={() => openUser(c.userId)}
+                        >
+                          @{c.authorName}
+                        </button>
+                      ) : (
+                        <strong>@{c.authorName}</strong>
+                      )}
                       <span>{c.body}</span>
                     </li>
                   ))}
@@ -123,7 +156,7 @@ export function GoonFeed({
                 <input
                   value={drafts[post.id] || ''}
                   maxLength={280}
-                  placeholder="Kommentieren…"
+                  placeholder={t('comment_ph')}
                   onChange={(e) =>
                     setDrafts((prev) => ({ ...prev, [post.id]: e.target.value }))
                   }
@@ -137,7 +170,7 @@ export function GoonFeed({
                   disabled={sending === post.id || !(drafts[post.id] || '').trim()}
                   onClick={() => void submit(post.id)}
                 >
-                  Senden
+                  {t('send')}
                 </button>
               </div>
             </li>
@@ -146,7 +179,7 @@ export function GoonFeed({
       </ul>
       {!expanded && (
         <button type="button" className="btn" onClick={onExpand} disabled={busy}>
-          Mehr anzeigen
+          {t('show_more')}
         </button>
       )}
     </div>

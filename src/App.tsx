@@ -272,7 +272,7 @@ export default function App() {
     () => ({
       ...buildSnapshot({
         id: data.profile.cloudUserId || data.profile.id,
-        name: data.profile.name || data.profile.username || 'Du',
+        name: data.profile.name || data.profile.username || t('you'),
         entries: data.entries,
         goonStreak,
         dryStreak,
@@ -291,6 +291,7 @@ export default function App() {
       goonStreak,
       dryStreak,
       rank.id,
+      t,
     ],
   )
 
@@ -571,7 +572,7 @@ export default function App() {
                     {!monkMode ? (
                       <>
                         <div className="home-hero__rank">
-                          <p className="eyebrow">Rang</p>
+                          <p className="eyebrow">{t('rank')}</p>
                           <RankBadge totalMinutes={totalMinutes} rank={rank} />
                         </div>
                         <div className="home-compose__streak" aria-label="Streak">

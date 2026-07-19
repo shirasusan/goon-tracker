@@ -1,3 +1,5 @@
+import type { MsgId } from './i18n'
+
 const PREFIX = 'goon-tracker-tour-v1:'
 
 export type TourStepId =
@@ -20,9 +22,9 @@ export type TourState = {
 
 export const TOUR_STEPS: {
   id: TourStepId
-  title: string
-  body: string
-  cta: string
+  title: MsgId
+  body: MsgId
+  cta: MsgId
   /** CSS selector for the control to highlight; null = centered card */
   anchor: string | null
   /** Tab to open when this step becomes active */
@@ -30,65 +32,65 @@ export const TOUR_STEPS: {
 }[] = [
   {
     id: 'welcome',
-    title: 'Willkommen bei Goon Tracker',
-    body: 'Kurzer Rundgang — wir zeigen dir die wichtigsten Buttons direkt am Ort.',
-    cta: 'Los geht’s',
+    title: 'tour_welcome_title',
+    body: 'tour_welcome_body',
+    cta: 'tour_welcome_cta',
     anchor: '[data-tour="nav-home"]',
     tab: 'home',
   },
   {
     id: 'name',
-    title: 'Namen setzen',
-    body: 'Öffne Einstellungen und gib deinen Anzeigenamen ein.',
-    cta: 'Weiter',
+    title: 'tour_name_title',
+    body: 'tour_name_body',
+    cta: 'next',
     anchor: '[data-tour="profile-settings"]',
     tab: 'profile',
   },
   {
     id: 'widgets',
-    title: 'Dein Home-Board',
-    body: 'Hier siehst du Rang, Level und Streak. Heute füttert den Streak.',
-    cta: 'Weiter',
+    title: 'tour_widgets_title',
+    body: 'tour_widgets_body',
+    cta: 'next',
     anchor: '[data-tour="home-widgets"]',
     tab: 'home',
   },
   {
     id: 'entry',
-    title: 'Ersten Eintrag loggen',
-    body: 'Tippe auf Neuer Eintrag, wähle Kategorien und Minuten.',
-    cta: 'Weiter',
+    title: 'tour_entry_title',
+    body: 'tour_entry_body',
+    cta: 'next',
     anchor: '[data-tour="new-entry"]',
     tab: 'home',
   },
   {
     id: 'friends',
-    title: 'Freunde',
-    body: 'Hier vergleichst du dich und lädst Freunde ein.',
-    cta: 'Weiter',
+    title: 'tour_friends_title',
+    body: 'tour_friends_body',
+    cta: 'next',
     anchor: '[data-tour="nav-friends"]',
     tab: 'home',
   },
   {
     id: 'feed',
-    title: 'Feed',
-    body: 'Im Freunde-Tab öffnest du den Feed über diesen Reiter.',
-    cta: 'Weiter',
+    title: 'tour_feed_title',
+    body: 'tour_feed_body',
+    cta: 'next',
     anchor: '[data-tour="friends-feed"]',
     tab: 'friends',
   },
   {
     id: 'ranked',
-    title: 'Rangliste',
-    body: 'Saison zählt fürs Ranking — Allzeit fürs Level.',
-    cta: 'Weiter',
+    title: 'tour_ranked_title',
+    body: 'tour_ranked_body',
+    cta: 'next',
     anchor: '[data-tour="nav-ranked"]',
     tab: 'home',
   },
   {
     id: 'profile',
-    title: 'Profil & Settings',
-    body: 'Über deinen Avatar erreichst du Profil, Monk Mode und Logout.',
-    cta: 'Fertig',
+    title: 'tour_profile_title',
+    body: 'tour_profile_body',
+    cta: 'tour_done',
     anchor: '[data-tour="nav-profile"]',
     tab: 'home',
   },
