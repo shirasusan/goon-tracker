@@ -11,8 +11,10 @@ type CategoryPickerProps = {
 
 type Drafts = Partial<Record<Category, number>>
 
+const MAX_MINUTES = 24 * 60
+
 function clampMinutes(n: number) {
-  return Math.max(1, Math.min(24 * 60, Math.round(n)))
+  return Math.max(1, Math.min(MAX_MINUTES, Math.round(n)))
 }
 
 export function CategoryPicker({ onLog }: CategoryPickerProps) {
@@ -144,26 +146,35 @@ export function CategoryPicker({ onLog }: CategoryPickerProps) {
                   )}
                   {isOpen && (
                     <div className="cat-block__panel">
-                      <div className="duration__value">
-                        {(activeMinutes ?? 0) >= 1 ? (
-                          <>
-                            <strong>{activeMinutes}</strong>
-                            <span>min</span>
-                          </>
-                        ) : (
-                          <span className="duration__placeholder">Minuten wählen</span>
-                        )}
-                      </div>
-                      <input
-                        className="duration__slider"
-                        type="range"
-                        min={0}
-                        max={180}
-                        value={activeMinutes != null && activeMinutes >= 1 ? Math.min(180, activeMinutes) : 0}
-                        onChange={(e) =>
-                          setActiveMinutes(Number(e.target.value))
-                        }
-                      />
+                      <label className="duration__type">
+                        <input
+                          className="duration__input"
+                          type="number"
+                          inputMode="numeric"
+                          min={1}
+                          max={MAX_MINUTES}
+                          step={1}
+                          placeholder="Minuten"
+                          aria-label={`Minuten für ${meta.label}`}
+                          autoFocus
+                          value={
+                            activeMinutes != null && activeMinutes >= 1
+                              ? activeMinutes
+                              : ''
+                          }
+                          onChange={(e) => {
+                            const raw = e.target.value
+                            if (raw === '') {
+                              setActiveMinutes(0)
+                              return
+                            }
+                            const n = Number(raw)
+                            if (!Number.isFinite(n)) return
+                            setActiveMinutes(n)
+                          }}
+                        />
+                        <span>min</span>
+                      </label>
                     </div>
                   )}
                 </div>
