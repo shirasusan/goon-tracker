@@ -67,47 +67,6 @@
   display: none;
 }
 
-.top__me {
-  appearance: none;
-  border: 1px solid var(--line);
-  background: transparent;
-  color: inherit;
-  border-radius: var(--radius-sm);
-  padding: 0.2rem 0.55rem 0.2rem 0.2rem;
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  cursor: pointer;
-  max-width: 42%;
-  flex-shrink: 0;
-  transition:
-    border-color 0.15s ease,
-    background 0.15s ease,
-    transform 0.15s ease;
-}
-
-.top__me:hover {
-  border-color: color-mix(in srgb, var(--ink) 35%, var(--line));
-  background: var(--bg-elevated);
-}
-
-.top__me:active {
-  transform: scale(0.97);
-}
-
-.top__me.is-active {
-  border-color: var(--ink);
-  background: var(--surface);
-}
-
-.top__me-name {
-  font-size: 0.78rem;
-  font-weight: 600;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .page {
   display: grid;
   gap: var(--gap);
@@ -3334,10 +3293,6 @@ button.avatar {
     color: var(--ink);
   }
 
-  .chrome__me {
-    max-width: none;
-  }
-
   .shell > .bottom-nav {
     grid-column: 1;
     grid-row: 2;
@@ -3428,8 +3383,7 @@ button.avatar {
   }
 
   .top__brand,
-  .top__sub,
-  .top__me--mobile {
+  .top__sub {
     display: none;
   }
 

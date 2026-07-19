@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AchievementUnlockOverlay } from './components/AchievementUnlockOverlay'
 import { AuthScreen } from './components/AuthScreen'
-import { Avatar } from './components/Avatar'
 import { BottomNav, type TabId } from './components/BottomNav'
 import { CategoryPicker } from './components/CategoryPicker'
 import { FriendsPanel } from './components/FriendsPanel'
@@ -68,7 +67,6 @@ export default function App() {
     cloudEnabled ? emptyData() : loadData(),
   )
   const [tab, setTab] = useState<TabId>('home')
-  const [showProfile, setShowProfile] = useState(false)
   const [flash, setFlash] = useState<string | null>(null)
   const [authed, setAuthed] = useState<boolean | null>(null)
   /** False until cloud entry sync finishes — blocks empty profile overwrite. */
@@ -397,7 +395,6 @@ export default function App() {
   }
 
   function openTab(next: TabId) {
-    setShowProfile(false)
     setTab(next)
   }
 
@@ -415,7 +412,7 @@ export default function App() {
     setUnlockQueue([])
     setFreshKeys(new Set())
     setAuthed(false)
-    setShowProfile(false)
+    setTab('home')
   }
 
   async function handleDeleteAccount() {
@@ -425,7 +422,7 @@ export default function App() {
     setData(emptyData())
     setUnlockQueue([])
     setFreshKeys(new Set())
-    setShowProfile(false)
+    setTab('home')
     setAuthed(false)
   }
 
@@ -447,9 +444,7 @@ export default function App() {
     )
   }
 
-  const page = showProfile
-    ? { title: 'Profil' }
-    : PAGE_META[tab]
+  const page = PAGE_META[tab]
   const displayLabel =
     data.profile.name.trim() || data.profile.username || 'Profil'
   const activeUnlock = unlockQueue[0] ?? null
@@ -467,29 +462,18 @@ export default function App() {
 
       <header className="chrome">
         <p className="chrome__brand">Goon Tracker</p>
-        <button
-          type="button"
-          className={`top__me chrome__me${showProfile ? ' is-active' : ''}`}
-          onClick={() => setShowProfile(true)}
-          aria-label="Profil öffnen"
-        >
-          <Avatar
-            src={data.profile.avatarUrl}
-            name={displayLabel}
-            goonStreak={goonStreak}
-            dryStreak={dryStreak}
-            size="sm"
-          />
-          <span className="top__me-name">{displayLabel}</span>
-        </button>
       </header>
 
       <BottomNav
-        active={showProfile ? null : tab}
+        active={tab}
         onChange={openTab}
         hideRanked={monkMode}
         cloudCode={data.profile.cloudCode}
         userId={data.profile.cloudUserId}
+        avatarUrl={data.profile.avatarUrl}
+        displayName={displayLabel}
+        goonStreak={goonStreak}
+        dryStreak={dryStreak}
       />
 
       <div className="app">
@@ -498,25 +482,10 @@ export default function App() {
             <p className="top__brand">Goon Tracker</p>
             <h1 className="top__title">{page.title}</h1>
           </div>
-          <button
-            type="button"
-            className={`top__me top__me--mobile${showProfile ? ' is-active' : ''}`}
-            onClick={() => setShowProfile(true)}
-            aria-label="Profil öffnen"
-          >
-            <Avatar
-              src={data.profile.avatarUrl}
-              name={displayLabel}
-              goonStreak={goonStreak}
-              dryStreak={dryStreak}
-              size="sm"
-            />
-            <span className="top__me-name">{displayLabel}</span>
-          </button>
         </header>
 
-        <main className="page" id="main" key={showProfile ? 'profile' : tab}>
-          {showProfile ? (
+        <main className="page" id="main" key={tab}>
+          {tab === 'profile' ? (
             <ProfilePanel
               userId={data.profile.cloudUserId}
               username={data.profile.username}
@@ -539,7 +508,7 @@ export default function App() {
               onLogout={() => void handleLogout()}
               onDeleteAccount={handleDeleteAccount}
               onRemoveEntry={removeEntry}
-              onBack={() => setShowProfile(false)}
+              onBack={() => setTab('home')}
               freshAchievementKeys={freshKeys}
               monkMode={monkMode}
               onMonkModeChange={setMonkMode}
@@ -591,11 +560,8 @@ export default function App() {
                     hasProfileName={Boolean(data.profile.name.trim())}
                     hasEntry={data.entries.length > 0}
                     hasFriends={data.friends.length > 0}
-                    onGoProfile={() => setShowProfile(true)}
-                    onGoFriends={() => {
-                      setShowProfile(false)
-                      setTab('friends')
-                    }}
+                    onGoProfile={() => setTab('profile')}
+                    onGoFriends={() => setTab('friends')}
                   />
 
                   {!monkMode && (
