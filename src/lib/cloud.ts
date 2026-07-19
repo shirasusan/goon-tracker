@@ -168,6 +168,8 @@ export async function ensureCloudProfile(
 ): Promise<
   | {
       code: string
+      name?: string
+      username?: string
       avatarUrl?: string | null
       rankedAnonymous?: boolean
       startedOn?: string | null
@@ -178,7 +180,7 @@ export async function ensureCloudProfile(
 
   const { data: existing, error: readError } = await supabase
     .from('profiles')
-    .select('code, avatar_url, ranked_anonymous, started_on')
+    .select('code, name, username, avatar_url, ranked_anonymous, started_on')
     .eq('id', userId)
     .maybeSingle()
 
@@ -191,14 +193,14 @@ export async function ensureCloudProfile(
   }
 
   if (existing?.code) {
-    if (username) {
-      await supabase
-        .from('profiles')
-        .update({ username, name: displayName.trim() || username })
-        .eq('id', userId)
+    // Keep cloud display name; only fill username if missing
+    if (username && !existing.username) {
+      await supabase.from('profiles').update({ username }).eq('id', userId)
     }
     return {
-      code: existing.code,
+      code: existing.code as string,
+      name: (existing.name as string | null) || undefined,
+      username: (existing.username as string | null) || username,
       avatarUrl: existing.avatar_url as string | null,
       rankedAnonymous: Boolean(existing.ranked_anonymous),
       startedOn: (existing.started_on as string | null) ?? null,
@@ -219,6 +221,8 @@ export async function ensureCloudProfile(
     if (!error) {
       return {
         code,
+        name: displayName.trim() || username || 'Anon',
+        username: username ?? undefined,
         avatarUrl: null,
         rankedAnonymous: false,
         startedOn: startedOn ?? null,
@@ -1058,8 +1062,109 @@ async function pullOwnGoonPostsAsEntries(
 }
 
 /**
+ * Pull cloud entries only (no local merge). Backfills from goon_posts if needed.
+ */
+export async function pullCloudEntriesOnly(
+  userId: string,
+  cloudStartedOn?: string | null,
+): Promise<{ entries: Entry[]; startedOn: string } | { error: string }> {
+  const pulled = await pullTrackerEntries(userId)
+  if ('error' in pulled) return pulled
+
+  let cloudEntries = pulled.entries
+
+  if (cloudEntries.length === 0) {
+    const fromPosts = await pullOwnGoonPostsAsEntries(userId)
+    if ('error' in fromPosts) {
+      if (!fromPosts.error.includes('Tabelle fehlt')) return fromPosts
+    } else if (fromPosts.entries.length > 0) {
+      const backfill = await pushTrackerEntries(userId, fromPosts.entries)
+      if (backfill.error) return { error: backfill.error }
+      cloudEntries = fromPosts.entries
+    }
+  }
+
+  const startedOn =
+    cloudStartedOn && /^\d{4}-\d{2}-\d{2}$/.test(cloudStartedOn)
+      ? cloudStartedOn
+      : cloudEntries.length > 0
+        ? cloudEntries
+            .map((e) => e.date)
+            .sort()[0]
+        : toDateKeyFallback()
+
+  return { entries: cloudEntries, startedOn }
+}
+
+function toDateKeyFallback(): string {
+  const d = new Date()
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const day = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${day}`
+}
+
+/**
+ * Load full account state from cloud — source of truth for multi-account.
+ */
+export async function hydrateAccountFromCloud(input: {
+  userId: string
+  username?: string
+}): Promise<
+  | {
+      entries: Entry[]
+      startedOn: string
+      friends: FriendSnapshot[]
+      profile: {
+        cloudUserId: string
+        cloudCode: string
+        name: string
+        username?: string
+        avatarUrl?: string
+        rankedAnonymous?: boolean
+      }
+    }
+  | { error: string }
+> {
+  const username = input.username?.trim().toLowerCase()
+  const profile = await ensureCloudProfile(
+    input.userId,
+    username || 'User',
+    username,
+  )
+  if ('error' in profile) return profile
+
+  const entriesResult = await pullCloudEntriesOnly(
+    input.userId,
+    profile.startedOn,
+  )
+  if ('error' in entriesResult) return entriesResult
+
+  const friendsResult = await loadFriendProfiles(input.userId)
+  const friends =
+    'error' in friendsResult
+      ? []
+      : friendsResult.friends.map(({ code: _c, ...f }) => f)
+
+  return {
+    entries: entriesResult.entries,
+    startedOn: entriesResult.startedOn,
+    friends,
+    profile: {
+      cloudUserId: input.userId,
+      cloudCode: profile.code,
+      name: profile.name || username || '',
+      username: profile.username || username,
+      avatarUrl: profile.avatarUrl || undefined,
+      rankedAnonymous: profile.rankedAnonymous,
+    },
+  }
+}
+
+/**
  * Pull cloud entries, backfill from goon_posts if needed, merge with local,
  * push local-only rows, sync started_on. Does not push profile aggregates.
+ * @deprecated Prefer hydrateAccountFromCloud / pullCloudEntriesOnly for multi-account.
  */
 export async function syncEntriesWithCloud(input: {
   userId: string

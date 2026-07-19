@@ -2,13 +2,18 @@ import { toDateKey } from './dates'
 import { buildEntryFromParts, normalizeParts } from './entries'
 import { CATEGORIES, type Category, type Entry, type FriendSnapshot, type TrackerData } from '../types'
 
-const KEY = 'goon-tracker-v1'
+const LEGACY_KEY = 'goon-tracker-v1'
+const KEY_PREFIX = 'goon-tracker-v1:'
 
 function newProfileId() {
   return crypto.randomUUID()
 }
 
-function emptyData(): TrackerData {
+function userKey(userId: string) {
+  return `${KEY_PREFIX}${userId}`
+}
+
+export function emptyData(): TrackerData {
   return {
     entries: [],
     startedOn: toDateKey(),
@@ -87,12 +92,11 @@ function normalizeFriend(raw: Partial<FriendSnapshot>): FriendSnapshot | null {
   }
 }
 
-export function loadData(): TrackerData {
+function parseStored(raw: string | null): TrackerData | null {
+  if (!raw) return null
   try {
-    const raw = localStorage.getItem(KEY)
-    if (!raw) return emptyData()
     const parsed = JSON.parse(raw) as Partial<TrackerData>
-    if (!parsed.startedOn || !Array.isArray(parsed.entries)) return emptyData()
+    if (!parsed.startedOn || !Array.isArray(parsed.entries)) return null
     return {
       startedOn: parsed.startedOn,
       entries: parsed.entries
@@ -115,18 +119,41 @@ export function loadData(): TrackerData {
         : [],
     }
   } catch {
-    return emptyData()
+    return null
   }
 }
 
-export function saveData(data: TrackerData): void {
-  localStorage.setItem(KEY, JSON.stringify(data))
+/** Offline / no-cloud fallback — shared legacy key. Prefer loadDataForUser when authed. */
+export function loadData(): TrackerData {
+  return parseStored(localStorage.getItem(LEGACY_KEY)) ?? emptyData()
 }
 
-/** Clears tracker + achievement local keys (e.g. after account delete). */
+export function loadDataForUser(userId: string): TrackerData {
+  return parseStored(localStorage.getItem(userKey(userId))) ?? emptyData()
+}
+
+export function saveData(data: TrackerData): void {
+  const userId = data.profile.cloudUserId
+  if (userId) {
+    localStorage.setItem(userKey(userId), JSON.stringify(data))
+    return
+  }
+  localStorage.setItem(LEGACY_KEY, JSON.stringify(data))
+}
+
 export function clearLocalTrackerData(): void {
-  localStorage.removeItem(KEY)
+  localStorage.removeItem(LEGACY_KEY)
   localStorage.removeItem('goon-tracker-achievements-seen')
   localStorage.removeItem('goon-tracker-achievement-flags')
   localStorage.removeItem('goon-tracker-season-ranks')
+  const toRemove: string[] = []
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i)
+    if (k?.startsWith(KEY_PREFIX)) toRemove.push(k)
+  }
+  for (const k of toRemove) localStorage.removeItem(k)
+}
+
+export function clearLegacySharedCache(): void {
+  localStorage.removeItem(LEGACY_KEY)
 }
