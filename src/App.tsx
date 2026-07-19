@@ -583,11 +583,11 @@ export default function App() {
                     <section className="home-compose__primary">
                       <div className="block__head">
                         <h2>Heute</h2>
-                        <span>
-                          {todayEntries.length === 0
-                            ? 'leer'
-                            : `${todayEntries.length} · ${formatMinutes(todayMinutes)}`}
-                        </span>
+                        {todayEntries.length > 0 && (
+                          <span>
+                            {todayEntries.length} · {formatMinutes(todayMinutes)}
+                          </span>
+                        )}
                       </div>
                       <CategoryPicker onLog={logCategory} />
                       {flash && <p className="flash">{flash}</p>}

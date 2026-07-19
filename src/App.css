@@ -68,12 +68,19 @@
   cursor: pointer;
   max-width: 42%;
   flex-shrink: 0;
-  transition: border-color 0.15s ease, background 0.15s ease;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .top__me:hover {
   border-color: color-mix(in srgb, var(--ink) 35%, var(--line));
   background: var(--bg-elevated);
+}
+
+.top__me:active {
+  transform: scale(0.97);
 }
 
 .top__me.is-active {
@@ -189,11 +196,19 @@
   place-items: center;
   gap: 0;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .bottom-nav__btn:hover {
   color: color-mix(in srgb, var(--ink) 75%, var(--muted));
+}
+
+.bottom-nav__btn:active {
+  transform: scale(0.97);
 }
 
 .bottom-nav__btn.is-active {
@@ -517,7 +532,7 @@
 }
 
 .new-entry:active {
-  transform: translateY(0);
+  transform: scale(0.985);
 }
 
 .new-entry__plus {
@@ -614,6 +629,10 @@
   filter: brightness(1.08);
 }
 
+.cat-tile:active {
+  transform: scale(0.98);
+}
+
 .cat-tile.is-active {
   box-shadow:
     0 0 0 2px var(--bg),
@@ -688,7 +707,10 @@
   transition:
     background 0.15s ease,
     border-color 0.15s ease,
-    transform 0.15s ease;
+    color 0.15s ease,
+    transform 0.15s ease,
+    filter 0.15s ease,
+    opacity 0.15s ease;
 }
 
 .btn:hover {
@@ -697,7 +719,7 @@
 }
 
 .btn:active {
-  transform: translateY(1px);
+  transform: scale(0.97);
 }
 
 .btn--solid {
@@ -709,6 +731,11 @@
 .btn--solid:hover {
   filter: brightness(0.94);
   background: var(--ink);
+}
+
+.btn--solid:active {
+  filter: brightness(0.88);
+  transform: scale(0.97);
 }
 
 .btn--solid:disabled {
@@ -838,12 +865,21 @@
   cursor: pointer;
   padding: 0.15rem 0.35rem;
   border-radius: 6px;
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .entry-row__remove:hover,
 .leaderboard__remove:hover {
   color: var(--ink);
   background: #1c222b;
+}
+
+.entry-row__remove:active,
+.leaderboard__remove:active {
+  transform: scale(0.92);
 }
 
 .cat-stats {
@@ -906,11 +942,21 @@
   color: var(--muted);
   font-size: 0.85rem;
   cursor: pointer;
-  padding: 0;
+  padding: 0.15rem 0.25rem;
+  border-radius: var(--radius-xs);
+  transition:
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .section__close:hover {
   color: var(--ink);
+  background: color-mix(in srgb, var(--surface) 80%, transparent);
+}
+
+.section__close:active {
+  transform: scale(0.96);
 }
 
 .friends {
@@ -958,6 +1004,7 @@
 .friends__tabs {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-end;
   gap: 0;
   padding: 0;
   border-radius: 0;
@@ -965,6 +1012,37 @@
   border: none;
   border-bottom: 1px solid var(--line-soft);
   width: 100%;
+}
+
+.friends__invite-btn {
+  appearance: none;
+  margin-left: auto;
+  margin-bottom: -1px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  color: var(--link);
+  border-radius: 0;
+  padding: 0.55rem 0.35rem 0.5rem 0.85rem;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 0.15s ease,
+    transform 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.friends__invite-full {
+  display: none;
+}
+
+.friends__invite-btn:hover {
+  color: var(--ink);
+}
+
+.friends__invite-btn:active {
+  transform: scale(0.97);
 }
 
 .chip {
@@ -979,11 +1057,19 @@
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .chip:hover {
   color: var(--ink);
+}
+
+.chip:active {
+  transform: scale(0.97);
 }
 
 .chip.is-active {
@@ -1447,11 +1533,19 @@ button.avatar {
   font-size: 0.84rem;
   font-weight: 600;
   cursor: pointer;
-  transition: color 0.15s ease, border-color 0.15s ease;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.15s ease,
+    background 0.15s ease;
 }
 
 .chip:hover {
   color: var(--ink);
+}
+
+.chip:active {
+  transform: scale(0.97);
 }
 
 .chip.is-active {
@@ -1616,36 +1710,62 @@ button.avatar {
 
 .recs__toolbar {
   display: flex;
-  align-items: center;
-  gap: 0.45rem;
+  align-items: stretch;
+  gap: 0.5rem;
 }
 
 .recs__search {
   flex: 1;
   min-width: 0;
   margin: 0;
-  padding: 0.4rem 0.65rem;
-  font-size: 0.85rem;
+  height: 2.75rem;
+  padding: 0 0.85rem;
+  font-size: 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  background: var(--bg-elevated);
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease;
+}
+
+.recs__search:hover,
+.recs__search:focus {
+  border-color: color-mix(in srgb, var(--ink) 28%, var(--line));
+  outline: none;
 }
 
 .recs__add-btn {
   flex-shrink: 0;
-  width: 2rem;
-  height: 2rem;
+  box-sizing: border-box;
+  width: 2.75rem;
+  height: 2.75rem;
   padding: 0;
   border-radius: var(--radius-sm);
   border: 1px solid var(--line);
   background: var(--surface-2);
   color: var(--ink);
-  font-size: 1.25rem;
+  font-size: 1.45rem;
   font-weight: 600;
   line-height: 1;
   cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .recs__add-btn:hover {
   border-color: var(--goon);
   color: var(--goon);
+  background: color-mix(in srgb, var(--goon) 8%, var(--surface-2));
+}
+
+.recs__add-btn:active {
+  transform: scale(0.95);
 }
 
 .recs__modal {
@@ -1849,11 +1969,20 @@ button.avatar {
   line-height: 1;
   cursor: pointer;
   padding: 0;
+  transition:
+    color 0.15s ease,
+    border-color 0.15s ease,
+    background 0.15s ease,
+    transform 0.15s ease;
 }
 
 .help-btn:hover {
   color: #e8ecf2;
   border-color: #e8ecf2;
+}
+
+.help-btn:active {
+  transform: scale(0.92);
 }
 
 .rank-help {
@@ -2766,6 +2895,49 @@ button.avatar {
 
   .friends.page-stack {
     gap: 1.5rem;
+  }
+
+  .friends__header {
+    display: none;
+  }
+
+  .friends__tabs {
+    gap: 0.15rem 0.35rem;
+    padding-bottom: 0;
+    margin-bottom: 0.35rem;
+  }
+
+  .friends__tabs .chip {
+    padding: 0.85rem 1.15rem 0.75rem;
+    font-size: 1.05rem;
+  }
+
+  .friends__invite-btn {
+    padding: 0.85rem 0.5rem 0.75rem 1.15rem;
+    font-size: 1rem;
+  }
+
+  .friends__invite-short {
+    display: none;
+  }
+
+  .friends__invite-full {
+    display: inline;
+  }
+
+  .recs__toolbar {
+    gap: 0.65rem;
+    max-width: 36rem;
+  }
+
+  .recs__search,
+  .recs__add-btn {
+    height: 3rem;
+  }
+
+  .recs__add-btn {
+    width: 3rem;
+    font-size: 1.55rem;
   }
 
   .friends__board,

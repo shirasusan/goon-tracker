@@ -389,14 +389,6 @@ export function FriendsPanel({
         <div className="friends__header-text">
           <h2 className="friends__title">Freunde</h2>
         </div>
-        <button
-          type="button"
-          className="recs__add-btn"
-          aria-label="Freund hinzufügen"
-          onClick={() => setShowAddFriend(true)}
-        >
-          +
-        </button>
       </header>
 
       {incoming.length > 0 && (
@@ -471,6 +463,14 @@ export function FriendsPanel({
             Recs
           </button>
         )}
+        <button
+          type="button"
+          className="friends__invite-btn"
+          onClick={() => setShowAddFriend(true)}
+        >
+          <span className="friends__invite-short">+ Freund</span>
+          <span className="friends__invite-full">Freund hinzufügen</span>
+        </button>
       </div>
 
       {view === 'feed' && (
