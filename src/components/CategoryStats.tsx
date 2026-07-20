@@ -1,6 +1,6 @@
 import { CATEGORIES, CATEGORY_META, type Category, type Entry } from '../types'
 import { formatMinutes } from '../lib/format'
-import { categoryTotalsSolo } from '../lib/snapshot'
+import { categoryTotals } from '../lib/snapshot'
 
 type CategoryStatsProps = {
   entries: Entry[]
@@ -9,7 +9,7 @@ type CategoryStatsProps = {
 }
 
 export function CategoryStats({ entries, selected, onSelect }: CategoryStatsProps) {
-  const totals = categoryTotalsSolo(entries)
+  const totals = categoryTotals(entries)
   const max = Math.max(1, ...Object.values(totals))
 
   return (
